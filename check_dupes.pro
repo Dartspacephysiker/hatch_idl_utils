@@ -1,5 +1,5 @@
 ;2015/08/13 Now we can check for duplicates in the data!
-PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum
+PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum,OUT_DUPE_I=out_dupe_i,PRINTDUPES=printDupes
 
   IF N_ELEMENTS(data) EQ 0 THEN BEGIN
      PRINT,"CHECK_DUPES: Provided array is empty! Returning..."
@@ -19,9 +19,26 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum
      RETURN
   ENDIF
 
+  rev_ind = r
+  dupes_rev_ind = dupes
+
+  ;;master dupe ind list
+  out_dupe_i = R[R[dupes[0]] : R[dupes[0]+1]-1]
+  FOR i=1,N_ELEMENTS(dupes)-1 DO BEGIN
+     out_dupe_i=[out_dupe_i, (R[R[dupes[i]] : R[dupes[i]+1]-1]) ]
+  ENDFOR
+
   totDupes = TOTAL(h[dupes])
-  IF totDupes GT 500 THEN BEGIN 
-     READ,answer, PROMPT="More than 500 duplicates! Print them? (y/n)"
+  IF totDupes GT 500  THEN BEGIN 
+
+     answer = ''
+     IF N_ELEMENTS(printDupes) EQ 0 THEN $
+        READ,answer, PROMPT="More than 500 duplicates (" + STRCOMPRESS(totDupes,/REMOVE_ALL) + ", in fact)!  Print them? (y/n)" $
+     ELSE BEGIN
+        PRINT,"printDupes: " + printDupes
+        answer=printDupes
+     ENDELSE
+
      IF STRLOWCASE(STRMID(answer,0,1)) NE 'y' THEN BEGIN
         PRINT,"OK, exiting..."
         RETURN
@@ -40,9 +57,6 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum
      print,R[R[dupes[i]] : R[dupes[i]+1]-1]
      print,''
   ENDFOR
-
-  rev_ind = r
-  dupes_rev_ind = dupes
 
   print,"Total number of dupes: " + STRCOMPRESS(totDupes)
 
