@@ -20,7 +20,7 @@ function median_hist, MLT, ILAT, data, $
                       OBIN1=Obin1, OBIN2=Obin2, $
                       BINEDGE1=Binedge1, BINEDGE2=Binedge2, NONZEROHIST=nonzeroHist,$
                       PTRHIST=ptrHist,ABSMED=absMed,$
-                      OUTFILE=outFile,PLOT_I=plot_i,LOGNORMSTATS=lorNormStats
+                      OUTFILE=outFile,PLOT_I=plot_i,LOGNORMSTATS=logNormStats
 
          ON_ERROR, 0          ; on error, return control to caller
 

@@ -16,6 +16,7 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum,OUT_DUPE_I=out_dupe_i,PRINTD
   dupes=Where(h gt 1,/NULL)
   IF N_ELEMENTS(dupes) EQ 0 THEN BEGIN
      PRINT,"No duplicates in this array!"
+     out_dupe_i = !NULL
      RETURN
   ENDIF
 

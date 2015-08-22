@@ -1,12 +1,15 @@
 PRO OVERLAY_TWO_HISTOS,data_1,data_2,DATA_1_COL=data_1_col,DATA_2_COL=data_2_col,DATA_OUTLINE_COL=data_outline_col, $
                        DATA_1_TITLE=data_1_title,DATA_2_TITLE=data_2_title, $
                        BINSIZE=binSize,XRANGE=xRange,YRANGE=yRange,HISTTITLE=histTitle,XTITLE=xTitle, $
+                       DO_BKCOLOR=do_bkColor, legendLoc=legendLoc, $
                        OUTFILE=outFile,POS=pos
 
   ;; Defaults
   defData_1_col='yellow'
   defData_2_col='olive'
   
+  def_bkColor = 'gray'
+
   ;; defData_outline_col='dark slate gray'
   defData_outline_col=36
 
@@ -19,6 +22,8 @@ PRO OVERLAY_TWO_HISTOS,data_1,data_2,DATA_1_COL=data_1_col,DATA_2_COL=data_2_col
 
   defPos=[0.12,0.12,0.88,0.88]
 
+  defLegendLoc=[0.565, 0.90]
+
   defThick=1.2
   defCharSize=2.1
 
@@ -29,12 +34,16 @@ PRO OVERLAY_TWO_HISTOS,data_1,data_2,DATA_1_COL=data_1_col,DATA_2_COL=data_2_col
   IF N_ELEMENTS(data_2_col) EQ 0 THEN data_2_col = defData_2_col
   IF N_ELEMENTS(data_outline_col) EQ 0 THEN data_outline_col = defData_outline_col
 
+  IF N_ELEMENTS(do_bkColor) EQ 0 THEN do_bkColor = 0
+
   IF N_ELEMENTS(data_1_title) EQ 0 THEN data_1_title = defData_1_title
   IF N_ELEMENTS(data_2_title) EQ 0 THEN data_2_title = defData_2_title
 
   IF N_ELEMENTS(yRange) LT 2 THEN yRange=defYRange
 
   IF ~KEYWORD_SET(pos) THEN pos=defPos
+  IF N_ELEMENTS(legendLoc) EQ 0 THEN legendLoc = defLegendLoc
+
   IF ~KEYWORD_SET(thick) THEN thick=defThick
   IF ~KEYWORD_SET(charSize) THEN charSize=defCharSize
 
@@ -42,13 +51,13 @@ PRO OVERLAY_TWO_HISTOS,data_1,data_2,DATA_1_COL=data_1_col,DATA_2_COL=data_2_col
                /FREQUENCY, /FILL, $
                XRANGE=xRange, YRANGE=yRange, BINSIZE=binSize, $
                XTITLE=xTitle,TITLE=histTitle,CHARSIZE=charSize,THICK=thick, $
-               POSITION=pos;,backcolorname='gray'
+               POSITION=pos,backcolorname=do_bkcolor ? def_bkColor : !NULL
   cgHistoplot, data_1, POLYCOLOR=data_1_col, DATACOLORNAME=data_outline_col, $
                /FREQUENCY, /FILL, /OPLOT, $
                ;; YRANGE=yRange, BINSIZE=binSize, $
                XRANGE=xRange, YRANGE=yRange, BINSIZE=binSize, $
                XTITLE=xTitle,TITLE=histTitle,CHARSIZE=charSize,THICK=thick, $
-               POSITION=pos;,backcolorname='gray'
+               POSITION=pos,backcolorname=do_bkcolor ? def_bkColor : !NULL
   firstPlot = cgSnapshot()
   
   cgHistoplot, data_1, POLYCOLOR=data_1_col, DATACOLORNAME=data_outline_col, $
@@ -61,12 +70,12 @@ PRO OVERLAY_TWO_HISTOS,data_1,data_2,DATA_1_COL=data_1_col,DATA_2_COL=data_2_col
                ;; YRANGE=yRange, BINSIZE=binSize, $
                XRANGE=xRange, YRANGE=yRange, BINSIZE=binSize, $
                XTITLE=xTitle,TITLE=histTitle,CHARSIZE=charSize,THICK=thick, $
-               POSITION=pos,backcolorname='pink'
+               POSITION=pos
   secondPlot = cgSnapshot()
   
   cgBlendimage, firstPlot, secondPlot, ALPHA=0.75
   
-  cgLegend, SymColors=[data_1_col, data_2_col], PSyms=[15,15], Symsize=1.5, Location=[0.525, 0.89], $
+  cgLegend, SymColors=[data_1_col, data_2_col], PSyms=[15,15], Symsize=1.5, Location=legendLoc, $
             Titles=[data_1_title, data_2_title], Length=0, /Box, VSpace=2.75, /Background, BG_Color='light gray'
   ;; cgLegend, SymColors=[data_1_col, data_2_col], PSyms=[15,15], Symsize=1.5, Location=[0.175, 0.89], $
   ;;           Titles=[data_1_title, data_2_title], Length=0, /Box, VSpace=2.75, /Background, BG_Color='light gray'
