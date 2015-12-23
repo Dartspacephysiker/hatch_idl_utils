@@ -62,7 +62,8 @@
 ; MODIFICATION HISTORY:     2015/12/22 Barn
 ;
 ;-
-FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
+
+FUNCTION RUNNING_MEDIAN,x,y,binWidth, $
                          BIN_CENTERS=bin_centers, $
                          BIN_L_EDGES=bin_l_edges, $
                          BIN_R_EDGES=bin_r_edges, $
@@ -91,10 +92,9 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
   
   IF status LT 0 THEN RETURN, status
 
-  ;;Calculate some running averages!
   zero_i                = !NULL
   nonzero_i             = !NULL
-  averages              = MAKE_ARRAY(nBins,/DOUBLE)
+  medians              = MAKE_ARRAY(nBins,/DOUBLE)
   FOR i=0,N_ELEMENTS(bin_centers)-1 DO BEGIN
 
      temp_i             = WHERE(x GT bin_l_edges[i] AND x LE bin_r_edges[i],/NULL)
@@ -103,24 +103,17 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
      CASE nTemp OF
         0: BEGIN
            zero_i       = [zero_i,i]
-           averages[i]  = 0.
+           medians[i]  = 0.
         END
         1: BEGIN
            nonzero_i    = [nonzero_i,i]
-           averages[i]  = y[temp_i]
+           medians[i]  = y[temp_i]
         END
         ELSE: BEGIN
            nonzero_i    = [nonzero_i,i]
-           averages[i]  = TOTAL(y[temp_i],/DOUBLE)/nTemp
+           medians[i]  = MEDIAN(y[temp_i],/DOUBLE)
         END
      ENDCASE
-
-     ;; IF nTemp GT 1 THEN BEGIN
-     ;;    
-     ;; ENDIF ELSE BEGIN
-     ;;    IF nTemp EQ 1 THEN BEGIN
-           
-     ;; ENDELSE
 
   ENDFOR
 
@@ -130,6 +123,6 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
   out_l_edge         = bin_l_edges
   out_r_edge         = bin_r_edges
 
-  RETURN,averages
+  RETURN,medians
 
 END
