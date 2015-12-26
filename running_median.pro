@@ -61,6 +61,7 @@
 ;
 ; MODIFICATION HISTORY:     2015/12/22 Barn
 ;                           2015/12/24 Added error bar output
+;                           2015/12/26 Adding smoothing.
 ;
 ;-
 
@@ -71,6 +72,7 @@ FUNCTION RUNNING_MEDIAN,x,y,binWidth, $
                         BIN_R_EDGES=bin_r_edges, $
                         XMIN=xMin, $
                         XMAX=xMax, $
+                        SMOOTH_NPOINTS=smooth_nPoints, $
                         DONT_TRUNCATE_EDGES=dont_truncate_edges, $
                         DROP_EDGES=drop_edges, $
                         MAKE_ERROR_BARS=make_error_bars, $
@@ -93,6 +95,7 @@ FUNCTION RUNNING_MEDIAN,x,y,binWidth, $
                                                    NBINS=nBins, $
                                                    XMIN=xMin, $
                                                    XMAX=xMax, $
+                                                   SMOOTH_NPOINTS=smooth_nPoints, $
                                                    DONT_TRUNCATE_EDGES=dont_truncate_edges, $
                                                    DROP_EDGES=drop_edges, $
                                                    MAKE_ERROR_BARS=make_error_bars, $
@@ -143,6 +146,12 @@ FUNCTION RUNNING_MEDIAN,x,y,binWidth, $
      ENDCASE
 
   ENDFOR
+
+  ;;Any smoothing?
+  IF smooth_nPoints GT 1 THEN BEGIN
+     PRINTF,lun,FORMAT='("Smoothing running medians with ",I0," points ...")',smooth_nPoints
+     medians                 = SMOOTH(medians,smooth_nPoints,/EDGE_TRUNCATE)
+  ENDIF
 
   ;;Take care of optional output
   out_nonzero_i              = nonzero_i

@@ -70,6 +70,7 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
                          BIN_R_EDGES=bin_r_edges, $
                          XMIN=xMin, $
                          XMAX=xMax, $
+                         SMOOTH_NPOINTS=smooth_nPoints, $
                          DONT_TRUNCATE_EDGES=dont_truncate_edges, $
                          DROP_EDGES=drop_edges, $
                          MAKE_ERROR_BARS=make_error_bars, $
@@ -92,6 +93,7 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
                                                       NBINS=nBins, $
                                                       XMIN=xMin, $
                                                       XMAX=xMax, $
+                                                      SMOOTH_NPOINTS=smooth_nPoints, $
                                                       DONT_TRUNCATE_EDGES=dont_truncate_edges, $
                                                       DROP_EDGES=drop_edges, $
                                                       MAKE_ERROR_BARS=make_error_bars, $
@@ -141,6 +143,12 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
      ENDCASE
 
   ENDFOR
+
+  ;;Any smoothing?
+  IF smooth_nPoints GT 1 THEN BEGIN
+     PRINTF,lun,FORMAT='("Smoothing running averages with ",I0," points ...")',smooth_nPoints
+     averages                   = SMOOTH(averages,smooth_nPoints,/EDGE_TRUNCATE)
+  ENDIF
 
   ;;Take care of optional output
   out_nonzero_i                 = nonzero_i

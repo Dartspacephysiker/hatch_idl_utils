@@ -42,6 +42,7 @@
 ;
 ; MODIFICATION HISTORY:     2015/12/23 Barn
 ;                           2015/12/24 Added error bar output
+;                           2015/12/26 Adding smooth keyword
 ;-
 FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
                              BIN_CENTERS=bin_centers, $
@@ -51,6 +52,7 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
                              NBINS=nBins, $
                              XMIN=xMin, $
                              XMAX=xMax, $
+                             SMOOTH_NPOINTS=smooth_nPoints, $
                              DONT_TRUNCATE_EDGES=dont_truncate_edges, $
                              DROP_EDGES=drop_edges, $
                              MAKE_ERROR_BARS=make_error_bars, $
@@ -58,6 +60,7 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
                              LUN=lun
 
   ;;defaults
+  defSmooth_nPoints             = 1
   defNBoot                      = 10
 
   IF ~KEYWORD_SET(lun) THEN lun = -1 ;stdout
@@ -186,6 +189,10 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
      bin_l_edges        = bin_l_edges[lMin:rMax]
      bin_r_edges        = bin_r_edges[lMin:rMax]
      bin_centers        = bin_centers[lMin:rMax]
+  ENDIF
+
+  IF N_ELEMENTS(smooth_nPoints) EQ 0 THEN BEGIN
+     smooth_nPoints     = defSmooth_nPoints
   ENDIF
 
   IF KEYWORD_SET(make_error_bars) THEN BEGIN
