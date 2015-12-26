@@ -60,75 +60,94 @@
 ;
 ;
 ; MODIFICATION HISTORY:     2015/12/22 Barn
+;                           2015/12/24 Added error bar output, bin spacing keyword
 ;
 ;-
 FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
                          BIN_CENTERS=bin_centers, $
+                         BIN_SPACING=bin_spacing, $
                          BIN_L_EDGES=bin_l_edges, $
                          BIN_R_EDGES=bin_r_edges, $
                          XMIN=xMin, $
                          XMAX=xMax, $
                          DONT_TRUNCATE_EDGES=dont_truncate_edges, $
                          DROP_EDGES=drop_edges, $
+                         MAKE_ERROR_BARS=make_error_bars, $
+                         ERROR_BAR_NBOOT=nBoot, $
+                         ERROR_BAR_CONFLIMIT=confLimit, $
                          OUT_L_EDGES=out_l_edges, $
                          OUT_R_EDGES=out_r_edges, $
                          OUT_NONZERO_i=out_nonzero_i, $
                          OUT_ZERO_I=out_zero_i, $
+                         OUT_ERROR_BARS=out_error_bars, $
                          LUN=lun
 
   COMPILE_OPT idl2
 
-  status = RUNNING_STATS_SETUP(x,y,binWidth, $
-                               BIN_CENTERS=bin_centers, $
-                               BIN_L_EDGES=bin_l_edges, $
-                               BIN_R_EDGES=bin_r_edges, $
-                               NBINS=nBins, $
-                               XMIN=xMin, $
-                               XMAX=xMax, $
-                               DONT_TRUNCATE_EDGES=dont_truncate_edges, $
-                               DROP_EDGES=drop_edges, $
-                               LUN=lun)
+  status                        = RUNNING_STATS_SETUP(x,y,binWidth, $
+                                                      BIN_CENTERS=bin_centers, $
+                                                      BIN_SPACING=bin_spacing, $
+                                                      BIN_L_EDGES=bin_l_edges, $
+                                                      BIN_R_EDGES=bin_r_edges, $
+                                                      NBINS=nBins, $
+                                                      XMIN=xMin, $
+                                                      XMAX=xMax, $
+                                                      DONT_TRUNCATE_EDGES=dont_truncate_edges, $
+                                                      DROP_EDGES=drop_edges, $
+                                                      MAKE_ERROR_BARS=make_error_bars, $
+                                                      ERROR_BAR_NBOOT=nBoot, $
+                                                      LUN=lun)
   
   IF status LT 0 THEN RETURN, status
 
   ;;Calculate some running averages!
-  zero_i                = !NULL
-  nonzero_i             = !NULL
-  averages              = MAKE_ARRAY(nBins,/DOUBLE)
+  zero_i                        = !NULL
+  nonzero_i                     = !NULL
+  averages                      = MAKE_ARRAY(nBins,/DOUBLE)
+  error_bars                    = MAKE_ARRAY(2,nBins,/DOUBLE)
   FOR i=0,N_ELEMENTS(bin_centers)-1 DO BEGIN
 
-     temp_i             = WHERE(x GT bin_l_edges[i] AND x LE bin_r_edges[i],/NULL)
-     nTemp              = N_ELEMENTS(temp_i)
+     temp_i                     = WHERE(x GT bin_l_edges[i] AND x LE bin_r_edges[i],/NULL)
+     nTemp                      = N_ELEMENTS(temp_i)
      
      CASE nTemp OF
         0: BEGIN
-           zero_i       = [zero_i,i]
-           averages[i]  = 0.
+           zero_i               = [zero_i,i]
+           averages[i]          = 0.
         END
         1: BEGIN
-           nonzero_i    = [nonzero_i,i]
-           averages[i]  = y[temp_i]
+           nonzero_i            = [nonzero_i,i]
+           averages[i]          = y[temp_i]
+           IF KEYWORD_SET(make_error_bars) THEN BEGIN
+              ;; error_bars[i,*]   = [y[temp_i],y[temp_i]]
+              error_bars[*,i]   = [y[temp_i],y[temp_i]]
+           ENDIF
         END
         ELSE: BEGIN
-           nonzero_i    = [nonzero_i,i]
-           averages[i]  = TOTAL(y[temp_i],/DOUBLE)/nTemp
+           nonzero_i            = [nonzero_i,i]
+
+           IF KEYWORD_SET(make_error_bars) THEN BEGIN
+              temp_eb           = BOOTSTRAP_MEAN(y[temp_i], $
+                                                 NBOOT=nBoot, $
+                                                 CONFLIMIT=confLimit)
+              ;; error_bars[i,*]   = [temp_eb[0],temp_eb[2]]
+              error_bars[*,i]   = [temp_eb[0],temp_eb[2]]
+              averages[i]       = temp_eb[1]
+           ENDIF ELSE BEGIN
+              averages[i]       = TOTAL(y[temp_i],/DOUBLE)/nTemp
+           ENDELSE
+
         END
      ENDCASE
-
-     ;; IF nTemp GT 1 THEN BEGIN
-     ;;    
-     ;; ENDIF ELSE BEGIN
-     ;;    IF nTemp EQ 1 THEN BEGIN
-           
-     ;; ENDELSE
 
   ENDFOR
 
   ;;Take care of optional output
-  out_nonzero_i      = nonzero_i
-  out_zero_i         = zero_i
-  out_l_edge         = bin_l_edges
-  out_r_edge         = bin_r_edges
+  out_nonzero_i                 = nonzero_i
+  out_zero_i                    = zero_i
+  out_l_edge                    = bin_l_edges
+  out_r_edge                    = bin_r_edges
+  out_error_bars                = error_bars
 
   RETURN,averages
 

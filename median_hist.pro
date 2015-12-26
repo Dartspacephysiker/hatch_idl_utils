@@ -53,8 +53,10 @@ function median_hist, MLT, ILAT, data, $
          IF KEYWORD_SET(medHist) THEN data = ABS(data)
 
 ;   Remove data points outside MAX/MIN range
-         iout = WHERE( (MLT gt Max1) or (MLT lt Min1) or $
-                       (ILAT gt Max2) or (ILAT lt Min2), nout )
+         ;; iout = WHERE( (MLT gt Max1) or (MLT lt Min1) or $
+         ;;               (ILAT gt Max2) or (ILAT lt Min2), nout )
+         iout = WHERE( (MLT le Max1) AND (MLT ge Min1) AND $
+                       (ILAT le Max2) AND (ILAT ge Min2), nout )
 
          if nout gt 0 then begin
               MLTc  = MLT(iout)
