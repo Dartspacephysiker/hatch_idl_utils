@@ -28,6 +28,7 @@
 ;
 ;
 ;
+;                          WINDOW_SUM          :        Just sum all points in each bin and don't average
 ; KEYWORD PARAMETERS:      DONT_TRUNCATE_EDGES :        Allow bin edges to extend beyond XMIN or XMAX.
 ;                          DROP_EDGES          :        Drop the bins that don't cover a full bin width
 ;
@@ -61,6 +62,7 @@
 ;
 ; MODIFICATION HISTORY:     2015/12/22 Barn
 ;                           2015/12/24 Added error bar output, bin spacing keyword
+;                           2015/12/26 Added windowed sum keyword for proboccurrence plot
 ;
 ;-
 FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
@@ -73,6 +75,7 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
                          SMOOTH_NPOINTS=smooth_nPoints, $
                          DONT_TRUNCATE_EDGES=dont_truncate_edges, $
                          DROP_EDGES=drop_edges, $
+                         WINDOW_SUM=window_sum, $
                          MAKE_ERROR_BARS=make_error_bars, $
                          ERROR_BAR_NBOOT=nBoot, $
                          ERROR_BAR_CONFLIMIT=confLimit, $
@@ -101,6 +104,11 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
                                                       LUN=lun)
   
   IF status LT 0 THEN RETURN, status
+
+  IF KEYWORD_SET(make_error_bars) AND KEYWORD_SET(window_sum) THEN BEGIN
+     PRINTF,lun,"make_error_bars and window_sum set! Meaningless!"
+     STOP
+  ENDIF
 
   ;;Calculate some running averages!
   zero_i                        = !NULL
@@ -136,7 +144,11 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
               error_bars[*,i]   = [temp_eb[0],temp_eb[2]]
               averages[i]       = temp_eb[1]
            ENDIF ELSE BEGIN
-              averages[i]       = TOTAL(y[temp_i],/DOUBLE)/nTemp
+              IF KEYWORD_SET(window_sum) THEN BEGIN
+                 averages[i]    = TOTAL(y[temp_i],/DOUBLE)
+              ENDIF ELSE BEGIN
+                 averages[i]    = TOTAL(y[temp_i],/DOUBLE)/nTemp
+              ENDELSE
            ENDELSE
 
         END
@@ -145,7 +157,7 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
   ENDFOR
 
   ;;Any smoothing?
-  IF smooth_nPoints GT 1 THEN BEGIN
+  IF smooth_nPoints GT 1 AND ~KEYWORD_SET(window_sum) THEN BEGIN
      PRINTF,lun,FORMAT='("Smoothing running averages with ",I0," points ...")',smooth_nPoints
      averages                   = SMOOTH(averages,smooth_nPoints,/EDGE_TRUNCATE)
   ENDIF
