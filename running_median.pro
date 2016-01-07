@@ -62,9 +62,8 @@
 ; MODIFICATION HISTORY:     2015/12/22 Barn
 ;                           2015/12/24 Added error bar output
 ;                           2015/12/26 Adding smoothing.
-;
+;                           2016/01/07 Added a default confidence limit in RUNNING_STATS_SETUP
 ;-
-
 FUNCTION RUNNING_MEDIAN,x,y,binWidth, $
                         BIN_CENTERS=bin_centers, $
                         BIN_SPACING=bin_spacing, $
@@ -100,6 +99,7 @@ FUNCTION RUNNING_MEDIAN,x,y,binWidth, $
                                                    DROP_EDGES=drop_edges, $
                                                    MAKE_ERROR_BARS=make_error_bars, $
                                                    ERROR_BAR_NBOOT=nBoot, $
+                                                   ERROR_BAR_CONFLIMIT=confLimit, $
                                                    LUN=lun)
 
   IF status LT 0 THEN RETURN, status

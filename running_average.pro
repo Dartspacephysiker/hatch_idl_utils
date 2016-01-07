@@ -63,6 +63,7 @@
 ; MODIFICATION HISTORY:     2015/12/22 Barn
 ;                           2015/12/24 Added error bar output, bin spacing keyword
 ;                           2015/12/26 Added windowed sum keyword for proboccurrence plot
+;                           2016/01/07 Added a default confidence limit in RUNNING_STATS_SETUP
 ;
 ;-
 FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
@@ -101,6 +102,7 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
                                                       DROP_EDGES=drop_edges, $
                                                       MAKE_ERROR_BARS=make_error_bars, $
                                                       ERROR_BAR_NBOOT=nBoot, $
+                                                      ERROR_BAR_CONFLIMIT=confLimit, $
                                                       LUN=lun)
   
   IF status LT 0 THEN RETURN, status

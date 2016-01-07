@@ -43,6 +43,7 @@
 ; MODIFICATION HISTORY:     2015/12/23 Barn
 ;                           2015/12/24 Added error bar output
 ;                           2015/12/26 Adding smooth keyword
+;                           2016/01/07 Added a default confidence limit
 ;-
 FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
                              BIN_CENTERS=bin_centers, $
@@ -57,11 +58,14 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
                              DROP_EDGES=drop_edges, $
                              MAKE_ERROR_BARS=make_error_bars, $
                              ERROR_BAR_NBOOT=nBoot, $
+                             ERROR_BAR_CONFLIMIT=confLimit, $
                              LUN=lun
 
   ;;defaults
   defSmooth_nPoints             = 1
   defNBoot                      = 10
+  ;; defConfLimit                  = 0.68
+  defConfLimit                  = 0.68
 
   IF ~KEYWORD_SET(lun) THEN lun = -1 ;stdout
 
@@ -199,6 +203,12 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
      PRINTF,lun,'Making error bars as well ...'
      IF ~KEYWORD_SET(nBoot) THEN BEGIN
         nBoot                = defNBoot
+        PRINTF,lun, 'No NBoot provided! Set to default: ' + STRCOMPRESS(nBoot,/REMOVE_ALL)
+     ENDIF
+
+     IF ~KEYWORD_SET(confLimit) THEN BEGIN
+        confLimit            = defConfLimit
+        PRINTF,lun,"No confidence limit provided! Set to default: " + STRCOMPRESS(confLimit,/REMOVE_ALL)
      ENDIF
   ENDIF
 
