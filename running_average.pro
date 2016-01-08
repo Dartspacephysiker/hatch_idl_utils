@@ -63,12 +63,14 @@
 ; MODIFICATION HISTORY:     2015/12/22 Barn
 ;                           2015/12/24 Added error bar output, bin spacing keyword
 ;                           2015/12/26 Added windowed sum keyword for proboccurrence plot
-;                           2016/01/07 Added a default confidence limit in RUNNING_STATS_SETUP
+;                           2016/01/07 Added a default confidence limit in RUNNING_STATS_SETUP, also BIN_{L,R}_OFFSET
 ;
 ;-
 FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
                          BIN_CENTERS=bin_centers, $
                          BIN_SPACING=bin_spacing, $
+                         BIN_L_OFFSET=bin_l_offset, $
+                         BIN_R_OFFSET=bin_r_offset, $
                          BIN_L_EDGES=bin_l_edges, $
                          BIN_R_EDGES=bin_r_edges, $
                          XMIN=xMin, $
@@ -92,6 +94,8 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
   status                        = RUNNING_STATS_SETUP(x,y,binWidth, $
                                                       BIN_CENTERS=bin_centers, $
                                                       BIN_SPACING=bin_spacing, $
+                                                      BIN_L_OFFSET=bin_l_offset, $
+                                                      BIN_R_OFFSET=bin_r_offset, $
                                                       BIN_L_EDGES=bin_l_edges, $
                                                       BIN_R_EDGES=bin_r_edges, $
                                                       NBINS=nBins, $
@@ -139,12 +143,20 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
            nonzero_i            = [nonzero_i,i]
 
            IF KEYWORD_SET(make_error_bars) THEN BEGIN
-              temp_eb           = BOOTSTRAP_MEAN(y[temp_i], $
-                                                 NBOOT=nBoot, $
-                                                 CONFLIMIT=confLimit)
-              ;; error_bars[i,*]   = [temp_eb[0],temp_eb[2]]
-              error_bars[*,i]   = [temp_eb[0],temp_eb[2]]
-              averages[i]       = temp_eb[1]
+              ;;TRY A BOOTSTRAP MEAN, W/ CONFIDENCE INTERVALS
+              ;; temp_eb           = BOOTSTRAP_MEAN(y[temp_i], $
+              ;;                                    NBOOT=nBoot, $
+              ;;                                    CONFLIMIT=confLimit)
+              ;; ;; error_bars[i,*]   = [temp_eb[0],temp_eb[2]]
+              ;; error_bars[*,i]   = [temp_eb[0],temp_eb[2]]
+              ;; averages[i]       = temp_eb[1]
+
+              ;;TRY JUST A STD DEV
+              PRINTF,lun,"Trying two std. devs instead of a bootstrap mean..."
+              temp_eb           = MOMENT(y[temp_i], $
+                                                 /DOUBLE)
+              error_bars[*,i]   = [temp_eb[0]-2.*SQRT(temp_eb[1]),temp_eb[0]+2.*SQRT(temp_eb[1])]
+              averages[i]       = temp_eb[0]
            ENDIF ELSE BEGIN
               IF KEYWORD_SET(window_sum) THEN BEGIN
                  averages[i]    = TOTAL(y[temp_i],/DOUBLE)

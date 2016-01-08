@@ -43,11 +43,14 @@
 ; MODIFICATION HISTORY:     2015/12/23 Barn
 ;                           2015/12/24 Added error bar output
 ;                           2015/12/26 Adding smooth keyword
-;                           2016/01/07 Added a default confidence limit
+;                           2016/01/07 Added a default confidence limit and BIN_{L,R}_OFFSETS
+;                           
 ;-
 FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
                              BIN_CENTERS=bin_centers, $
                              BIN_SPACING=bin_spacing, $
+                             BIN_L_OFFSET=bin_l_offset, $
+                             BIN_R_OFFSET=bin_r_offset, $
                              BIN_L_EDGES=bin_l_edges, $
                              BIN_R_EDGES=bin_r_edges, $
                              NBINS=nBins, $
@@ -94,19 +97,20 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
      PRINTF,lun,"No binWidth provided for running statistics! Setting to 1 ..."
      binWidth            = 1
   ENDIF
-  IF KEYWORD_SET(bin_l_edges) AND KEYWORD_SET(bin_r_edges) THEN BEGIN
+  ;; IF KEYWORD_SET(bin_l_edges) AND KEYWORD_SET(bin_r_edges) THEN BEGIN
+  IF N_ELEMENTS(bin_l_edges) GT 0 AND N_ELEMENTS(bin_r_edges) GT 0 THEN BEGIN
      IF N_ELEMENTS(bin_l_edges) GT 1 AND N_ELEMENTS(bin_r_edges) GT 1 AND $
         (N_ELEMENTS(bin_l_edges) NE N_ELEMENTS(bin_r_edges)) THEN BEGIN
         PRINTF,lun,"Bad sitiation (and I do mean sitiation): bogus l_edges or r_edges provided for running statistics!"
         PRINT,lun,"Quitting ..."
         RETURN, -1
      ENDIF
-     IF N_ELEMENTS(bin_l_edges) EQ 1 AND bin_l_edges LT 0 THEN BEGIN
+     IF N_ELEMENTS(bin_l_edges) EQ 1 AND bin_l_edges[0] LT 0 THEN BEGIN
         PRINTF,lun,"Negative bin_l_edge provided! Bogus!"
         PRINTF,lun,"Quitting..."
         RETURN, -1
      ENDIF
-     IF N_ELEMENTS(bin_r_edges) EQ 1 AND bin_r_edges LT 0 THEN BEGIN
+     IF N_ELEMENTS(bin_r_edges) EQ 1 AND bin_r_edges[0] LT 0 THEN BEGIN
         PRINTF,lun,"Negative bin_r_edge provided! Bogus!"
         PRINTF,lun,"Quitting..."
         RETURN, -1
@@ -121,7 +125,7 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
 
      IF ~KEYWORD_SET(bin_spacing) THEN BEGIN
         IF KEYWORD_SET(make_error_bars) THEN BEGIN
-           bin_spacing  = 2
+           bin_spacing  = 5
         ENDIF ELSE BEGIN
            bin_spacing  = 1
         ENDELSE
@@ -137,27 +141,31 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
 
   ;;Take care of bin edges, if not provided or if only one value provided
   IF N_ELEMENTS(bin_l_edges) EQ 0 THEN BEGIN
+     IF N_ELEMENTS(bin_l_offset) EQ 0 THEN bin_l_offset = binWidth/2.
+        
      IF KEYWORD_SET(dont_truncate_edges) THEN BEGIN
-        bin_l_edges     = bin_centers - binWidth/2.
+        bin_l_edges     = bin_centers - bin_l_offset
      ENDIF ELSE BEGIN
-        bin_l_edges     = (bin_centers - binWidth/2.) > xMin
+        bin_l_edges     = (bin_centers - bin_l_offset) > xMin
      ENDELSE
   ENDIF ELSE BEGIN
-     IF N_ELEMENTS(bin_l_edges) EQ 1 THEN BEGIN
-        bin_l_edges     = bin_centers - bin_l_edges
-     ENDIF
+     ;; IF N_ELEMENTS(bin_l_edges) EQ 1 THEN BEGIN
+     ;;    bin_l_edges     = bin_centers - bin_l_edges
+     ;; ENDIF
   ENDELSE
 
   IF N_ELEMENTS(bin_r_edges) EQ 0 THEN BEGIN
+     IF N_ELEMENTS(bin_r_offset) EQ 0 THEN bin_r_offset = binWidth/2.
+
      IF KEYWORD_SET(dont_truncate_edges) THEN BEGIN
-        bin_r_edges     = bin_centers + binWidth/2.
+        bin_r_edges     = bin_centers + bin_r_offset
      ENDIF ELSE BEGIN
-        bin_r_edges     = (bin_centers + binWidth/2.) < xMax
+        bin_r_edges     = (bin_centers + bin_r_offset) < xMax
      ENDELSE
   ENDIF ELSE BEGIN
-     IF N_ELEMENTS(bin_r_edges) EQ 1 THEN BEGIN
-        bin_r_edges     = bin_centers + bin_r_edges
-     ENDIF
+     ;; IF N_ELEMENTS(bin_r_edges) EQ 1 THEN BEGIN
+     ;;    bin_r_edges     = bin_centers + bin_r_edges
+     ;; ENDIF
   ENDELSE
 
   ;;Check to make sure bin edges are sensible
