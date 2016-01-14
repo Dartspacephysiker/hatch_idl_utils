@@ -65,6 +65,7 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
                              LUN=lun
 
   ;;defaults
+  defBinWidth                   = 1
   defSmooth_nPoints             = 1
   defNBoot                      = 10
   ;; defConfLimit                  = 0.68
@@ -88,16 +89,69 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
      PRINTF,lun,"Quitting ..."
      RETURN, -1
   ENDIF
+
   IF N_ELEMENTS(binWidth) GT 1 THEN BEGIN
      PRINTF,lun,"Unexpected array provided as binWidth for running statistics!"
      PRINTF,lun,"Quitting ..."
      RETURN, -1
   ENDIF
-  IF N_ELEMENTS(binWidth) EQ 0 THEN BEGIN
-     PRINTF,lun,"No binWidth provided for running statistics! Setting to 1 ..."
-     binWidth            = 1
+
+  ;;If binWidth isn't set...
+  IF N_ELEMENTS(bin_l_offset) GT 0 THEN BEGIN
+     IF bin_l_offset GT 0 THEN BEGIN
+        PRINTF,lun,'Positive bin_l_offset provided! Intentional?'
+        WAIT,5
+        ;; bin_l_offset = -ABS(bin_l_offset)
+     ENDIF
   ENDIF
-  ;; IF KEYWORD_SET(bin_l_edges) AND KEYWORD_SET(bin_r_edges) THEN BEGIN
+  
+  IF N_ELEMENTS(bin_r_offset) GT 0 THEN BEGIN
+     IF bin_r_offset LT 0 THEN BEGIN
+        PRINTF,lun,'Negative bin_r_offset provided! Intentional?'
+        WAIT,5
+        ;; bin_l_offset = -ABS(bin_l_offset)
+     ENDIF
+  ENDIF
+  
+  IF N_ELEMENTS(binWidth) EQ 0 THEN BEGIN
+     PRINTF,lun,"No binWidth provided for running statistics!"
+
+     IF N_ELEMENTS(bin_l_offset) EQ 1 AND N_ELEMENTS(bin_r_offset) EQ 1 THEN BEGIN
+
+        binWidth        = bin_r_offset - bin_l_offset
+        binCenterOff    = (bin_r_offset + bin_l_offset)/2.
+
+        PRINTF,lun,FORMAT='("binWidth set to ",F0.2," on the basis of {l,r}_offsets: ",F0.2,", ",F0.2)',binWidth,bin_l_offset,bin_r_offset
+     ENDIF ELSE BEGIN
+        binWidth     = defBinWidth
+
+        PRINTF,lun,'binWidth set to default: ' + STRCOMPRESS(binWidth,/REMOVE_ALL)
+     ENDELSE
+  ENDIF
+  
+  IF N_ELEMENTS(bin_l_offset) EQ 0 AND N_ELEMENTS(bin_r_offset) EQ 0 THEN BEGIN
+     
+     bin_l_offset = -binWidth/2.
+     bin_r_offset = binWidth/2.
+     binCenterOff = 0
+     
+     PRINTF,lun,FORMAT='("bin_{l,r}_offset set to -/+",F0.2,"...")',binWidth/2.
+  ENDIF ELSE BEGIN
+     IF N_ELEMENTS(bin_l_offset) EQ 0 AND N_ELEMENTS(bin_r_offset) GT 0 THEN BEGIN
+        bin_l_offset = bin_r_offset - binWidth
+        PRINTF,lun,FORMAT='("bin_l_offset set to ",F0.2,"...")',bin_l_offset
+     ENDIF ELSE BEGIN
+        IF N_ELEMENTS(bin_r_offset) EQ 0 AND N_ELEMENTS(bin_l_offset) GT 0 THEN BEGIN
+           bin_r_offset = binWidth - bin_l_offset
+           PRINTF,lun,FORMAT='("bin_r_offset set to ",F0.2,"...")',bin_r_offset
+        ENDIF ELSE BEGIN
+        ENDELSE 
+     ENDELSE
+     
+     binCenterOff = (bin_r_offset + bin_l_offset)/2.
+     PRINTF,lun,"Bin center offset: " + STRCOMPRESS(binCenterOff,/REMOVE_ALL)
+  ENDELSE
+
   IF N_ELEMENTS(bin_l_edges) GT 0 AND N_ELEMENTS(bin_r_edges) GT 0 THEN BEGIN
      IF N_ELEMENTS(bin_l_edges) GT 1 AND N_ELEMENTS(bin_r_edges) GT 1 AND $
         (N_ELEMENTS(bin_l_edges) NE N_ELEMENTS(bin_r_edges)) THEN BEGIN
@@ -119,7 +173,6 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
 
   ;;Handle bin centers if not provided
   IF ~KEYWORD_SET(bin_centers) THEN BEGIN
-     PRINTF,lun,"No bin centers provided for running statistics; using integer spacing ..."
      xMin               = KEYWORD_SET(xMin) ? xMin : MIN(x)
      xMax               = KEYWORD_SET(xMax) ? xMax : MAX(x)
 
@@ -127,26 +180,31 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
         IF KEYWORD_SET(make_error_bars) THEN BEGIN
            bin_spacing  = 5
         ENDIF ELSE BEGIN
+           PRINTF,lun,"No bin centers provided for running statistics; using integer spacing ..."
            bin_spacing  = 1
         ENDELSE
-     ENDIF
+     ENDIF ELSE BEGIN
+        PRINTF,lun,"No bin centers provided for running statistics; using " + STRCOMPRESS(bin_spacing,/REMOVE_ALL) + "-hr spacing ..."
+     ENDELSE
      
      ;; bin_centers        = INDGEN(FLOOR(xMax-xMin))+xMin+bin_spacing/2.
 
      nBins              = FLOOR( (xMax-xMin)/DOUBLE(bin_spacing) )
-     bin_centers        = INDGEN(nBins)*DOUBLE(bin_spacing)+xMin+bin_spacing/2.
+     bin_centers        = INDGEN(nBins)*DOUBLE(bin_spacing)+xMin+bin_spacing/2. + binCenterOff
+     ;; bin_centers        = INDGEN(nBins)*DOUBLE(bin_spacing) + xMin + binCenterOff
   ENDIF ELSE BEGIN
      nBins              = N_ELEMENTS(bin_centers)
   ENDELSE
 
   ;;Take care of bin edges, if not provided or if only one value provided
   IF N_ELEMENTS(bin_l_edges) EQ 0 THEN BEGIN
-     IF N_ELEMENTS(bin_l_offset) EQ 0 THEN bin_l_offset = binWidth/2.
         
      IF KEYWORD_SET(dont_truncate_edges) THEN BEGIN
-        bin_l_edges     = bin_centers - bin_l_offset
+        bin_l_edges     = bin_centers + bin_l_offset
+        ;; bin_l_edges     = bin_centers - binWidth/2.
      ENDIF ELSE BEGIN
-        bin_l_edges     = (bin_centers - bin_l_offset) > xMin
+        bin_l_edges     = (bin_centers + bin_l_offset) > xMin
+        ;; bin_l_edges     = (bin_centers - binWidth/2.) > xMin
      ENDELSE
   ENDIF ELSE BEGIN
      ;; IF N_ELEMENTS(bin_l_edges) EQ 1 THEN BEGIN
@@ -155,28 +213,19 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
   ENDELSE
 
   IF N_ELEMENTS(bin_r_edges) EQ 0 THEN BEGIN
-     IF N_ELEMENTS(bin_r_offset) EQ 0 THEN bin_r_offset = binWidth/2.
 
      IF KEYWORD_SET(dont_truncate_edges) THEN BEGIN
         bin_r_edges     = bin_centers + bin_r_offset
+        ;; bin_r_edges     = bin_centers + binWidth/2.
      ENDIF ELSE BEGIN
         bin_r_edges     = (bin_centers + bin_r_offset) < xMax
+        ;; bin_r_edges     = (bin_centers + binWidth/2.) < xMax
      ENDELSE
   ENDIF ELSE BEGIN
      ;; IF N_ELEMENTS(bin_r_edges) EQ 1 THEN BEGIN
      ;;    bin_r_edges     = bin_centers + bin_r_edges
      ;; ENDIF
   ENDELSE
-
-  ;;Check to make sure bin edges are sensible
-  ;; nBins                 = N_ELEMENTS(bin_centers)
-  FOR i=0,nBins-1 DO BEGIN
-     IF bin_r_edges[i] LT bin_l_edges[i] THEN BEGIN
-        PRINTF,lun,FORMAT='("bin_r_edge is less than bin_l_edge for i=",I0,": ",G10.2,TR5,G10.2)',i,bin_r_edges[i],bin_l_edges[i]
-        PRINTF,lun,"Quitting ..."
-        RETURN, -1
-     ENDIF
-  ENDFOR
 
   ;;Drop the edges so that only bins getting a full bin width are kept?
   IF KEYWORD_SET(drop_edges) THEN BEGIN
@@ -203,8 +252,22 @@ FUNCTION RUNNING_STATS_SETUP,x,y,binWidth, $
      bin_centers        = bin_centers[lMin:rMax]
   ENDIF
 
+  ;;Check to make sure bin edges are sensible
+  ;; nBins                 = N_ELEMENTS(bin_centers)
+  FOR i=0,nBins-1 DO BEGIN
+     IF bin_r_edges[i] LT bin_l_edges[i] THEN BEGIN
+        PRINTF,lun,FORMAT='("bin_r_edge is less than bin_l_edge for i=",I0,": ",G10.2,TR5,G10.2)',i,bin_r_edges[i],bin_l_edges[i]
+        PRINTF,lun,"Quitting ..."
+        RETURN, -1
+     ENDIF
+  ENDFOR
+
   IF N_ELEMENTS(smooth_nPoints) EQ 0 THEN BEGIN
      smooth_nPoints     = defSmooth_nPoints
+  ENDIF ELSE BEGIN
+  ENDELSE
+  IF smooth_nPoints GT 1 THEN BEGIN
+     PRINTF,lun,'Smoothing running statistics with ' + STRCOMPRESS(smooth_nPoints,/REMOVE_ALL) + ' points ...'
   ENDIF
 
   IF KEYWORD_SET(make_error_bars) THEN BEGIN

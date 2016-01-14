@@ -64,6 +64,7 @@
 ;                           2015/12/24 Added error bar output, bin spacing keyword
 ;                           2015/12/26 Added windowed sum keyword for proboccurrence plot
 ;                           2016/01/07 Added a default confidence limit in RUNNING_STATS_SETUP, also BIN_{L,R}_OFFSET
+;                           2016/01/11 Added PRINT_STATS_FOR_THESE_RANGES keyword to get some storm stats.
 ;
 ;-
 FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
@@ -87,6 +88,7 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
                          OUT_NONZERO_i=out_nonzero_i, $
                          OUT_ZERO_I=out_zero_i, $
                          OUT_ERROR_BARS=out_error_bars, $
+                         PRINT_STATS_FOR_THESE_RANGES=print_stats_ranges, $
                          LUN=lun
 
   COMPILE_OPT idl2
@@ -174,6 +176,14 @@ FUNCTION RUNNING_AVERAGE,x,y,binWidth, $
   IF smooth_nPoints GT 1 AND ~KEYWORD_SET(window_sum) THEN BEGIN
      PRINTF,lun,FORMAT='("Smoothing running averages with ",I0," points ...")',smooth_nPoints
      averages                   = SMOOTH(averages,smooth_nPoints,/EDGE_TRUNCATE)
+  ENDIF
+
+  ;;Any stats desired?
+  IF KEYWORD_SET(print_stats_ranges) THEN BEGIN
+     PRINT_RUNNING_STATS_RANGES,x,y,print_stats_ranges, $
+                                WINDOW_SUM=KEYWORD_SET(window_sum), $
+                                AVERAGE=~KEYWORD_SET(window_sum), $
+                                LUN=lun     
   ENDIF
 
   ;;Take care of optional output

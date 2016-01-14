@@ -63,6 +63,7 @@
 ;                           2015/12/24 Added error bar output
 ;                           2015/12/26 Adding smoothing.
 ;                           2016/01/07 Added a default confidence limit in RUNNING_STATS_SETUP, also BIN_{L,R}_OFFSET
+;                           2016/01/11 Added PRINT_STATS_FOR_THESE_RANGES keyword to get some storm stats.
 ;-
 FUNCTION RUNNING_MEDIAN,x,y,binWidth, $
                         BIN_CENTERS=bin_centers, $
@@ -84,6 +85,7 @@ FUNCTION RUNNING_MEDIAN,x,y,binWidth, $
                         OUT_NONZERO_i=out_nonzero_i, $
                         OUT_ZERO_I=out_zero_i, $
                         OUT_ERROR_BARS=out_error_bars, $
+                        PRINT_STATS_FOR_THESE_RANGES=print_stats_ranges, $
                         LUN=lun
 
   COMPILE_OPT idl2
@@ -155,6 +157,12 @@ FUNCTION RUNNING_MEDIAN,x,y,binWidth, $
   IF smooth_nPoints GT 1 THEN BEGIN
      PRINTF,lun,FORMAT='("Smoothing running medians with ",I0," points ...")',smooth_nPoints
      medians                 = SMOOTH(medians,smooth_nPoints,/EDGE_TRUNCATE)
+  ENDIF
+
+  IF KEYWORD_SET(print_stats_ranges) THEN BEGIN
+     PRINT_RUNNING_STATS_RANGES,x,y,print_stats_ranges, $
+                                /MEDIAN, $
+                                LUN=lun     
   ENDIF
 
   ;;Take care of optional output
