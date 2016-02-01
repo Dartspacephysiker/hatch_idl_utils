@@ -28,13 +28,18 @@
 ;
 ;
 ; MODIFICATION HISTORY: 2016/01/30 Barnebarn
+;                       2016/02/01 Added THRESHOLD-related keywords
 ;
 ;-
 
 FUNCTION GET_N_MAXIMA_IN_ARRAY,data, $
                                DO_MINIMA=do_minima, $
                                N=n, $
-                               OUT_I=out_i
+                               THRESHOLD=threshold, $
+                               OUT_I=out_i, $
+                               OUT_EXCEEDED_THRESHOLD_VALS=out_exceed, $
+                               OUT_EXCEEDED_THRESHOLD_I=out_exceed_i, $
+                               OUT_EXCEEDED_THRESHOLD_N=out_exceed_n
 
   ;;Take care of bogus sitiations (and I do mean sitiations)
   nData                        = N_ELEMENTS(data)
@@ -59,9 +64,40 @@ FUNCTION GET_N_MAXIMA_IN_ARRAY,data, $
   max_i                        = !NULL
 
   check_these_i                = INDGEN(nData)
+
+  ;;if any threshold set, let's take a look
+  IF N_ELEMENTS(threshold) GT 0 THEN BEGIN
+     IF N_ELEMENTS(threshold) GT 1 THEN BEGIN
+        PRINT,'Bogus! Why does threshold have more than one element?'
+        STOP
+     ENDIF
+     ;; PRINT,"GET_N_MAXIMA_IN_ARRAY: Threshold value is " + STRCOMPRESS(threshold,/REMOVE_ALL)
+
+     IF KEYWORD_SET(do_minima) THEN BEGIN
+        exceed_i               = WHERE(tempData LT threshold,nExceed,/NULL)
+     ENDIF ELSE BEGIN
+        exceed_i               = WHERE(tempData GT threshold,nExceed,/NULL)
+     ENDELSE
+
+     IF nExceed GT 0 THEN BEGIN
+        exceedVals             = tempData[exceed_i]
+        ;; PRINT,STRCOMPRESS(nExceed,/REMOVE_ALL) + ' values exceeding threshold. They are:'
+        ;; FOR i=0,nExceed-1 DO BEGIN
+        ;;    ;; PRINT,tempData[exceed_i[i]]
+        ;;    PRINT,exceedVals[i]
+        ;; ENDFOR
+        PRINT,'Removing ' + STRCOMPRESS(nExceed,/REMOVE_ALL) + ' vals exceeding threshold...'
+        check_these_i          = cgsetdifference(check_these_i,exceed_i)
+     ENDIF ELSE BEGIN
+        exceedVals             = !NULL
+        nExceed                = 0
+        ;; PRINT,'No values exceeding threshold!'
+     ENDELSE
+  ENDIF
+
+  ;;Start looking
   breakOut                     = 0
   i                            = 0
-
   WHILE i LT n DO BEGIN
      nToCheck               = N_ELEMENTS(check_these_i)
 
@@ -89,7 +125,7 @@ FUNCTION GET_N_MAXIMA_IN_ARRAY,data, $
            check_these_i    = check_these_i[0:nToCheck-2]
         END
         ELSE: BEGIN
-           check_these_i    = [check_these_i[0:temp_ii],check_these_i[temp_ii+1,nToCheck-1]]
+           check_these_i    = [check_these_i[0:temp_ii-1],check_these_i[temp_ii+1:nToCheck-1]]
         END
      ENDCASE
      i++
@@ -97,6 +133,11 @@ FUNCTION GET_N_MAXIMA_IN_ARRAY,data, $
   ENDWHILE
 
   out_i                     = max_i
+  IF N_ELEMENTS(threshold) GT 0 THEN BEGIN
+     out_exceed             = exceedVals
+     out_exceed_i           = exceed_i
+     out_exceed_n           = nExceed
+  ENDIF
 
   RETURN, maxVec
 
