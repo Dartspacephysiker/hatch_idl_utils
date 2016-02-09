@@ -41,6 +41,8 @@ FUNCTION GET_N_MAXIMA_IN_ARRAY,data, $
                                OUT_EXCEEDED_THRESHOLD_I=out_exceed_i, $
                                OUT_EXCEEDED_THRESHOLD_N=out_exceed_n
 
+  COMPILE_OPT idl2
+
   ;;Take care of bogus sitiations (and I do mean sitiations)
   nData                        = N_ELEMENTS(data)
   IF nData LE 2 THEN BEGIN
@@ -63,7 +65,7 @@ FUNCTION GET_N_MAXIMA_IN_ARRAY,data, $
   maxVec                       = !NULL
   max_i                        = !NULL
 
-  check_these_i                = INDGEN(nData)
+  check_these_i                = INDGEN(nData,/LONG)
 
   ;;if any threshold set, let's take a look
   IF N_ELEMENTS(threshold) GT 0 THEN BEGIN

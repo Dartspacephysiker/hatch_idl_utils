@@ -40,6 +40,7 @@
 ; EXAMPLE:
 ;
 ; MODIFICATION HISTORY:      2016/01/30 Barnebarn
+;                            2016/02/08 Added NBINS keywords
 ;
 ;-
 PRO GET_H2D_BIN_CENTERS_OR_EDGES,centers, $
@@ -51,6 +52,7 @@ PRO GET_H2D_BIN_CENTERS_OR_EDGES,centers, $
                                  OMIN1=Omin1, OMIN2=Omin2, $
                                  OMAX1=Omax1, OMAX2=Omax2,  $
                                  OBIN1=Obin1, OBIN2=Obin2, $
+                                 NBINS1=nBins1, NBINS2=nBins2, $
                                  BINEDGE1=Binedge1, BINEDGE2=Binedge2
 
          ON_ERROR, 2          ; on error, return control to caller
@@ -90,5 +92,6 @@ PRO GET_H2D_BIN_CENTERS_OR_EDGES,centers, $
          centers2  = rebin(reform(obin2,1,n2),n1,n2)
          centers   = transpose([[[centers1]],[[centers2]]],[2,0,1])
 
-
+         nBins1    = n1
+         nBins2    = n2
 END
