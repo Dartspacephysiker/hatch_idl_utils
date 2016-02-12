@@ -1,63 +1,86 @@
 ;2015/08/13 Now we can check for duplicates in the data!
-PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum,OUT_DUPE_I=out_dupe_i,PRINTDUPES=printDupes
+PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
+                OUT_DUPE_I=out_dupe_i, $
+                PRINTDUPES=printDupes, $
+                PRINT_SAMPLE=print_sample, $
+                NSAMPLETOPRINT=nSampleToPrint
+
+  IF ~KEYWORD_SET(nSampleToPrint) THEN nSampleToPrint = 100
 
   IF N_ELEMENTS(data) EQ 0 THEN BEGIN
      PRINT,"CHECK_DUPES: Provided array is empty! Returning..."
      RETURN
   ENDIF
   
-  sorteddata = data[Sort(data)]
+  sorteddata    = data[SORT(data)]
 
-  dataenum = sorteddata[Uniq(sorteddata)]
-  mappeddata = Value_Locate(dataenum, data)
+  dataenum      = SORTEDDATA[UNIQ(sorteddata)]
+  mappeddata    = VALUE_LOCATE(dataenum, data)
 
-  h = histogram(mappeddata,REVERSE_INDICES=R)
+  h             = HISTOGRAM(mappeddata,REVERSE_INDICES=R)
 
-  dupes=Where(h gt 1,/NULL)
+  dupes         = WHERE(h gt 1,/NULL)
   IF N_ELEMENTS(dupes) EQ 0 THEN BEGIN
      PRINT,"No duplicates in this array!"
      out_dupe_i = !NULL
      RETURN
   ENDIF
 
-  rev_ind = r
+  rev_ind       = r
   dupes_rev_ind = dupes
 
   ;;master dupe ind list
-  out_dupe_i = R[R[dupes[0]] : R[dupes[0]+1]-1]
+  out_dupe_i    = R[R[dupes[0]] : R[dupes[0]+1]-1]
   FOR i=1,N_ELEMENTS(dupes)-1 DO BEGIN
-     out_dupe_i=[out_dupe_i, (R[R[dupes[i]] : R[dupes[i]+1]-1]) ]
+     out_dupe_i = [out_dupe_i, (R[R[dupes[i]] : R[dupes[i]+1]-1]) ]
   ENDFOR
 
-  totDupes = TOTAL(h[dupes])
+  totDupes      = TOTAL(h[dupes])
   IF totDupes GT 500  THEN BEGIN 
 
-     answer = ''
-     IF N_ELEMENTS(printDupes) EQ 0 THEN $
-        READ,answer, PROMPT="More than 500 duplicates (" + STRCOMPRESS(totDupes,/REMOVE_ALL) + ", in fact)!  Print them? (y/n)" $
-     ELSE BEGIN
+     answer     = ''
+     IF N_ELEMENTS(printDupes) EQ 0 THEN BEGIN
+        IF ~KEYWORD_SET(print_sample) THEN BEGIN
+           READ,answer, PROMPT="More than 500 duplicates (" + STRCOMPRESS(totDupes,/REMOVE_ALL) + ", in fact)!  Print them? [y/n/s(=print sample)]"
+        ENDIF ELSE BEGIN
+           PRINT,"Printing sample of dupes ..."
+        ENDELSE
+     ENDIF ELSE BEGIN
         PRINT,"printDupes: " + printDupes
-        answer=printDupes
+        answer  = printDupes
      ENDELSE
 
-     IF STRLOWCASE(STRMID(answer,0,1)) NE 'y' THEN BEGIN
+     IF STRLOWCASE(STRMID(answer,0,1)) NE 'y' AND STRLOWCASE(STRMID(answer,0,1)) NE 's' THEN BEGIN
         PRINT,"OK, exiting..."
         RETURN
      ENDIF
   ENDIF
 
-  print, "Duplicate elements"
-  print, "==================="
-  Print, dataenum[dupes]
-  print, ''
-
-  print, "Indices of dupes"
-  print, "================"
-  FOR i=0,N_ELEMENTS(dupes)-1 DO BEGIN
-     print,'ELEMENT: ' + STRCOMPRESS(dataenum(dupes[i]),/REMOVE_ALL)
-     print,R[R[dupes[i]] : R[dupes[i]+1]-1]
-     print,''
-  ENDFOR
+  IF STRLOWCASE(STRMID(answer,0,1)) EQ 'y' THEN BEGIN
+     print, "Duplicate elements"
+     print, "==================="
+     Print, dataenum[dupes]
+     print, ''
+     
+     print, "Indices of dupes"
+     print, "================"
+     FOR i=0,N_ELEMENTS(dupes)-1 DO BEGIN
+        print,'ELEMENT: ' + STRCOMPRESS(dataenum(dupes[i]),/REMOVE_ALL)
+        print,R[R[dupes[i]] : R[dupes[i]+1]-1]
+        print,''
+     ENDFOR
+     
+  ENDIF ELSE BEGIN
+     PRINT,"Sample of dupes"
+     PRINT,"==============="
+     PRINT,FORMAT='("Index",T10,"Value",T20,"N")'
+     fmtString             = '(I0,T10,G9.2,T20,I0)'
+     nSampleToPrint        = totDupes < nSampleToPrint
+     FOR i=0,nSampleToPrint-1 DO BEGIN
+        iDupe              = out_dupe_i[FIX(RANDOMU(seed)*totDupes)]
+        PRINT,FORMAT=fmtString,iDupe,data[iDupe],N_ELEMENTS(WHERE(data EQ data[iDupe]))
+     ENDFOR
+  ENDELSE
 
   print,"Total number of dupes: " + STRCOMPRESS(totDupes)
 
