@@ -8,11 +8,8 @@ PRO READ_ARRAY_FROM_USER,array, $
                          FLOAT=float, $
                          DOUBLE=double, $
                          PROMPT=prompt, $
+                         NPROMPT=nPrompt, $
                          QUIET=quiet
-
-  IF ~KEYWORD_SET(prompt) THEN BEGIN
-     prompt = 'Enter ' + typeStr + 'vars to read, separated by a space'
-  ENDIF
 
   CASE 1 OF
      KEYWORD_SET(string): BEGIN
@@ -123,23 +120,68 @@ PRO READ_ARRAY_FROM_USER,array, $
      END
   ENDCASE
 
+  IF ~KEYWORD_SET(nPrompt) THEN BEGIN
+     nPrompt = 'How many vars to read?  (Dumb question, yes, but I am not a very bright programmer.)'
+  ENDIF
+
+  IF ~KEYWORD_SET(prompt) THEN BEGIN
+     prompt  = 'Enter ' + typeStr + ' vars to read, separated by a space (or press enter after each one)'
+  ENDIF
+
   
-  READ,var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11,var12,PROMPT=prompt
-  READ,n_to_read,PROMPT='How many vars was that?  (Dumb question, yes, but I am not a very bright programmer.)'
+  READ,n_to_read,PROMPT=nPrompt
+
+  ;; READ,var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11,var12,PROMPT=prompt
 
   CASE n_to_read OF 
-      1: array = var1
-      2: array = [var1,var2]
-      3: array = [var1,var2,var3]
-      4: array = [var1,var2,var3,var4]
-      5: array = [var1,var2,var3,var4,var5]
-      6: array = [var1,var2,var3,var4,var5,var6]
-      7: array = [var1,var2,var3,var4,var5,var6,var7]
-      8: array = [var1,var2,var3,var4,var5,var6,var7,var8]
-      9: array = [var1,var2,var3,var4,var5,var6,var7,var8,var9]
-     10: array = [var1,var2,var3,var4,var5,var6,var7,var8,var9,var10]
-     11: array = [var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11]
-     12: array = [var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11,var12]
+     1: BEGIN
+        READ,var1,PROMPT=prompt
+        array = var1
+     END
+     2: BEGIN
+        READ,var1,var2,PROMPT=prompt
+        array = [var1,var2]
+     END
+     3: BEGIN
+        READ,var1,var2,var3,PROMPT=prompt
+        array = [var1,var2,var3]
+     END
+     4: BEGIN
+        READ,var1,var2,var3,var4,PROMPT=prompt
+        array = [var1,var2,var3,var4]
+     END
+     5: BEGIN
+        READ,var1,var2,var3,var4,var5,PROMPT=prompt
+        array = [var1,var2,var3,var4,var5]
+     END
+     6: BEGIN
+        READ,var1,var2,var3,var4,var5,var6,PROMPT=prompt
+        array = [var1,var2,var3,var4,var5,var6]
+     END
+     7: BEGIN
+        READ,var1,var2,var3,var4,var5,var6,var7,PROMPT=prompt
+        array = [var1,var2,var3,var4,var5,var6,var7]
+     END
+     8: BEGIN
+        READ,var1,var2,var3,var4,var5,var6,var7,var8,PROMPT=prompt
+        array = [var1,var2,var3,var4,var5,var6,var7,var8]
+     END
+     9: BEGIN
+        READ,var1,var2,var3,var4,var5,var6,var7,var8,var9,PROMPT=prompt
+        array = [var1,var2,var3,var4,var5,var6,var7,var8,var9]
+     END
+     10: BEGIN
+        READ,var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,PROMPT=prompt
+        array = [var1,var2,var3,var4,var5,var6,var7,var8,var9,var10]
+     END
+     11: BEGIN
+        READ,var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11,PROMPT=prompt
+        array = [var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11]
+     END
+     12: BEGIN
+        READ,var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11,var12,PROMPT=prompt
+        array = [var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11,var12]
+     END
      ELSE: BEGIN
         PRINT,'Can only read in up to 12 vars! Anything beyond that just got junked...'
      END
