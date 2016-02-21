@@ -1,6 +1,7 @@
 ;2015/10/14
 ;This routine returns, for integer input, all streak beginning and ending indices.
 ;For example, if input=[0,1,2,4,5,8], start_i[0]=0, stop_i[0]=2, start_i[1]=3, stop_i[1]=4, and single_i=5
+;2016/02/19 Added OUT_STREAKLENS keyword
 PRO GET_STREAKS,input, $
                 START_I=start_i, $
                 STOP_I=stop_i, $
@@ -8,6 +9,7 @@ PRO GET_STREAKS,input, $
                 MIN_STREAK_TO_KEEP=min_streak, $
                 LOWSTREAK_START_I=lowStreak_start_i, $
                 LOWSTREAK_STOP_I=lowStreak_stop_i, $
+                OUT_STREAKLENS=streakLens, $
                 LUN=lun, $
                 NO_PRINT_SUMMARY=no_print_summary
 
@@ -55,5 +57,7 @@ PRO GET_STREAKS,input, $
      PRINTF,lun,FORMAT='("N Streaks                     :",T35,I0)',N_ELEMENTS(start_i)
      PRINTF,lun,FORMAT='("N single values               :",T35,I0)',N_ELEMENTS(single_i)
   ENDIF
+
+  streakLens                 = stop_i-start_i
 
 END
