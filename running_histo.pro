@@ -64,8 +64,9 @@
 FUNCTION RUNNING_HISTO,x,binWidth, $
                        BIN_CENTERS=bin_centers, $
                        BIN_SPACING=bin_spacing, $
-                       BIN_L_OFFSET=bin_l_offset, $
-                       BIN_R_OFFSET=bin_r_offset, $
+                       BIN_OFFSET=bin_offset, $
+                       ;; BIN_L_OFFSET=bin_l_offset, $
+                       ;; BIN_R_OFFSET=bin_r_offset, $
                        BIN_L_EDGES=bin_l_edges, $
                        BIN_R_EDGES=bin_r_edges, $
                        XMIN=xMin, $
@@ -90,8 +91,9 @@ FUNCTION RUNNING_HISTO,x,binWidth, $
   status                        = RUNNING_STATS_SETUP(x,x,binWidth, $
                                                       BIN_CENTERS=bin_centers, $
                                                       BIN_SPACING=bin_spacing, $
-                                                      BIN_L_OFFSET=bin_l_offset, $
-                                                      BIN_R_OFFSET=bin_r_offset, $
+                                                      BIN_OFFSET=bin_offset, $
+                                                      ;; BIN_L_OFFSET=bin_l_offset, $
+                                                      ;; BIN_R_OFFSET=bin_r_offset, $
                                                       BIN_L_EDGES=bin_l_edges, $
                                                       BIN_R_EDGES=bin_r_edges, $
                                                       NBINS=nBins, $
