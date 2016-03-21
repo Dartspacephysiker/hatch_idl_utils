@@ -11,10 +11,10 @@
 ; downArea = LATLONG_PAIR_AREA(lonLat1[0],lonLat1[1],lonLat2[0],lonLat2[1])
 ;
 ;uparea+downarea = 212565.86 km^2
-;actual area of Utah = 84899 sq. mi. * (1.60934 km/mi)^2 = 219886.3
+;actual area of Utah = 84899 sq. mi. * (1.60934 km/mi)^2 = 219886.3 sq. km.
 ;Error = 3.33% (7320 sq. km.). Not bad!
 
-; ;;:Upper square: 
+;Get area (in km^2) of a rectangle on a sphere defined by two lat/lon pairs
 FUNCTION LATLONG_PAIR_AREA,lon1, lat1, $
                            lon2, lat2, $
                            RADIUS_METERS=radius_meters

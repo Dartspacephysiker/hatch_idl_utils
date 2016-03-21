@@ -51,8 +51,8 @@ PRO GET_H2D_BIN_AREAS,areas, $
                                  OMIN1=Omin1, OMIN2=Omin2, $
                                  OMAX1=Omax1, OMAX2=Omax2,  $
                                  OBIN1=Obin1, OBIN2=Obin2, $
-                                 NBINS1=nBins1, NBINS2=nBins2, $
-                                 BINEDGE1=Binedge1, BINEDGE2=Binedge2
+                                 NBINS1=nBins1, NBINS2=nBins2 ;, $
+                                 ;; BINEDGE1=Binedge1, BINEDGE2=Binedge2
 
          ON_ERROR, 2          ; on error, return control to caller
 
