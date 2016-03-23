@@ -74,7 +74,11 @@ PRO WINDOW_CUSTOM_SETUP, $
      ENDIF ELSE BEGIN ;;just return the current window
 
         PRINT,"Already got a window here, and you didn't ask for a nouveau; wassup?"
-        STOP
+        PRINT,'Doing it for you...'
+        WC__window_list.add,WINDOW(WINDOW_TITLE=wTitle,DIMENSIONS=WC__dimensions)
+        WC__window_i     = N_ELEMENTS(WC__window_list) - 1
+        WC__window       = WC__window_list[WC__window_i]
+
      ENDELSE
   ENDELSE 
 
