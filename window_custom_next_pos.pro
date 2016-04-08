@@ -1,5 +1,5 @@
 ;2016/03/21 This routine exists to provide an easy way to, you know, lay out some plots
-FUNCTION WINDOW_CUSTOM_NEXT_POS,NEXT_ROW=next_row,NEXT_COLUMN=next_column
+FUNCTION WINDOW_CUSTOM_NEXT_POS,NEXT_ROW=next_row,NEXT_COLUMN=next_column,HOLD_POSITION=hold_position
 
   COMPILE_OPT idl2
 
@@ -32,6 +32,9 @@ FUNCTION WINDOW_CUSTOM_NEXT_POS,NEXT_ROW=next_row,NEXT_COLUMN=next_column
      ;;    WC__plotColumn++
         
      ;; END
+     KEYWORD_SET(hold_position): BEGIN
+
+     END
      ELSE: BEGIN
         WC__plot_i++
         WC__plotColumn   = ( (WC__plot_i - 1) MOD WC__nPlotCols )
