@@ -42,25 +42,27 @@
 ; MODIFICATION HISTORY:      2016/03/12 Barnebarn
 ;
 ;-
-PRO GET_H2D_BIN_AREAS,areas, $
-                                 CENTERS1=centers1,CENTERS2=centers2, $
-                                 BINSIZE1=Binsize1, BINSIZE2=Binsize2, $
-                                 MIN1=Min1, MIN2=Min2,$
-                                 MAX1=Max1, MAX2=Max2,  $
-                                 SHIFT1=shift1,SHIFT2=shift2, $
-                                 OMIN1=Omin1, OMIN2=Omin2, $
-                                 OMAX1=Omax1, OMAX2=Omax2,  $
-                                 OBIN1=Obin1, OBIN2=Obin2, $
-                                 NBINS1=nBins1, NBINS2=nBins2 ;, $
-                                 ;; BINEDGE1=Binedge1, BINEDGE2=Binedge2
-
+PRO GET_H2D_BIN_LENGTHS,lengths, $
+                        LONGITUDINAL=longitudinal, $
+                        LATITUDINAL=latitudinal, $
+                        CENTERS1=centers1,CENTERS2=centers2, $
+                        BINSIZE1=Binsize1, BINSIZE2=Binsize2, $
+                        MIN1=Min1, MIN2=Min2,$
+                        MAX1=Max1, MAX2=Max2,  $
+                        SHIFT1=shift1,SHIFT2=shift2, $
+                        OMIN1=Omin1, OMIN2=Omin2, $
+                        OMAX1=Omax1, OMAX2=Omax2,  $
+                        OBIN1=Obin1, OBIN2=Obin2, $
+                        NBINS1=nBins1, NBINS2=nBins2 ;, $
+  ;; BINEDGE1=Binedge1, BINEDGE2=Binedge2
+  
          ON_ERROR, 2          ; on error, return control to caller
 
-;These are both set to -1 because we use the lower and lefthand edges as well as the respective binsizes to calculate area
+         ;;These are both set to -1 because we use the lower and lefthand edges as well as the respective binsizes to calculate area
          Binedge1                             = -1
          Binedge2                             = -1
 
-;   Take care of INPUT KEYWORDS
+         ;; Take care of INPUT KEYWORDS
          if n_elements( MAX1 ) eq 0 then Max1 = m1
          if n_elements( MAX2 ) eq 0 then Max2 = m2
          if n_elements( MIN1 ) eq 0 then Min1 = mm1
@@ -70,7 +72,7 @@ PRO GET_H2D_BIN_AREAS,areas, $
          if n_elements( SHIFT1 ) eq 0 then shift1 = 0
          if n_elements( SHIFT2 ) eq 0 then shift2 = 0
 
-;   Define histogram parameters
+         ;;   Define histogram parameters
          d1   = double(Binsize1)
          d2   = double(Binsize2)
          w1   = double(Max1 - Min1)
@@ -80,7 +82,7 @@ PRO GET_H2D_BIN_AREAS,areas, $
          n1   = I1m + 1L
          n2   = I2m + 1L
 
-;   Take care of OUTPUT KEYWORDS
+         ;;   Take care of OUTPUT KEYWORDS
          Omax1 = Max1 & Omax2 = Max2
          Omin1 = Min1 & Omin2 = Min2
 
@@ -98,12 +100,26 @@ PRO GET_H2D_BIN_AREAS,areas, $
          nBins1    = n1
          nBins2    = n2
 
-         areas     = MAKE_ARRAY(n1,n2,/DOUBLE)
+         lengths   = MAKE_ARRAY(n1,n2,/DOUBLE)
          ;;first index is MLT, second index is ILAT
          FOR i1 = 0,n1-1 DO BEGIN
             FOR i2 = 0,n2-1 DO BEGIN
-               areas[i1,i2] = LATLONG_PAIR_AREA(centers1[i1,i2],centers2[i1,i2],centers1[i1,i2]+binsize1,centers2[i1,i2]+binsize2, $
-                                               RADIUS_METERS=6.470949e+6) ;use radius at 100 km
+               lon1 = centers1[i1,i2]
+               lat1 = centers2[i1,i2]
+               lon2 = centers1[i1,i2]+binsize1
+               lat2 = centers2[i1,i2]+binsize2
+               CASE 1 OF
+                  KEYWORD_SET(latitudinal): BEGIN
+                     lengths[i1,i2] = GEO_DIST(lon1,lat1, $
+                                             lon1,lat2, $
+                                             RADIUS_METERS=6.470949e+6) ;use radius at 100 km
+                  END
+                  KEYWORD_SET(longitudinal): BEGIN
+                     lengths[i1,i2] = GEO_DIST(lon1,lat1, $
+                                             lon2,lat1, $
+                                             RADIUS_METERS=6.470949e+6) ;use radius at 100 km
+                  END
+               ENDCASE
             ENDFOR
          ENDFOR
 END

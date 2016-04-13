@@ -18,24 +18,26 @@ FUNCTION CALC_PLOT_POSITION,plot_index,nPlotColumns,nPlotRows, $
                             SPACE_HORIZ_BETWEEN_COLS=hPlotSpace, $
                             SPACE_VERT_BETWEEN_ROWS=vPlotSpace
 
+  COMPILE_OPT idl2
+
   IF plot_index LE 0 THEN BEGIN
      PRINT,"Warning! You're about to get junk from CALC_PLOT_POSITION"
      STOP
   ENDIF
 
   ;;First see if we got any thangs 
-  IF N_ELEMENTS(mLeft) EQ 0 THEN mLeft             = 0
-  IF N_ELEMENTS(mRight) EQ 0 THEN mRight           = 0
-  IF N_ELEMENTS(mBottom) EQ 0 THEN mBottom         = 0
-  IF N_ELEMENTS(mTop) EQ 0 THEN mTop               = 0
+  IF N_ELEMENTS(mLeft) EQ 0 THEN mLeft             = 0.D
+  IF N_ELEMENTS(mRight) EQ 0 THEN mRight           = 0.D
+  IF N_ELEMENTS(mBottom) EQ 0 THEN mBottom         = 0.D
+  IF N_ELEMENTS(mTop) EQ 0 THEN mTop               = 0.D
   
-  IF N_ELEMENTS(hPlotSpace) EQ 0 THEN hPlotSpace   = 0
-  IF N_ELEMENTS(vPlotSpace) EQ 0 THEN vPlotSpace   = 0
+  IF N_ELEMENTS(hPlotSpace) EQ 0 THEN hPlotSpace   = 0.D
+  IF N_ELEMENTS(vPlotSpace) EQ 0 THEN vPlotSpace   = 0.D
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;How much space do we have to work with?
-  totUsableWidth                      = 1.0 - mLeft - mRight
-  totUsableHeight                     = 1.0 - mBottom - mTop
+  totUsableWidth                      = 1.0D - mLeft - mRight
+  totUsableHeight                     = 1.0D - mBottom - mTop
 
   widthPerPlot                        = totUsableWidth/nPlotColumns
   heightPerPlot                       = totUsableHeight/nPlotRows
