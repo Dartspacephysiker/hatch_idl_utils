@@ -1,9 +1,12 @@
 ;2015/08/13 Now we can check for duplicates in the data!
+;2016/04/18 Added HAS_DUPES keyword
 PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
                 OUT_DUPE_I=out_dupe_i, $
+                N_DUPES=n_dupes, $
                 PRINTDUPES=printDupes, $
                 PRINT_SAMPLE=print_sample, $
-                NSAMPLETOPRINT=nSampleToPrint
+                NSAMPLETOPRINT=nSampleToPrint, $
+                HAS_DUPES=has_dupes
 
   IF ~KEYWORD_SET(nSampleToPrint) THEN nSampleToPrint = 100
 
@@ -23,6 +26,8 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
   IF N_ELEMENTS(dupes) EQ 0 THEN BEGIN
      PRINT,"No duplicates in this array!"
      out_dupe_i = !NULL
+     n_dupes    = 0
+     has_dupes  = 0
      RETURN
   ENDIF
 
@@ -54,7 +59,9 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
         PRINT,"OK, exiting..."
         RETURN
      ENDIF
-  ENDIF
+  ENDIF ELSE BEGIN
+     answer = 'y' 
+  ENDELSE
 
   IF STRLOWCASE(STRMID(answer,0,1)) EQ 'y' THEN BEGIN
      print, "Duplicate elements"
@@ -83,5 +90,8 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
   ENDELSE
 
   print,"Total number of dupes: " + STRCOMPRESS(totDupes)
+
+  n_dupes                  = totDupes
+  has_dupes                = 1
 
 END
