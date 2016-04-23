@@ -1,7 +1,7 @@
 ;+
-; NAME:                        GET_H2D_BIN_AREAS
+; NAME:                        GET_H2D_BIN_LENGTHS
 ;
-; PURPOSE:                     And now you wanna know the area, too?!?!?!
+; PURPOSE:                     And now you wanna know the lengths, too?!?!?!
 ;
 ; CATEGORY:
 ;
