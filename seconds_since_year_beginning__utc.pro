@@ -15,7 +15,7 @@ FUNCTION SECONDS_SINCE_YEAR_BEGINNING__UTC,times
      END
      ELSE: BEGIN
         ;;Make sure this isn't gobbledygook
-        test      = STR_TO_TIME(times[0])
+        test      = TIME_TO_STR(times[0])
         IF test EQ -1 THEN BEGIN
            PRINT,"Not sure what's wrong with times you provided, but they're bogus. Check it out."
            STOP
@@ -29,9 +29,9 @@ FUNCTION SECONDS_SINCE_YEAR_BEGINNING__UTC,times
   yearStr     = STRING(FORMAT='(I0,"-01-01/00:00:00")',years)
   yearUTC     = DOUBLE(STR_TO_TIME(yearStr))
 
-  bestDiff    = VALUE_LOCATE(yearsUTC,tempTimes,/L64)
+  bestDiff    = VALUE_LOCATE(yearUTC,tempTimes,/L64)
 
-  seconds     = tempTimes-yearsUTC[bestDiff]
+  seconds     = tempTimes-yearUTC[bestDiff]
 
   ;;Better error check
   test        = WHERE(seconds LT 0)

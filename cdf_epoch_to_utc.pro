@@ -1,0 +1,9 @@
+FUNCTION CDF_EPOCH_TO_UTC,cdf_epoch
+
+  COMPILE_OPT idl2
+
+  utc = (cdf_epoch-62167219200000.0000D)/1000.0D
+
+  RETURN,utc
+
+END
