@@ -1,12 +1,15 @@
 ;2015/08/13 Now we can check for duplicates in the data!
 ;2016/04/18 Added HAS_DUPES keyword
+;2016/05/07 Added RETURN_WITH_DUPES_REMOVED and OUT_UNIQ_I keywords
 PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
-                OUT_DUPE_I=out_dupe_i, $
                 N_DUPES=n_dupes, $
                 PRINTDUPES=printDupes, $
                 PRINT_SAMPLE=print_sample, $
                 NSAMPLETOPRINT=nSampleToPrint, $
-                HAS_DUPES=has_dupes
+                HAS_DUPES=has_dupes, $
+                RETURN_WITH_DUPES_REMOVED=return_with_dupes_removed, $
+                OUT_DUPE_I=out_dupe_i, $
+                OUT_UNIQ_I=out_uniq_i
 
   IF ~KEYWORD_SET(nSampleToPrint) THEN nSampleToPrint = 100
 
@@ -91,7 +94,53 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
 
   print,"Total number of dupes: " + STRCOMPRESS(totDupes)
 
-  n_dupes                  = totDupes
-  has_dupes                = 1
+  ;;Get the unique inds if either requested or else if we're returning a dupeless array
+  IF ARG_PRESENT(out_uniq_i) OR KEYWORD_SET(return_with_dupes_removed_and_sorted) THEN BEGIN
+
+     out_uniq_i             = UNIQ(data, SORT(data))
+
+  ENDIF
+
+  IF KEYWORD_SET(return_with_dupes_removed) THEN BEGIN
+     PRINT,'Removing dupes from provided data...'
+
+     nOriginal              = N_ELEMENTS(data)
+     totUniqueDupes         = N_ELEMENTS(UNIQ(data[out_dupe_i],SORT(data[out_dupe_i])))
+
+     ;;Finally:
+     data                   = data[out_uniq_i]
+     nFinal                 = N_ELEMENTS(data)
+     nRemoved               = nOriginal-nFinal
+
+     CHECK_SORTED,data,is_sorted,/QUIET
+
+     PRINT,'------------------------------'
+     PRINT,'Summary of duplicate removal  '
+     PRINT,'------------------------------'
+     PRINT,''
+     PRINT,FORMAT='("Number of elements in original array:",T50,I0)',nOriginal
+     PRINT,FORMAT='("Number of elements in returned array:",T50,I0)',nFinal
+     PRINT,'                                                       '
+     PRINT,FORMAT='("Total number of duplicates          :",T50,I0)',totDupes
+     PRINT,FORMAT='("Total number of unique dupes        :",T50,I0)',totUniqueDupes
+     PRINT,FORMAT='("Number of duplicates removed        :",T50,I0)',nRemoved
+     PRINT,'                                                       '
+     PRINT,FORMAT='("Is dupe-free array sorted?          :",T50,I0)',is_sorted
+     PRINT,''
+
+     out_dupe_i            = -1
+     has_dupes             = 0
+     n_dupes               = 0
+     IF ARG_PRESENT(out_uniq_i) THEN BEGIN
+        out_uniq_i         = LINDGEN(N_ELEMENTS(data))
+     ENDIF
+
+  ENDIF ELSE BEGIN
+
+     has_dupes             = 1
+     n_dupes               = totDupes
+
+  ENDELSE
+
 
 END
