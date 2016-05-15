@@ -5,16 +5,31 @@
 ; A[0]: E_b,       Plasma bulk energy (eV)
 ; A[1]: T,         Plasma kinetic temperature (eV)
 ; A[2]: kappa,     Kappa (of course!)--or more specifically 3D kappa index, so that kappa = kappa_0 + 3/2
-; A[3]: n,         Plasma density
+; A[3]: n,         Plasma density (cm^-3)
+
+;;We don't use the ones below...
 ; A[4]: bulkAngle, Angle between bulk velocity, u_b, and velocity in direction for which we're interested in the distribution
 ; A[5]: m,         Particle mass (in this case electron mass), in eV/c^2
-PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,energy,A,F,pders
+;
+;If multiplying by energy, return units are #/cm^2-s
+;Otherwise,                return units are s/kg-m^4
+;
+;2016/05/13 I think Livadiotis and McComas [2013] just muffed the units. So 2 / m^2 -> 1 / SQRT(2 * mass)
+PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,F,pders, $
+                                          MULTIPLY_BY_ENERGY=multiply_by_energy, $
+                                          CMSQ_S_UNITS=cmsq_s_units
 
   COMPILE_OPT idl2
   
-  ;; electron_mass          = DOUBLE(1.6e-19)
-  electron_mass          = DOUBLE(5.109989e5)   ;eV/c^2
+  energy                 = X
 
+  IF N_ELEMENTS(cmsq_s_units) EQ 0 THEN cmsq_s_units   = 1 ;default, yes
+
+  IF KEYWORD_SET(cmsq_s_units) THEN multiply_by_energy = 1
+
+  electron_mass          = DOUBLE(5.109989e5)   ;eV/c^2
+  speedOfLight           = DOUBLE(29979245800.) ;cm / s
+  
   IF N_ELEMENTS(A) LT 4 THEN BEGIN
      PRINT,"Must have all four estimates for kappa dist! ( E_b, T, kappa, n[, bulkAngle, m] )"
      PRINT,"Returning..."
@@ -31,20 +46,32 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,energy,A,F,pders
   m                      = N_ELEMENTS(A) GT 5 ? DOUBLE(A[5]) : electron_mass
 
   ;;Make sure kappa is fo' real
-  IF kappa LT 1.5D THEN BEGIN
-     PRINT,"Kappa must be GE 1.5D!"
+  IF kappa LE 1.5D THEN BEGIN
+     PRINT,"Kappa must be GT 1.5D, or else I'll blow up!"
      PRINT,"Returning..."
      RETURN
   ENDIF
 
+  ;; normFac                = 2.D / m^2   ;original L&M [2013] factor
+  normFac                = 1.D / SQRT(2.D*m)  ;corrected
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Chunks of the function
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
 
-  Finv                   = 2 * n / m^2 * energy
+  Finv                   = normFac *  n * energy
+
+  IF KEYWORD_SET(multiply_by_energy) THEN BEGIN
+     Finv                = Finv * energy
+  ENDIF
+
+  ;Get regular #/cm^2-s
+  IF KEYWORD_SET(cmsq_s_units) THEN BEGIN
+     Finv                = Finv * speedOfLight
+  ENDIF
+     
 
   ;;First chunk
-  FK1                    = (!PI * T * (kappa - 1.5) )^(-3.D/2.D)
+  FK1                    = (DOUBLE((!PI * T * (kappa - 1.5) )))^(-1.5)
 
   ;;Second chunk
   FK2                    = GAMMA(kappa + 1.D) / GAMMA(kappa - 0.5D)
