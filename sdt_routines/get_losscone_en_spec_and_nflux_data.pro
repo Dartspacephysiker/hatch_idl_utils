@@ -2,6 +2,7 @@
 PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                                         EN_SPEC=eSpec, $
                                         JE_EN=je_en, $
+                                        OUT_ORB=orb, $
                                         ESPECUNITS=eSpecUnits, $
                                         ELECTRON_ENERGY_LIMS=energy_electrons, $
                                         SAVE_ESPEC_AND_NFLUX=save_these,$

@@ -26,6 +26,8 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
    TRIM_ENERGIES_BELOW_PEAK=trim_energies_below_peak, $
    N_ENERGIES_BELOW_PEAK=n_below_peak, $
    N_ENERGIES_AFTER_PEAK=n_after_peak, $
+   FIT_TOLERANCE=fit_tol, $
+   MAX_ITERATIONS=max_iter, $
    ADD_FITPARAMS_TEXT=add_fitParams_text, $
    SAVE_FITPLOTS=save_fitplots
    ;; SAVE_FITS=save_fits
@@ -67,7 +69,10 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
   IF N_ELEMENTS(eSpec) EQ 0 THEN BEGIN
      GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                                          EN_SPEC=eSpec, $
-                                         JE_EN=je_en
+                                         JE_EN=je_en, $
+                                         OUT_ORB=orb
+
+     orbStr   = STRCOMPRESS(orb,/REMOVE_ALL)
      ;; GET_EN_SPEC,'fa_ees',UNITS=eSpecUnits,NAME='el',RETRACE=1,T1=t1,T2=t2,ANGLE=e_angle
      ;; ;;GET the spectrogram data struct
      ;; GET_DATA,'el',data=eSpec
@@ -134,8 +139,8 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
         A                     = DOUBLE([peak_energy,T,kappa,n_est])
      ENDELSE
      
-     title     = STRING(FORMAT='("Loss-cone e!U-!N # flux, (Orbit ",I0,", ",A0)', $
-                        orb, $
+     title     = STRING(FORMAT='("Loss-cone e!U-!N # flux, (Orbit ",I0,", ",A0,")")', $
+                        orbStr, $
                         STRMID(TIME_TO_STR(je_en.x[bounds[i]]),0,10))
      xTitle    = "Energy (eV)"
      yTitle    = "Losscone Number flux (#/cm!U2!N-s)"
@@ -146,7 +151,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      orbDate   = STRMID(TIME_TO_STR(je_en.x[bounds[i]]),0,10)
      plotSN    = STRING(FORMAT='("nFlux_fit--",A0,"--orb_",I0,"__",A0,".png")', $
                         timeFNStrs[bounds[i]], $
-                        orb, $
+                        orbStr, $
                         orbDate)
 
      ;;plot things
@@ -159,7 +164,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      plotArr[0] = PLOT(X, $     ;x, $
                        Y, $
                        TITLE=title, $
-                       NAME=STRMID(TIME_TO_STR(je_en.x[bounds[i]]),11,9), $
+                       NAME=STRMID(TIME_TO_STR(je_en.x[bounds[i]],/MSEC),11,12), $
                        XTITLE=xTitle, $
                        YTITLE=yTitle, $
                        XRANGE=xRange, $
@@ -200,9 +205,9 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      weights    = SQRT(ABS(Y))
      yFit = CURVEFIT(X, Y, weights, A, SIGMA, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322' , $
                      /DOUBLE, $
-                     ITMAX=20, $
+                     ITMAX=KEYWORD_SET(max_iter) ? max_iter : 50, $
                      ITER=itNum, $
-                     ;; TOL=1e-3, $
+                     TOL=KEYWORD_SET(fit_tol) ? fit_tol : 1e-3, $
                      STATUS=fitStatus)
 
      ;;need to adjust Y bounds?
@@ -227,20 +232,37 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
                        CURRENT=window) 
 
 
-     legend           = LEGEND(TARGET=plotArr[*],POSITION=[0.45,0.45],/NORMAL)
+     legend           = LEGEND(TARGET=plotArr[*],POSITION=[0.45,0.55],/NORMAL)
      IF KEYWORD_SET(add_fitParams_text) THEN BEGIN
-        fitTitle      = STRING(FORMAT='("Bulk energy (eV)",T20,"Plasma temp. (eV)",T40,"Kappa",T50,"Density (cm^-3)",A0)','')
-        fitInfoStr    = STRING(FORMAT='(F-15.2,T20,F-15.2,T40,F-7.3,T50,F-8.4)', $
-                               A[0], $
-                               A[1], $
-                               A[2], $
-                               A[3])
+        ;; fitTitle      = STRING(FORMAT='("Bulk energy (eV)",T20,"Plasma temp. (eV)",T40,"Kappa",T50,"Density (cm!U-3!N)",A0)','')
+        ;; fitInfoStr    = STRING(FORMAT='(F-15.2,T20,F-15.2,T40,F-7.3,T50,F-8.4)', $
+        ;;                        A[0], $
+        ;;                        A[1], $
+        ;;                        A[2], $
+        ;;                        A[3])
 
-        fitParamsText = TEXT(0.3,0.3, $
-                                fitTitle + '!C' + fitInfoStr, $
-                                FONT_SIZE=14, $
-                                FONT_NAME='Helvetica', $
+        ;; fitParamsText = TEXT(0.3,0.3, $
+        ;;                         fitTitle + '!C' + fitInfoStr, $
+        ;;                         FONT_SIZE=10, $
+        ;;                         FONT_NAME='Courier', $
+        ;;                         /NORMAL)
+
+        fitTitle      = ["Bulk energy (eV)","Plasma temp. (eV)","Kappa","Density (cm^-3)"]
+        fitInfoStr    = [STRING(FORMAT='(F-15.2)',A[0]), $
+                         STRING(FORMAT='(F-15.2)',A[1]), $
+                         STRING(FORMAT='(F-7.3)',A[2]), $
+                         STRING(FORMAT='(F-8.4)',A[3])]
+
+        fitParamsText = TEXT(0.25,0.3, $
+                             STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[0],fitInfoStr[0]) + '!C' + $
+                             STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[1],fitInfoStr[1]) + '!C' + $
+                             STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[2],fitInfoStr[2]) + '!C' + $
+                             STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[3],fitInfoStr[3]) + '!C' + $
+                             STRING(FORMAT='("Fit success",T20,": ",A0)',(fitStatus EQ 0 ? 'Y' : 'N')), $
+                                FONT_SIZE=10, $
+                                FONT_NAME='Courier', $
                                 /NORMAL)
+
      ENDIF
 
      CASE fitStatus OF 
@@ -253,14 +275,14 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
            failMe     = 1 
         END 
         2: BEGIN 
-           PRINT,'Fit failure! No convergence in ' + STRCOMPRESS(nIter,/REMOVE_ALL) + ' iterations!' 
+           PRINT,'Fit failure! No convergence in ' + STRCOMPRESS(itNum,/REMOVE_ALL) + ' iterations!' 
            failMe     = 1 
         END 
      ENDCASE
 
      IF KEYWORD_SET(save_fitplots) THEN BEGIN
-        PRINT,'Saving plot to ' + saveFitName + '...'
-        WINDOW.save,saveFitName
+        PRINT,'Saving plot to ' + plotSN + '...'
+        WINDOW.save,plotSN
         WINDOW.close
      ENDIF
 
