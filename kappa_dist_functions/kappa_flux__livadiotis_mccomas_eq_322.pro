@@ -15,7 +15,7 @@
 ;Otherwise,                return units are s/kg-m^4
 ;
 ;2016/05/13 I think Livadiotis and McComas [2013] just muffed the units. So 2 / m^2 -> 1 / SQRT(2 * mass)
-PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,F,pders, $
+PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,F,pder, $
                                           MULTIPLY_BY_ENERGY=multiply_by_energy, $
                                           CMSQ_S_UNITS=cmsq_s_units
 
@@ -53,8 +53,9 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,F,pders, $
   ;;Make sure kappa is fo' real
   IF kappa LE 1.5D THEN BEGIN
      PRINT,"Kappa must be GT 1.5D, or else I'll blow up!"
-     PRINT,"Returning..."
-     RETURN
+     ;; PRINT,"Returning..."
+     ;; RETURN
+     kappa = 1.5001D
   ENDIF
 
   ;; normFac                = 2.D / m^2   ;original L&M [2013] factor

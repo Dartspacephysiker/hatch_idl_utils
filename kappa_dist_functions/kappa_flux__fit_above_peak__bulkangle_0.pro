@@ -9,11 +9,12 @@
 ; A[4]: bulkAngle, Angle between bulk velocity, u_b, and velocity in direction for which we're interested in the distribution
 ;;Assuming a field-aligned beam, only fit energies above peak energy
 
-;; PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0,X,A,F,pders, $
-;;    ;; SDT_JFLUX=sdt_jFlux, $
-;;    SDT_FIELDALIGNED_N_EST=n_est, $
-;;    PEAK_ENERGY=peak_energy, $
-;;    TEMPERATURE=T
+PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
+   SDT_JFLUX=sdt_jFlux, $
+   SDT_FIELDALIGNED_N_EST=n_est, $
+   PEAK_ENERGY=peak_energy, $
+   TEMPERATURE=T, $
+   SDT_DAT=dat
 
 ;;   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;   ;;From Kivelson & Russell, Table 2.2 "Properties of Typical Plasmas"
@@ -33,7 +34,7 @@
   restFile = inDir + 'nFlux_and_eSpec--orb_10000__18_08_36-18_09_00.sav'
   RESTORE,restFile
 
-  estimate_A_from_data              = 0
+  estimate_A_from_data              = 1
 
   bounds    = 15 ;minute 10
   X         = REVERSE(REFORM(eSpec.v[bounds[0],*]))
@@ -51,20 +52,25 @@
   A                     = DOUBLE([peak_energy,T,kappa,n_est])
 
   ;;estimate from the data!
-  IF KEYWORD_SET(estimate_A_from_data) THEN BEGIN & $
-     min_energy            = peak_energy & $
-     min_energy            = 50 & $
+  IF KEYWORD_SET(estimate_A_from_data) THEN BEGIN 
+     min_energy            = peak_energy 
+     ;; min_energy            = 50 
 
-     bulk_energy           = (V_2D_FS(dat,energy=[min_energy,30000]))[2] & $
-     bulk_energy           = 9.1e-31*(bulk_energy*1000)^2/2/1.6e-19 & $      ;in eV
-     T                     = (T_2D_FS(dat,energy=[min_energy,30000]))[3] & $ ;T_avg
-     n_est                 = n_2d_fs(dat,energy=[min_energy,30000])  & $     ; print density >100 eV, #/cm3
-     print,v_2d_fs(dat,ENERGY=[min_energy,30000])                       & $ ; print Vx,Vy,Vz, km/s
-     print,p_2d_fs(dat,ENERGY=[min_energy,30000]) & $                       ; print Pxx,Pyy,Pzz,Pxy,Pxz,Pyz, eV/cm^3
-     print,t_2d_fs(dat,ENERGY=[min_energy,30000])    & $                    ; print Tx,Ty,Tz,Tavg, eV
+     ;; bulk_energy           = (V_2D_FS(dat,energy=[min_energy,30000]))[2] 
+     ;; bulk_energy           = 9.1e-31*(bulk_energy*1000)^2/2/1.6e-19       ;in eV
+     bulk_energy           = peak_energy
+     T                     = (T_2D_FS(dat,energy=[min_energy,30000]))[3]  ;T_avg
+     n_est                 = n_2d_fs(dat,energy=[min_energy,30000])/3       ; print density >100 eV, #/cm3
+     ;; print,v_2d_fs(dat,ENERGY=[min_energy,30000])                        ; print Vx,Vy,Vz, km/s
+     ;; print,p_2d_fs(dat,ENERGY=[min_energy,30000])                        ; print Pxx,Pyy,Pzz,Pxy,Pxz,Pyz, eV/cm^3
+     ;; print,t_2d_fs(dat,ENERGY=[min_energy,30000])                        ; print Tx,Ty,Tz,Tavg, eV
 
-     A                     = DOUBLE([bulk_energy,T,kappa,n_est]) & $
+                            
+     A                     = DOUBLE([bulk_energy,T,kappa,n_est]) 
   
+     PRINT,"Here's my initial estimate based on spectral properties: "
+     PRINT_KAPPA_FLUX_FIT_PARAMS,A
+     
   ENDIF
 
   ;;conv peak to bulk energy
@@ -105,23 +111,26 @@
   
   
   ;;Trim energies vector if attempting to fit below peak
-  IF KEYWORD_SET(trim_energies_below_peak) THEN BEGIN & $
-     keepme             = (WHERE(X GE peak_energy))[0:9] & $
-     keepme             = [keepme[0]-4,keepme[0]-3,keepme[0]-2,keepme[0]-1,keepme] & $
-     X                  = X[keepme] & $
-     Y                  = Y[keepme] & $
+  IF KEYWORD_SET(trim_energies_below_peak) THEN BEGIN 
+     keepme             = (WHERE(X GE peak_energy))[0:9] 
+     keepme             = [keepme[0]-4,keepme[0]-3,keepme[0]-2,keepme[0]-1,keepme] 
+     X                  = X[keepme] 
+     Y                  = Y[keepme] 
   ENDIF
 
   KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,yFit,pders, $
                                         /CMSQ_S_UNITS
 
+  weights    = SQRT(ABS(Y))
   yFit = CURVEFIT(X, Y, weights, A, SIGMA, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322' , $
                   /DOUBLE, $
-                  ITMAX=5, $
+                  ITMAX=20, $
                   ITER=itNum, $
-                  TOL=1e-1, $
+                  ;; TOL=1e-3, $
                   STATUS=fitStatus)
   yRange[1]  = MAX(yFit) > yRange[1]
+
+  PRINT_KAPPA_FLUX_FIT_PARAMS,A
 
   plotArr[1] = PLOT(x, $        ;x, $
                     yFit, $
@@ -139,19 +148,19 @@
                     CURRENT=window) 
 
 
-  CASE fitStatus OF & $
-     0: BEGIN & $
-        PRINT,'Fit success!' & $
-        failMe     = 0 & $
-        END & $
-     1: BEGIN & $
-        PRINT,'Fit failure! Chi-square increasing without bound!' & $
-        failMe     = 1 & $
-        END & $
-     2: BEGIN & $
-        PRINT,'Fit failure! No convergence in ' + STRCOMPRESS(nIter,/REMOVE_ALL) + ' iterations!' & $
-        failMe     = 1 & $
-        END & $
+  CASE fitStatus OF 
+     0: BEGIN 
+        PRINT,'Fit success!' 
+        failMe     = 0 
+        END 
+     1: BEGIN 
+        PRINT,'Fit failure! Chi-square increasing without bound!' 
+        failMe     = 1 
+        END 
+     2: BEGIN 
+        PRINT,'Fit failure! No convergence in ' + STRCOMPRESS(nIter,/REMOVE_ALL) + ' iterations!' 
+        failMe     = 1 
+        END 
   ENDCASE
 
 ;;      IF ~failMe THEN BEGIN
@@ -160,4 +169,4 @@
 ;;         PRINT,'No fit to plot ...'
 ;;      ENDELSE
 
-;; END
+END
