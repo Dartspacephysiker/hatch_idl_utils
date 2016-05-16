@@ -25,7 +25,12 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,F,pders, $
 
   IF N_ELEMENTS(cmsq_s_units) EQ 0 THEN cmsq_s_units   = 1 ;default, yes
 
-  IF KEYWORD_SET(cmsq_s_units) THEN multiply_by_energy = 1
+  IF KEYWORD_SET(cmsq_s_units) THEN BEGIN
+     multiply_by_energy = 1
+     factor             = DOUBLE(energy)
+  ENDIF ELSE BEGIN
+     factor             = DOUBLE(1)
+  ENDELSE
 
   electron_mass          = DOUBLE(5.109989e5)   ;eV/c^2
   speedOfLight           = DOUBLE(29979245800.) ;cm / s
@@ -90,13 +95,19 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,F,pders, $
   IF N_PARAMS() GE 4 THEN BEGIN
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 1: PDs wrt to E_b
-     pdwrtE_b            = Finv * SQRT( !PI^(-3) * (T * (kappa - 1.5D)^(-5) ) ) * FK2 * (-1.D - kappa) * $
-                           ( fk3_innard )^(-2.D - kappa) * ( 2.D*( SQRT(energy/E_b) - COS(bulkAngle) ) + (SIN(bulkAngle))^2 )
+     ;; pdwrtE_b            = Finv * SQRT( !PI^(-3) * (T * (kappa - 1.5D)^(-5) ) ) * FK2 * (-1.D - kappa) * $
+     ;;                       ( fk3_innard )^(-2.D - kappa) * ( 2.D*( SQRT(energy/E_b) - COS(bulkAngle) ) + (SIN(bulkAngle))^2 )
+     ;;Pretty sure there are issues with the above
+     pdwrtE_b            = Finv * SQRT( !PI^(-3) * (T * (kappa - 1.5D) )^(-5) ) * FK2 * (-1.D - kappa) * $
+                           ( fk3_innard )^(-2.D - kappa) * ( 1.D - SQRT(energy/E_b) * COS(bulkAngle) )
 
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 2: PDs wrt to T
-     pdwrtT              = (-1.5D) * Finv * SQRT( (!PI * (kappa - 1.5D))^(-3) * T^(-5) ) * FK2 * ( -kappa - 1D) * $
-                           ( -1.D - kappa ) * ( fk3_innard )^(-2.D - kappa) * ( (-1.D / T ) * (fk3_innard - 1.D) )
+     ;; pdwrtT              = (-1.5D) * Finv * SQRT( (!PI * (kappa - 1.5D))^(-3) * T^(-5) ) * FK2 * ( -kappa - 1D) * $
+     ;;                       ( -1.D - kappa ) * ( fk3_innard )^(-2.D - kappa) * ( (-1.D / T ) * (fk3_innard - 1.D) )
+     ;;Problems with the above
+     pdwrtT              = Finv * ( (-1.5D) * SQRT( (!PI * (kappa - 1.5D))^(-3) * T^(-5) ) * FK2 * FK3 + $
+                                    FK1 * FK2 * ( 1.D + kappa ) * ( fk3_innard )^(-2.D - kappa) * ( f_e / ( (kappa - 1.5D) * T^2)) )
      
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 3: PDs wrt to kappa--The worst of all, and the most important
