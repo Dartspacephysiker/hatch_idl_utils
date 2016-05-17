@@ -22,12 +22,15 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
    TEMPERATURE_EST=T, $
    KAPPA_EST=kappa, $
    SDT_DAT=dat, $
+   BULK_OFFSET=bulk_offset, $
    ESTIMATE_FITPARAMS_FROM_SDT_DAT=estimate_A_from_data, $
    TRIM_ENERGIES_BELOW_PEAK=trim_energies_below_peak, $
    N_ENERGIES_BELOW_PEAK=n_below_peak, $
    N_ENERGIES_AFTER_PEAK=n_after_peak, $
+   CHECK_FOR_HIGHER_FLUX_PEAKS__SET_CORRESPONDING_PEAK_ENERGY=check_for_higher_flux_peaks__set_corresponding_peak_energy, $
    FIT_TOLERANCE=fit_tol, $
    MAX_ITERATIONS=max_iter, $
+   ADD_GAUSSIAN_ESTIMATE=add_gaussian_estimate, $
    ADD_FITPARAMS_TEXT=add_fitParams_text, $
    SAVE_FITPLOTS=save_fitplots
    ;; SAVE_FITS=save_fits
@@ -70,7 +73,9 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                                          EN_SPEC=eSpec, $
                                          JE_EN=je_en, $
-                                         OUT_ORB=orb
+                                         OUT_ORB=orb, $
+                                         OUT_LC_ANGLERANGE=e_angle
+
 
      orbStr   = STRCOMPRESS(orb,/REMOVE_ALL)
      ;; GET_EN_SPEC,'fa_ees',UNITS=eSpecUnits,NAME='el',RETRACE=1,T1=t1,T2=t2,ANGLE=e_angle
@@ -102,14 +107,39 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      bounds      = 15           ;minute 10
   ENDIF
 
+  b_offset       = KEYWORD_SET(bulk_offset) ? bulk_offset : 0
+
   ;;Loop over provided indices, plot data as well as fit, and optionally save
   FOR i=0,N_ELEMENTS(bounds)-1 DO BEGIN
 
      X           = REVERSE(REFORM(eSpec.v[bounds[i],*]))
      Y           = REVERSE(REFORM(je_en.y[bounds[i],*]))
 
-     max_y                    = MAX(y,peak_ind)
-     peak_energy              = X[peak_ind]
+     IF KEYWORD_SET(check_for_higher_flux_peaks__set_corresponding_peak_energy) THEN BEGIN
+        ;;Figure out where most energetic maximum is
+        max_ys                   = GET_N_MAXIMA_IN_ARRAY(Y,N=3,OUT_I=maxima_i)
+        peak_y                   = MAX(max_ys,max_y_ii)
+        peak_ind                 = maxima_i[max_y_ii]
+        peak_energy              = X[peak_ind]
+        peak_tol_percent         = .25
+        
+        FOR i=0,N_ELEMENTS(maxima_i)-1 DO BEGIN
+           testMax_X             = X[maxima_i[i]]
+           testMax               = max_ys[i]
+           curMax_i              = maxima_i[i]
+           PRINT,'testval:',STRCOMPRESS((ABS(testMax-peak_y)/peak_y),/REMOVE_ALL)
+           IF testMax_X GT X[peak_ind] AND (ABS(testMax-peak_y)/peak_y) LT peak_tol_percent THEN BEGIN
+              peak_ind           = curMax_i
+              peak_energy        = testMax_X
+           ENDIF
+        ENDFOR
+        PRINT,peak_ind
+     ENDIF ELSE BEGIN
+        max_y                    = MAX(Y,peak_ind)
+        peak_ind                -= b_offset
+        peak_energy              = X[peak_ind]
+        PRINT,peak_ind
+     ENDELSE
 
      ;;estimate from the data!
      IF KEYWORD_SET(estimate_A_from_data) THEN BEGIN 
@@ -123,8 +153,9 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
         ;; bulk_energy           = (V_2D_FS(dat,energy=[min_energy,30000]))[2] 
         ;; bulk_energy           = 9.1e-31*(bulk_energy*1000)^2/2/1.6e-19       ;in eV
         bulk_energy           = peak_energy
-        T                     = (T_2D_FS(dat,energy=[min_energy,30000]))[3] ;T_avg
-        n_est                 = n_2d_fs(dat,energy=[min_energy,30000])/3    ; print density >100 eV, #/cm3
+        ;; T                     = (T_2D_FS(dat,energy=[min_energy,30000]))[3] ;T_avg
+        T                     = (T_2D_FS(dat,ENERGY=[min_energy,30000],ANGLE=e_angle))[3] ;T_avg
+        n_est                 = N_2D_FS(dat,ENERGY=[min_energy,30000],ANGLE=e_angle)/20.    ; print density >100 eV, #/cm3
         ;; print,v_2d_fs(dat,ENERGY=[min_energy,30000])                        ; print Vx,Vy,Vz, km/s
         ;; print,p_2d_fs(dat,ENERGY=[min_energy,30000])                        ; print Pxx,Pyy,Pzz,Pxy,Pxz,Pyz, eV/cm^3
         ;; print,t_2d_fs(dat,ENERGY=[min_energy,30000])                        ; print Tx,Ty,Tz,Tavg, eV
@@ -134,11 +165,31 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
         
         PRINT,"Here's my initial estimate based on spectral properties: "
         PRINT_KAPPA_FLUX_FIT_PARAMS,A
+        PRINT,''
+
+     IF KEYWORD_SET(add_gaussian_estimate) THEN BEGIN
+        weights    = SQRT(ABS(Y))
         
+        bulk_energy           = peak_energy
+
+        TGauss                = (T_2D_FS(dat,ENERGY=[min_energy,30000],ANGLE=e_angle))[3]/2. ;T_avg
+        n_estGauss            = n_2d_fs(dat,ENERGY=[min_energy,30000],ANGLE=e_angle)/20.    ; print density >100 eV, #/cm3
+        
+        kappaGauss            = 100
+
+        AGauss                = DOUBLE([bulk_energy,TGauss,kappaGauss,n_estGauss]) 
+
+        PRINT,"Here's my initial Gaussian estimate based on spectral properties: "
+        PRINT_KAPPA_FLUX_FIT_PARAMS,AGauss
+        PRINT,''
+     ENDIF
+
      ENDIF ELSE BEGIN
         A                     = DOUBLE([peak_energy,T,kappa,n_est])
      ENDELSE
      
+
+
      title     = STRING(FORMAT='("Loss-cone e!U-!N # flux, (Orbit ",I0,", ",A0,")")', $
                         orbStr, $
                         STRMID(TIME_TO_STR(je_en.x[bounds[i]]),0,10))
@@ -155,11 +206,11 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
                         orbDate)
 
      ;;plot things
-     nPlots    = 2              ;Bud and me
+     nPlots    = 2+KEYWORD_SET(add_gaussian_estimate)   ;Bud and me
      window    = WINDOW(DIMENSION=[800,600])
      plotArr   = MAKE_ARRAY(nPlots,/OBJ) 
      ;; colorList = GENERATE_LIST_OF_RANDOM_COLORS(nPlots) 
-     colorList = LIST('RED','BLACK')
+     colorList = LIST('RED','BLACK','BLUE')
 
      plotArr[0] = PLOT(X, $     ;x, $
                        Y, $
@@ -202,7 +253,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      ;; KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,yFit,pders, $
      ;;                                       /CMSQ_S_UNITS
 
-     weights    = SQRT(ABS(Y))
+     weights    = 1./SQRT(ABS(Y))
      yFit = CURVEFIT(X, Y, weights, A, SIGMA, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322' , $
                      /DOUBLE, $
                      ITMAX=KEYWORD_SET(max_iter) ? max_iter : 50, $
@@ -213,7 +264,9 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      ;;need to adjust Y bounds?
      yRange[1]  = MAX(yFit) > yRange[1]
 
+     PRINT,"Fitted spectral properties: "
      PRINT_KAPPA_FLUX_FIT_PARAMS,A
+     PRINT,''
 
      plotArr[1] = PLOT(X, $     ;x, $
                        yFit, $
@@ -227,12 +280,84 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
                        YLOG=1, $
                        XLOG=1, $
                        THICK=2.2, $
+                       LINESTYLE='--', $
                        COLOR=colorList[1], $
                        /OVERPLOT, $
                        CURRENT=window) 
 
+     CASE fitStatus OF 
+        0: BEGIN 
+           PRINT,'Fit success!' 
+           failMe     = 0 
+        END 
+        1: BEGIN 
+           PRINT,'Fit failure! Chi-square increasing without bound!' 
+           failMe     = 1 
+        END 
+        2: BEGIN 
+           PRINT,'Fit failure! No convergence in ' + STRCOMPRESS(itNum,/REMOVE_ALL) + ' iterations!' 
+           failMe     = 1 
+        END 
+     ENDCASE
 
-     legend           = LEGEND(TARGET=plotArr[*],POSITION=[0.45,0.55],/NORMAL)
+     IF KEYWORD_SET(add_gaussian_estimate) THEN BEGIN
+        weights    = SQRT(ABS(Y))
+        
+        bulk_energy           = peak_energy
+        
+        yGaussFit  = CURVEFIT(X, Y, weights, AGauss, SIGMA, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322' , $
+                              /DOUBLE, $
+                              FITA=[1,1,0,1], $
+                              ITMAX=KEYWORD_SET(max_iter) ? max_iter : 50, $
+                              ITER=itNum, $
+                              TOL=KEYWORD_SET(fit_tol) ? fit_tol : 1e-3, $
+                              STATUS=gaussFitStatus)
+        
+        KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,AGauss,yGaussFit,pders, $
+                                              /CMSQ_S_UNITS
+
+        ;;need to adjust Y bounds?
+        yRange[1]  = MAX(yGaussFit) > yRange[1]
+        
+        PRINT,"Gaussian fitted spectral properties: "
+        PRINT_KAPPA_FLUX_FIT_PARAMS,AGauss
+        PRINT,''
+        
+        plotArr[2] = PLOT(X, $  ;x, $
+                          yGaussFit, $
+                          TITLE=title, $
+                          ;; NAME=STRMID(TIME_TO_STR(je_en.x[bounds[i]]),11,9), $
+                          NAME="Gaussian Fitted spectrum", $
+                          XTITLE=xTitle, $
+                          YTITLE=yTitle, $
+                          XRANGE=xRange, $
+                          YRANGE=yRange, $
+                          YLOG=1, $
+                          XLOG=1, $
+                          THICK=2.2, $
+                          LINESTYLE='-.', $
+                          COLOR=colorList[2], $
+                          /OVERPLOT, $
+                          CURRENT=window) 
+        
+
+        CASE gaussFitStatus OF 
+           0: BEGIN 
+              PRINT,'GaussFit success!' 
+              failMe     = 0 
+           END 
+           1: BEGIN 
+              PRINT,'GaussFit failure! Chi-square increasing without bound!' 
+              failMe     = 1 
+           END 
+           2: BEGIN 
+              PRINT,'GaussFit failure! No convergence in ' + STRCOMPRESS(itNum,/REMOVE_ALL) + ' iterations!' 
+              failMe     = 1 
+           END 
+        ENDCASE
+     ENDIF
+        
+     legend           = LEGEND(TARGET=plotArr[*],POSITION=[0.55,0.55],/NORMAL)
      IF KEYWORD_SET(add_fitParams_text) THEN BEGIN
         ;; fitTitle      = STRING(FORMAT='("Bulk energy (eV)",T20,"Plasma temp. (eV)",T40,"Kappa",T50,"Density (cm!U-3!N)",A0)','')
         ;; fitInfoStr    = STRING(FORMAT='(F-15.2,T20,F-15.2,T40,F-7.3,T50,F-8.4)', $
@@ -253,32 +378,36 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
                          STRING(FORMAT='(F-7.3)',A[2]), $
                          STRING(FORMAT='(F-8.4)',A[3])]
 
-        fitParamsText = TEXT(0.25,0.3, $
+        fitParamsText = TEXT(0.2,0.25, $
                              STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[0],fitInfoStr[0]) + '!C' + $
                              STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[1],fitInfoStr[1]) + '!C' + $
                              STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[2],fitInfoStr[2]) + '!C' + $
                              STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[3],fitInfoStr[3]) + '!C' + $
                              STRING(FORMAT='("Fit success",T20,": ",A0)',(fitStatus EQ 0 ? 'Y' : 'N')), $
-                                FONT_SIZE=10, $
-                                FONT_NAME='Courier', $
-                                /NORMAL)
+                             FONT_SIZE=10, $
+                             FONT_NAME='Courier', $
+                             /NORMAL)
 
      ENDIF
 
-     CASE fitStatus OF 
-        0: BEGIN 
-           PRINT,'Fit success!' 
-           failMe     = 0 
-        END 
-        1: BEGIN 
-           PRINT,'Fit failure! Chi-square increasing without bound!' 
-           failMe     = 1 
-        END 
-        2: BEGIN 
-           PRINT,'Fit failure! No convergence in ' + STRCOMPRESS(itNum,/REMOVE_ALL) + ' iterations!' 
-           failMe     = 1 
-        END 
-     ENDCASE
+     IF KEYWORD_SET(add_gaussian_estimate) THEN BEGIN
+        fitTitle      = ["Bulk energy (eV)","Plasma temp. (eV)","Kappa","Density (cm^-3)"]
+        fitInfoStr    = [STRING(FORMAT='(F-15.2)',AGauss[0]), $
+                         STRING(FORMAT='(F-15.2)',AGauss[1]), $
+                         STRING(FORMAT='(F-7.3)',AGauss[2]), $
+                         STRING(FORMAT='(F-8.4)',AGauss[3])]
+
+        fitParamsText = TEXT(0.52,0.25, $
+                             STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[0],fitInfoStr[0]) + '!C' + $
+                             STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[1],fitInfoStr[1]) + '!C' + $
+                             STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[2],fitInfoStr[2]) + '!C' + $
+                             STRING(FORMAT='(A0,T20,": ",A0)',fitTitle[3],fitInfoStr[3]) + '!C' + $
+                             STRING(FORMAT='("GaussFit success",T20,": ",A0)',(gaussFitStatus EQ 0 ? 'Y' : 'N')), $
+                             FONT_SIZE=10, $
+                             FONT_NAME='Courier', $
+                             /NORMAL, $
+                             FONT_COLOR=colorList[2])
+     ENDIF
 
      IF KEYWORD_SET(save_fitplots) THEN BEGIN
         PRINT,'Saving plot to ' + plotSN + '...'
