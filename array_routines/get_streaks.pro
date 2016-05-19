@@ -11,10 +11,16 @@ PRO GET_STREAKS,input, $
                 LOWSTREAK_STOP_I=lowStreak_stop_i, $
                 OUT_STREAKLENS=streakLens, $
                 LUN=lun, $
+                N_STREAKS=n_streaks, $
                 NO_PRINT_SUMMARY=no_print_summary
 
-  IF N_ELEMENTS(lun) EQ 0 THEN lun = -1
-  IF N_ELEMENTS(no_print_summary) EQ 0 THEN no_print_summary = 0
+  ;;Assume we have no streaks
+  n_streaks                         = 0
+
+  IF N_ELEMENTS(lun) EQ 0 THEN lun  = -1
+  IF N_ELEMENTS(no_print_summary) EQ 0 THEN BEGIN
+     no_print_summary               = 0
+  ENDIF
 
   CHECK_SORTED,input,is_sorted
   IF ~is_sorted THEN BEGIN
@@ -22,32 +28,33 @@ PRO GET_STREAKS,input, $
      RETURN
   ENDIF
 
-  diff = input - shift(input,1)
+  diff                              = input - shift(input,1)
 
-  start_i = WHERE(diff NE 1)
+  start_i                           = WHERE(diff NE 1)
   WHERECHECK,start_i  ;;Make sure this is OK
 
-  stop_i = [start_i[1:-1]-1,N_ELEMENTS(input)-1]
-  single_ii = WHERE(start_i EQ stop_i,COMPLEMENT=keep_ii,/NULL)
+  stop_i                            = [start_i[1:-1]-1,N_ELEMENTS(input)-1]
+  single_ii                         = WHERE(start_i EQ stop_i,COMPLEMENT=keep_ii,/NULL)
   WHERECHECK,single_ii,keep_ii
 
-  start_i   = start_i[keep_ii]
-  stop_i    = stop_i[keep_ii]
-  single_i  = start_i[single_ii]
+  start_i                           = start_i[keep_ii]
+  stop_i                            = stop_i[keep_ii]
+  single_i                          = start_i[single_ii]
 
   IF KEYWORD_SET(min_streak) THEN BEGIN
      PRINTF,lun,'Minimum streak for keeping: ' + STRCOMPRESS(min_streak,/REMOVE_ALL)
-     minStreak_ii = WHERE((stop_i-start_i) GE min_streak,COMPLEMENT=lowStreak_ii,/NULL,NCOMPLEMENT=nLow)
+     minStreak_ii                   = WHERE((stop_i-start_i) GE min_streak,COMPLEMENT=lowStreak_ii,/NULL,NCOMPLEMENT=nLow)
      IF N_ELEMENTS(minStreak_ii) GT 0 THEN BEGIN
         
         IF nLow GT 0 THEN BEGIN
            PRINT,'Losing ' + STRCOMPRESS(nLow,/REMOVE_ALL) + 'due to min streak requirement...'
-           lowStreak_start_i = start_i[lowStreak_ii]
-           lowStreak_stop_i  = stop_i[lowStreak_ii]
+           lowStreak_start_i        = start_i[lowStreak_ii]
+           lowStreak_stop_i         = stop_i[lowStreak_ii]
         ENDIF
 
-        start_i              = start_i[minStreak_ii]
-        stop_i               = stop_i[minStreak_ii]
+        start_i                     = start_i[minStreak_ii]
+        stop_i                      = stop_i[minStreak_ii]
+        n_streaks++
      ENDIF
   ENDIF
 
@@ -58,6 +65,6 @@ PRO GET_STREAKS,input, $
      PRINTF,lun,FORMAT='("N single values               :",T35,I0)',N_ELEMENTS(single_i)
   ENDIF
 
-  streakLens                 = stop_i-start_i
+  streakLens                        = stop_i-start_i
 
 END
