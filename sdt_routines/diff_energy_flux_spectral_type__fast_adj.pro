@@ -1,5 +1,7 @@
 ;+
-;2016/05/19 My version of the algorithm presented by Newell et al. [2009]: "Diffuse, monoenergetic, and broadband aurora: The global precipitation budget"
+;2016/05/20 A FAST version of the algorithm presented by Newell et al. [2009]: "Diffuse, monoenergetic, and broadband aurora: The
+;           global precipitation budget", based on conversations with Jim.
+;           The operating assumption is that our energy bins are about twice as fine
 ;Each event has these variables associated with it:
 ;event = { time:UTC seconds, $
 ;      	  eSpec_problems:INT(0), $       ;0 = no problems      , N = N bad bins
@@ -11,7 +13,7 @@
 ;	  Ji:DOUBLE(0), $                ;Ion number flux      (#/cm^2-s)
 ;	  Jei:DOUBLE(0)}                 ;Ion energy flux      (mW/m^2)
 ;-
-FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__NEWELL_ET_AL_2009,eSpec,Je,Jee, $
+FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
    MLT, $
    iSpec,Ji,Jei, $
    BATCH_MODE=batch_mode, $
@@ -60,11 +62,14 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__NEWELL_ET_AL_2009,eSpec,Je,Jee, $
      ENDIF
   ENDIF
 
-  threshold_percentage         = 0.5
-  strictThreshold_percentage   = 0.2
+  threshold_percentage         = 0.3
+  strictThreshold_percentage   = 0.1
   chare_threshold              = 80
   cusp_mineV                   = 300
   notCusp_mineV                = 140
+  minForBroad                  = 6
+  minForBroadStrict            = 8
+  monoenergetic_n_to_check     = 4
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;MONOENERGETIC EVENTS
   ;;I. Identify peak in differential energy flux
@@ -80,28 +85,46 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__NEWELL_ET_AL_2009,eSpec,Je,Jee, $
   ;;    NOTE: Assuming a Maxwellian, the drop would be ~80% on either side. 30% is well below Maxwellian.
   above_i     = WHERE(energy_e GT energy_e[peakFlux_ind],nAbove)
   below_i     = WHERE(energy_e LT energy_e[peakFlux_ind],nBelow)
-  nAbove = nAbove < 2
-  nBelow = nBelow < 2
+  nAbove = nAbove < monoenergetic_n_to_check
+  nBelow = nBelow < monoenergetic_n_to_check
   CASE nAbove OF
      0: BEGIN
         cont = 1
      END
      1: BEGIN
-        ;; IF (spec_e[peakFlux_ind+1]/peakFlux) LE threshold_percentage THEN BEGIN
-        ;;    cont = 1 
-        ;; ENDIF ELSE BEGIN
-        ;;    cont = 0
-        ;;    mono = -1
-        ;; ENDELSE
         cont = (spec_e[peakFlux_ind+1]/peakFlux) LE threshold_percentage 
         IF ~cont THEN mono = -1 ELSE BEGIN ;check how awesome
            strictMono_candidate = (spec_e[peakFlux_ind+1]/peakFlux) LE strictThreshold_percentage
         ENDELSE
      END
      2: BEGIN
-        cont = ( (spec_e[peakFlux_ind+1]/peakFlux) LE threshold_percentage) OR ( (spec_e[peakFlux_ind+2]/peakFlux) LE threshold_percentage )
+        cont = ( (spec_e[peakFlux_ind+1]/peakFlux) LE threshold_percentage) OR $
+               ( (spec_e[peakFlux_ind+2]/peakFlux) LE threshold_percentage )
         IF ~cont THEN mono = -1 ELSE BEGIN ;check how awesome
-           strictMono_candidate = ( (spec_e[peakFlux_ind+1]/peakFlux) LE strictThreshold_percentage) OR ( (spec_e[peakFlux_ind+2]/peakFlux) LE strictThreshold_percentage )
+           strictMono_candidate = ( (spec_e[peakFlux_ind+1]/peakFlux) LE strictThreshold_percentage ) OR $
+                                  ( (spec_e[peakFlux_ind+2]/peakFlux) LE strictThreshold_percentage )
+        ENDELSE
+     END
+     3: BEGIN
+        cont = ( (spec_e[peakFlux_ind+1]/peakFlux) LE threshold_percentage ) OR $
+               ( (spec_e[peakFlux_ind+2]/peakFlux) LE threshold_percentage ) OR $
+               ( (spec_e[peakFlux_ind+3]/peakFlux) LE threshold_percentage )
+        IF ~cont THEN mono = -1 ELSE BEGIN ;check how awesome
+           strictMono_candidate = ( (spec_e[peakFlux_ind+1]/peakFlux) LE strictThreshold_percentage ) OR $
+                                  ( (spec_e[peakFlux_ind+2]/peakFlux) LE strictThreshold_percentage ) OR $
+                                  ( (spec_e[peakFlux_ind+3]/peakFlux) LE strictThreshold_percentage )
+        ENDELSE
+     END
+     4: BEGIN
+        cont = ( (spec_e[peakFlux_ind+1]/peakFlux) LE threshold_percentage ) OR $
+               ( (spec_e[peakFlux_ind+2]/peakFlux) LE threshold_percentage ) OR $
+               ( (spec_e[peakFlux_ind+3]/peakFlux) LE threshold_percentage ) OR $
+               ( (spec_e[peakFlux_ind+4]/peakFlux) LE threshold_percentage )
+        IF ~cont THEN mono = -1 ELSE BEGIN ;check how awesome
+           strictMono_candidate = ( (spec_e[peakFlux_ind+1]/peakFlux) LE strictThreshold_percentage ) OR $
+                                  ( (spec_e[peakFlux_ind+2]/peakFlux) LE strictThreshold_percentage ) OR $
+                                  ( (spec_e[peakFlux_ind+3]/peakFlux) LE strictThreshold_percentage ) OR $
+                                  ( (spec_e[peakFlux_ind+4]/peakFlux) LE strictThreshold_percentage )
         ENDELSE
      END
   ENDCASE
@@ -112,21 +135,39 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__NEWELL_ET_AL_2009,eSpec,Je,Jee, $
            cont = 1
         END
         1: BEGIN
-           ;; IF (spec_e[peakFlux_ind+1]/peakFlux) LE threshold_percentage THEN BEGIN
-           ;;    cont = 1 
-           ;; ENDIF ELSE BEGIN
-           ;;    cont = 0
-           ;;    mono = -1
-           ;; ENDELSE
            cont = (spec_e[peakFlux_ind-1]/peakFlux) LE threshold_percentage 
            IF ~cont THEN mono      = -1 ELSE BEGIN ;check how awesome
               strictMono_candidate = (spec_e[peakFlux_ind-1]/peakFlux) LE strictThreshold_percentage
            ENDELSE
         END
         2: BEGIN
-           cont = ( (spec_e[peakFlux_ind-1]/peakFlux) LE threshold_percentage) OR ( (spec_e[peakFlux_ind-2]/peakFlux) LE threshold_percentage )
+           cont = ( (spec_e[peakFlux_ind-1]/peakFlux) LE threshold_percentage ) OR $
+                  ( (spec_e[peakFlux_ind-2]/peakFlux) LE threshold_percentage )
            IF ~cont THEN mono     = -1 ELSE BEGIN ;check how awesome
-              strictMono_candidate = ( (spec_e[peakFlux_ind-1]/peakFlux) LE strictThreshold_percentage) OR ( (spec_e[peakFlux_ind-2]/peakFlux) LE strictThreshold_percentage )
+              strictMono_candidate = ( (spec_e[peakFlux_ind-1]/peakFlux) LE strictThreshold_percentage ) OR $
+                                     ( (spec_e[peakFlux_ind-2]/peakFlux) LE strictThreshold_percentage )
+           ENDELSE
+        END
+        3: BEGIN
+           cont = ( (spec_e[peakFlux_ind-1]/peakFlux) LE threshold_percentage ) OR $
+                  ( (spec_e[peakFlux_ind-2]/peakFlux) LE threshold_percentage ) OR $
+                  ( (spec_e[peakFlux_ind-3]/peakFlux) LE threshold_percentage )
+           IF ~cont THEN mono = -1 ELSE BEGIN ;check how awesome
+              strictMono_candidate = ( (spec_e[peakFlux_ind-1]/peakFlux) LE strictThreshold_percentage ) OR $
+                                     ( (spec_e[peakFlux_ind-2]/peakFlux) LE strictThreshold_percentage ) OR $
+                                     ( (spec_e[peakFlux_ind-3]/peakFlux) LE strictThreshold_percentage )
+           ENDELSE
+        END
+        4: BEGIN
+           cont = ( (spec_e[peakFlux_ind-1]/peakFlux) LE threshold_percentage ) OR $
+                  ( (spec_e[peakFlux_ind-2]/peakFlux) LE threshold_percentage ) OR $
+                  ( (spec_e[peakFlux_ind-3]/peakFlux) LE threshold_percentage ) OR $
+                  ( (spec_e[peakFlux_ind-4]/peakFlux) LE threshold_percentage )
+           IF ~cont THEN mono = -1 ELSE BEGIN ;check how awesome
+              strictMono_candidate = ( (spec_e[peakFlux_ind-1]/peakFlux) LE strictThreshold_percentage ) OR $
+                                     ( (spec_e[peakFlux_ind-2]/peakFlux) LE strictThreshold_percentage ) OR $
+                                     ( (spec_e[peakFlux_ind-3]/peakFlux) LE strictThreshold_percentage ) OR $
+                                     ( (spec_e[peakFlux_ind-4]/peakFlux) LE strictThreshold_percentage )
            ENDELSE
         END
      ENDCASE
@@ -183,7 +224,7 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__NEWELL_ET_AL_2009,eSpec,Je,Jee, $
   ;;   ii.  Else, not broadband. Broadband = -1
   ;; broad_i = WHERE(dSpec_E GT 2.0e8,nBroad)
   broad_i = WHERE(spec_e GT 2.0e8,nBroad)
-  cont                        = nBroad GE 3
+  cont                        = nBroad GE minForBroad
   IF ~cont THEN broad         = -1
 
   ;;**
@@ -208,7 +249,7 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__NEWELL_ET_AL_2009,eSpec,Je,Jee, $
      wild_ii                  = WHERE(energy_e[broad_i] GE min_eV,N_wild)
      IF N_wild GE 3 THEN BEGIN
         ;; strictBroad_candidate = N_wild GE 4
-        broad                 = 1 + (N_wild GE 4)
+        broad                 = 1 + (N_wild GE 8)
      ENDIF ELSE BEGIN
         broad                 = -3
      ENDELSE
@@ -257,11 +298,12 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__NEWELL_ET_AL_2009,eSpec,Je,Jee, $
      Ji     = 0.
      Jei    = 0.
      nBad_i = 0
-     time_i = 0.
+     time_i = DOUBLE(0.)
   ENDELSE
 
   ;;Set up the event struct
-  event = { time_e:time_e, $         ; When are you?
+  ;; event = { time_e:time_e, $         ; When are you?
+  event = { x:time_e, $         ; When are you?
             mono:BYTE(mono), $       ;0 = not monoenergetic, 1 = monoenergetic, 2 = strict_monoenergetic, (NEGATIVE) = step where algorithm failed
             broad:BYTE(broad), $     ;0 = not broadband    , 1 = broadband    , 2 = strict_broadband
             diffuse:BYTE(diffuse), $ ;0 = not diffuse      , 1 = diffuse      , 2 = diffuse, flux extrapolated to 50 keV
