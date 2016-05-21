@@ -52,7 +52,8 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
   ENDELSE
 
   IF N_ELEMENTS(eSpecUnits) EQ 0 THEN BEGIN
-     eSpecUnits = 'DF'
+     ;; eSpecUnits = 'DF'
+     eSpecUnits = 'eflux'
   ENDIF
 
   ;;get_orbit data
