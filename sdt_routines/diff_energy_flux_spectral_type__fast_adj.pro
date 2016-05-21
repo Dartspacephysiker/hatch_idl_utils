@@ -16,7 +16,8 @@
 FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
    MLT, $
    iSpec,Ji,Jei, $
-   BATCH_MODE=batch_mode ;, $
+   BATCH_MODE=batch_mode, $
+   QUIET=quiet                  ;, $
    ;; INCLUDE_IONS=include_ions
 
   COMPILE_OPT idl2
@@ -35,7 +36,7 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
   bad_elec_i      = WHERE(~FINITE(spec_e),nBad_e)
   IF nBad_e GT 0 THEN BEGIN
      IF nBad_e GT 255 THEN BEGIN
-        PRINT,'nBad_e is too big to be assigned to a byte variable! Beware!'
+        IF ~KEYWORD_SET(quiet) THEN PRINT,'nBad_e is too big to be assigned to a byte variable! Beware!'
         IF KEYWORD_SET(batch_mode) THEN BEGIN
            nBad_e = 255
         ENDIF ELSE BEGIN
@@ -76,8 +77,8 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
   peakFlux    = MAX(spec_e,peakFlux_ind)
 
   peak_energy = energy_e[peakFlux_ind]
-  PRINT,'Peak flux: ' + STRCOMPRESS(peakFlux,/REMOVE_ALL) + ' eV'
-  PRINT,'Peak energy: ' + STRCOMPRESS(peak_energy,/REMOVE_ALL) + ' eV'
+  IF ~KEYWORD_SET(quiet) THEN PRINT,'Peak flux: ' + STRCOMPRESS(peakFlux,/REMOVE_ALL) + ' eV'
+  IF ~KEYWORD_SET(quiet) THEN PRINT,'Peak energy: ' + STRCOMPRESS(peak_energy,/REMOVE_ALL) + ' eV'
   ;;**
   ;;1. Examine drops in energy channels one and two levels above the peak (or only below, if at the highest energy)
   ;;    i.  If flux_drop_below AND flux_drop_above are 30% or less of the peak, continue to 2b.
