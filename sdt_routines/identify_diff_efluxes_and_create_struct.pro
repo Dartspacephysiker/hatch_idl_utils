@@ -1,4 +1,4 @@
-PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je,events,SC_POT=sc_pot
+PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je,mlt,events,SC_POT=sc_pot
 
   events       = !NULL
   nEvents      = N_ELEMENTS(eSpec.x)
@@ -26,7 +26,7 @@ PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je,events,SC_POT=sc_pot
      tempeSpec = {x:eSpec.x[i],y:REVERSE(REFORM(eSpec.y[i,0:max_en_ind[i]])),v:REVERSE(REFORM(eSpec.v[i,0:max_en_ind[i]]))}
      tempEvent = DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ(tempeSpec,Je.y[0],Jee.y[i],MLT[i])
      ADD_EVENT_TO_SPECTRAL_STRUCT,events,tempEvent
-     events    = [events,tempEvent]
+     ;; events    = [events,tempEvent]
   ENDFOR
 
 END

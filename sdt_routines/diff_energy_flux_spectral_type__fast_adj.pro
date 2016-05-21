@@ -16,8 +16,8 @@
 FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
    MLT, $
    iSpec,Ji,Jei, $
-   BATCH_MODE=batch_mode, $
-   INCLUDE_IONS=include_ions
+   BATCH_MODE=batch_mode ;, $
+   ;; INCLUDE_IONS=include_ions
 
   COMPILE_OPT idl2
 
@@ -45,22 +45,22 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
      spec_e[bad_elec_i] = 0.
   ENDIF
 
-  IF KEYWORD_SET(include_ions) THEN BEGIN
+  ;; IF KEYWORD_SET(include_ions) THEN BEGIN
      
 
-     bad_ion_i      = WHERE(~FINITE(iSpec),nBad_i)
-     IF nBad_i GT 0 THEN BEGIN
-        IF nBad_i GT 255 THEN BEGIN
-           PRINT,'nBad_i is too big to be assigned to a byte variable! Beware!'
-           IF KEYWORD_SET(batch_mode) THEN BEGIN
-              nBad_i = 255
-           ENDIF ELSE BEGIN
-              STOP
-           ENDELSE
-        ENDIF
-        iSpec[bad_ion_i] = 0.
-     ENDIF
-  ENDIF
+  ;;    bad_ion_i      = WHERE(~FINITE(iSpec),nBad_i)
+  ;;    IF nBad_i GT 0 THEN BEGIN
+  ;;       IF nBad_i GT 255 THEN BEGIN
+  ;;          PRINT,'nBad_i is too big to be assigned to a byte variable! Beware!'
+  ;;          IF KEYWORD_SET(batch_mode) THEN BEGIN
+  ;;             nBad_i = 255
+  ;;          ENDIF ELSE BEGIN
+  ;;             STOP
+  ;;          ENDELSE
+  ;;       ENDIF
+  ;;       iSpec[bad_ion_i] = 0.
+  ;;    ENDIF
+  ;; ENDIF
 
   threshold_percentage         = 0.3
   strictThreshold_percentage   = 0.1
@@ -292,14 +292,14 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
   ;;   i.   Based on Maxwellian assumption, extrapolate {#,energy} flux at extrapolated energy bin up to 50 keV (or one energy step above highest bin)
   ;; EXTRAPOLATE_SPECTRUM_TO_50KEV,energy_ions,ion_spectrum,extrapolated_i_spectrum
   ;; RECALCULATE_50KEV_FLUXES,extrapolated_e_spectrum,Ji,Jei
-  IF KEYWORD_SET(include_ions) THEN BEGIN
-     PRINT,'Currently no routine for doing the ion stuff!'
-  ENDIF ELSE BEGIN
-     Ji     = 0.
-     Jei    = 0.
-     nBad_i = 0
-     time_i = DOUBLE(0.)
-  ENDELSE
+  ;; IF KEYWORD_SET(include_ions) THEN BEGIN
+  ;;    PRINT,'Currently no routine for doing the ion stuff!'
+  ;; ENDIF ELSE BEGIN
+  ;;    Ji     = 0.
+  ;;    Jei    = 0.
+  ;;    nBad_i = 0
+  ;;    time_i = DOUBLE(0.)
+  ;; ENDELSE
 
   ;;Set up the event struct
   ;; event = { time_e:time_e, $         ; When are you?
@@ -309,11 +309,12 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
             diffuse:BYTE(diffuse), $ ;0 = not diffuse      , 1 = diffuse      , 2 = diffuse, flux extrapolated to 50 keV
             Je:Je, $                 ;Electron number flux (#/cm^2-s)
             Jee:Jee, $               ;Electron energy flux (mW/m^2)
-            time_i:time_i, $         ;Ion time
-            Ji:Ji, $                 ;Ion number flux      (#/cm^2-s)
-            Jei:Jei, $               ;Ion energy flux      (mW/m^2)
-            nBad_iSpec:nBad_e, $     ;0 = no problems      , N = N bad bins
-            nBad_eSpec:nBad_i}       ;0 = no problems      , N = N bad bins
+            nBad_eSpec:BYTE(nBad_e)}       ;0 = no problems      , N = N bad bins
+            ;; time_i:time_i, $         ;Ion time
+            ;; Ji:Ji, $                 ;Ion number flux      (#/cm^2-s)
+            ;; Jei:Jei, $               ;Ion energy flux      (mW/m^2)
+            ;; nBad_iSpec:BYTE(nBad_i)} $     ;0 = no problems      , N = N bad bins
+
 
 
   RETURN,event
