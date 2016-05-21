@@ -6,18 +6,20 @@
 ;; They keywords aren't backwards; the point is to ensure that 'values' are all GE than
 ;;vector vals with /ONLY_GE, and vice versa with /ONLY_LE.
 
-FUNCTION VALUE_CLOSEST,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE
+FUNCTION VALUE_CLOSEST,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
+                       BATCH_MODE=batch_mode, $
+                       QUIET=quiet
 
   BADVAL = -9999
 
   IF N_ELEMENTS(vector) EQ 0 OR N_ELEMENTS(values) EQ 0 THEN BEGIN
-     PRINT,"You gave me junk, son. 'vector' and 'values' have to have more than zero elements."
+     IF ~KEYWORD_SET(QUIET) THEN PRINT,"You gave me junk, son. 'vector' and 'values' have to have more than zero elements."
      RETURN,!NULL
   ENDIF
 
   check_sorted,vector,is_sorted
   IF ~is_sorted THEN BEGIN
-     PRINT,"'vector' isn't sorted! Can't work with it as it is...Sort, then try again."
+     IF ~KEYWORD_SET(QUIET) THEN PRINT,"'vector' isn't sorted! Can't work with it as it is...Sort, then try again."
      RETURN,!NULL
   ENDIF
 
@@ -28,9 +30,11 @@ FUNCTION VALUE_CLOSEST,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE
 
   IF (nVal * nVec) GT 1000000L THEN BEGIN 
      answer=''
-     READ,answer, PROMPT="This involves a million elements! (" + STRCOMPRESS(nVal*nVec,/REMOVE_ALL) + ", to be exact) Proceed? (y/n)"
+     IF KEYWORD_SET(batch_mode) THEN answer = 'y' ELSE BEGIN
+        READ,answer, PROMPT="This involves a million elements! (" + STRCOMPRESS(nVal*nVec,/REMOVE_ALL) + ", to be exact) Proceed? (y/n)"
+     ENDELSE
      IF STRLOWCASE(STRMID(answer,0,1)) NE 'y' THEN BEGIN
-        PRINT,"OK, exiting..."
+        IF ~KEYWORD_SET(QUIET) THEN PRINT,"OK, exiting..."
         RETURN,!NULL
      ENDIF
   ENDIF
