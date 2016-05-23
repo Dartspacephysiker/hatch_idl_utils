@@ -25,9 +25,9 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
   COMPILE_OPT idl2
 
   ;;return control to caller if no one is watching
-  IF KEYWORD_SET(batch_mode) THEN BEGIN
-     ON_ERROR, 2
-  ENDIF
+  ;; IF KEYWORD_SET(batch_mode) THEN BEGIN
+  ;;    ON_ERROR, 2
+  ;; ENDIF
 
   ;;A little error checking
   IF N_ELEMENTS(eSpec) EQ 0 THEN BEGIN

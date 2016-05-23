@@ -7,9 +7,9 @@ PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je, $
    ORBSTR=orbStr, $
    ERRORLOGFILE=errorLogFile
    
-  IF KEYWORD_SET(batch_mode) THEN BEGIN
-     ON_ERROR, 2
-  ENDIF
+  ;; IF KEYWORD_SET(batch_mode) THEN BEGIN
+  ;;    ON_ERROR, 2
+  ;; ENDIF
 
 
   ;;A little error checking
