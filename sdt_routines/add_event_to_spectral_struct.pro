@@ -29,8 +29,8 @@ PRO ADD_EVENT_TO_SPECTRAL_STRUCT,events,tempEvent
      ;;           nBad_eSpec:[events.nBad_iSpec,tempEvent.nBad_iSpec]}   ;0 = no problems      , N = N bad bins
 
      events = { x:[events.x,tempEvent.x], $       ; When are you?
-                MLT:[events.mlt,tempEvent,mlt], $
-                ILAT:[events.ilat,tempEvent,ilat], $
+                MLT:[events.mlt,tempEvent.mlt], $
+                ILAT:[events.ilat,tempEvent.ilat], $
                mono:[events.mono,tempEvent.mono], $ ;0 = not monoenergetic, 1 = monoenergetic, 2 = strict_monoenergetic, (NEGATIVE) = step where algorithm failed
                broad:[events.broad,tempEvent.broad], $     ;0 = not broadband    , 1 = broadband    , 2 = strict_broadband
                diffuse:[events.diffuse,tempEvent.diffuse], $ ;0 = not diffuse      , 1 = diffuse      , 2 = diffuse, flux extrapolated to 50 keV

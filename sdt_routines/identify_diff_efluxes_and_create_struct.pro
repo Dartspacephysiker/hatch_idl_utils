@@ -1,8 +1,16 @@
-PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je,mlt,ilat,events, $
+PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je, $
+   mlt,ilat, $
+   events, $
    SC_POT=sc_pot, $
    QUIET=quiet, $
-   BATCH_MODE=batch_mode
+   BATCH_MODE=batch_mode, $
+   ORBSTR=orbStr, $
+   ERRORLOGFILE=errorLogFile
    
+  IF KEYWORD_SET(batch_mode) THEN BEGIN
+     ON_ERROR, 2
+  ENDIF
+
 
   events       = !NULL
   nEvents      = N_ELEMENTS(eSpec.x)
@@ -31,7 +39,9 @@ PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je,mlt,ilat,events, $
      tempEvent = DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ(tempeSpec,Je.y[0],Jee.y[i], $
                                                           mlt[i],ilat[i], $
                                                           QUIET=quiet, $
-                                                          BATCH_MODE=batch_mode)
+                                                          BATCH_MODE=batch_mode, $
+                                                          ORBSTR=orbStr, $
+                                                          ERRORLOGFILE=errorLogFile)
      ADD_EVENT_TO_SPECTRAL_STRUCT,events,tempEvent
      ;; events    = [events,tempEvent]
   ENDFOR

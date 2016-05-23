@@ -17,7 +17,9 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
    mlt,ilat, $
    ;; iSpec,Ji,Jei, $
    BATCH_MODE=batch_mode, $
-   QUIET=quiet                  ;, $
+   QUIET=quiet, $
+   ORBSTR=orbStr, $
+   ERRORLOGFILE=errorLogFile                ;, $
    ;; INCLUDE_IONS=include_ions
 
   COMPILE_OPT idl2
@@ -25,6 +27,18 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
   ;;return control to caller if no one is watching
   IF KEYWORD_SET(batch_mode) THEN BEGIN
      ON_ERROR, 2
+  ENDIF
+
+  ;;A little error checking
+  IF NDIMEN(eSpec.v) NE 2 OR NDIMEN(eSpec.y) NE 2 THEN BEGIN
+     IF KEYWORD_SET(errorLogFile) THEN BEGIN
+        WRITE_MESSAGE_TO_LOGFILE,errorLogFile, $
+                                 STRING(FORMAT='(A0,T20,A0,T40,A0)',KEYWORD_SET(orbStr) ? orbStr : '???', $
+                                        todayStr, $
+                                        'DIFF_ENERGY_FLUX_SPECTRAL_TYPE: NDIMEN ESPEC.{v and/or y} NE 2!'), $
+                                 /APPEND
+     ENDIF
+     RETURN, -1
   ENDIF
 
   time_e    = eSpec.x

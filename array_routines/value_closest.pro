@@ -28,10 +28,10 @@ FUNCTION VALUE_CLOSEST,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
   nVal = N_ELEMENTS(values)
   nVec = N_ELEMENTS(vector)
 
-  IF (nVal * nVec) GT 1000000L THEN BEGIN 
+  IF (nVal * nVec) GT 10000000L THEN BEGIN 
      answer=''
      IF KEYWORD_SET(batch_mode) THEN answer = 'y' ELSE BEGIN
-        READ,answer, PROMPT="This involves a million elements! (" + STRCOMPRESS(nVal*nVec,/REMOVE_ALL) + ", to be exact) Proceed? (y/n)"
+        READ,answer, PROMPT="This involves ten million elements! (" + STRCOMPRESS(nVal*nVec,/REMOVE_ALL) + ", to be exact) Proceed? (y/n)"
      ENDELSE
      IF STRLOWCASE(STRMID(answer,0,1)) NE 'y' THEN BEGIN
         IF ~KEYWORD_SET(QUIET) THEN PRINT,"OK, exiting..."
