@@ -18,8 +18,8 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
    ;; iSpec,Ji,Jei, $
    BATCH_MODE=batch_mode, $
    QUIET=quiet, $
-   ORBSTR=orbStr, $
-   ERRORLOGFILE=errorLogFile                ;, $
+   ERRORMSG=errorMsg                ;, $
+   ;; ORBSTR=orbStr, $
    ;; INCLUDE_IONS=include_ions
 
   COMPILE_OPT idl2
@@ -30,14 +30,26 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
   ENDIF
 
   ;;A little error checking
-  IF NDIMEN(eSpec.v) NE 2 OR NDIMEN(eSpec.y) NE 2 THEN BEGIN
-     IF KEYWORD_SET(errorLogFile) THEN BEGIN
-        WRITE_MESSAGE_TO_LOGFILE,errorLogFile, $
-                                 STRING(FORMAT='(A0,T20,A0,T40,A0)',KEYWORD_SET(orbStr) ? orbStr : '???', $
-                                        todayStr, $
-                                        'DIFF_ENERGY_FLUX_SPECTRAL_TYPE: NDIMEN ESPEC.{v and/or y} NE 2!'), $
-                                 /APPEND
-     ENDIF
+  IF N_ELEMENTS(eSpec) EQ 0 THEN BEGIN
+     ;; IF KEYWORD_SET(errorLogFile) THEN BEGIN
+        ;; WRITE_MESSAGE_TO_LOGFILE,errorLogFile, $
+        ;;                          STRING(FORMAT='(A0,T20,A0,T40,A0)',KEYWORD_SET(orbStr) ? orbStr : '???', $
+        ;;                                 GET_TODAY_STRING(/DO_YYYYMMDD_FMT), $
+        ;;                                 'DIFF_ENERGY_FLUX_SPECTRAL_TYPE: N_ELEMENTS(eSpec) EQ 0!'), $
+        ;;                          /APPEND
+     errorMsg = 'DIFF_ENERGY_FLUX_SPECTRAL_TYPE: N_ELEMENTS(eSpec) EQ 0!'
+     ;; ENDIF
+     RETURN, -1
+  ENDIF
+  IF N_ELEMENTS(eSpec.v) LE 1 OR N_ELEMENTS(eSpec.y) LE 1 THEN BEGIN
+     ;; IF KEYWORD_SET(errorLogFile) THEN BEGIN
+     ;;    WRITE_MESSAGE_TO_LOGFILE,errorLogFile, $
+     ;;                             STRING(FORMAT='(A0,T20,A0,T40,A0)',KEYWORD_SET(orbStr) ? orbStr : '???', $
+     ;;                                    GET_TODAY_STRING(/DO_YYYYMMDD_FMT), $
+     ;;                                    'DIFF_ENERGY_FLUX_SPECTRAL_TYPE: N_ELEMENTS(eSpec.{v and/or y}) LE 1!'), $
+     ;;                             /APPEND
+     ;; ENDIF
+     errorMsg = 'DIFF_ENERGY_FLUX_SPECTRAL_TYPE: N_ELEMENTS(eSpec.{v and/or y}) LE 1!'
      RETURN, -1
   ENDIF
 

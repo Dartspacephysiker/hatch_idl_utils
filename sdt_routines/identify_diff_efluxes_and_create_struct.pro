@@ -12,6 +12,18 @@ PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je, $
   ENDIF
 
 
+  ;;A little error checking
+  IF NDIMEN(eSpec.v) NE 2 OR NDIMEN(eSpec.y) NE 2 THEN BEGIN
+     IF KEYWORD_SET(errorLogFile) THEN BEGIN
+        WRITE_MESSAGE_TO_LOGFILE,errorLogFile, $
+                                 STRING(FORMAT='(A0,T20,A0,T40,A0)',KEYWORD_SET(orbStr) ? orbStr : '???', $
+                                        GET_TODAY_STRING(/DO_YYYYMMDD_FMT), $
+                                        'IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT: NDIMEN ESPEC.{v and/or y} NE 2!'), $
+                                 /APPEND
+     ENDIF
+     RETURN
+  ENDIF
+
   events       = !NULL
   nEvents      = N_ELEMENTS(eSpec.x)
   energies     = REFORM(eSpec.v[0,*])
@@ -40,8 +52,16 @@ PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je, $
                                                           mlt[i],ilat[i], $
                                                           QUIET=quiet, $
                                                           BATCH_MODE=batch_mode, $
-                                                          ORBSTR=orbStr, $
-                                                          ERRORLOGFILE=errorLogFile)
+                                                          ERRORMSG=errorMsg) ;, $
+                                                              ;; ORBSTR=orbStr, $
+                                                              ;; ERRORLOGFILE=errorLogFile)
+     IF SIZE(tempEvent,/TYPE) NE 8 THEN BEGIN
+        WRITE_MESSAGE_TO_LOGFILE,errorLogFile, $
+                                 STRING(FORMAT='(A0,T20,A0,T40,A0)',KEYWORD_SET(orbStr) ? orbStr : '???', $
+                                        GET_TODAY_STRING(/DO_YYYYMMDD_FMT), $
+                                        errorMsg), $
+                                 /APPEND
+     ENDIF
      ADD_EVENT_TO_SPECTRAL_STRUCT,events,tempEvent
      ;; events    = [events,tempEvent]
   ENDFOR
