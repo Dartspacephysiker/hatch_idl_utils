@@ -1,4 +1,4 @@
-PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je,mlt,events, $
+PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je,mlt,ilat,events, $
    SC_POT=sc_pot, $
    QUIET=quiet, $
    BATCH_MODE=batch_mode
@@ -28,9 +28,10 @@ PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je,mlt,events, $
 
      ;; The FAST-adjusted way
      tempeSpec = {x:eSpec.x[i],y:REVERSE(REFORM(eSpec.y[i,0:max_en_ind[i]])),v:REVERSE(REFORM(eSpec.v[i,0:max_en_ind[i]]))}
-     tempEvent = DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ(tempeSpec,Je.y[0],Jee.y[i],MLT[i], $
-                                                         QUIET=quiet, $
-                                                         BATCH_MODE=batch_mode)
+     tempEvent = DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ(tempeSpec,Je.y[0],Jee.y[i], $
+                                                          mlt[i],ilat[i], $
+                                                          QUIET=quiet, $
+                                                          BATCH_MODE=batch_mode)
      ADD_EVENT_TO_SPECTRAL_STRUCT,events,tempEvent
      ;; events    = [events,tempEvent]
   ENDFOR
