@@ -1,7 +1,9 @@
 ;2016/05/15
 PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
+                                        EEB_OR_EES=eeb_or_ees, $
                                         EN_SPEC=eSpec, $
                                         JE_EN=je_en, $
+                                        N_SPECTRA_TO_AVERAGE=n_spectra_to_average, $
                                         OUT_ORB=orb, $
                                         OUT_LC_ANGLERANGE=e_angle, $
                                         ESPECUNITS=eSpecUnits, $
@@ -13,6 +15,8 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
   COMPILE_OPT idl2
 
   @startup
+
+  IF ~KEYWORD_SET(eeb_or_ees) THEN eeb_or_ees = 'ees'
 
   IF ~KEYWORD_SET(energy_electrons) THEN BEGIN
      energy_electrons = [3e1,3e4]
@@ -90,26 +94,43 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
 
   ;;Make the spectrogram data struct
   IF ARG_PRESENT(eSpec) OR KEYWORD_SET(save_these) THEN BEGIN
-     GET_EN_SPEC,'fa_ees',UNITS=eSpecUnits,NAME='el',RETRACE=1,T1=t1,T2=t2,ANGLE=e_angle
+     
+     GET_EN_SPEC,'fa_' + eeb_or_ees,UNITS=eSpecUnits,NAME='el',RETRACE=1,T1=t1,T2=t2,ANGLE=e_angle
      ;;GET the spectrogram data struct
      GET_DATA,'el',DATA=eSpec
   ENDIF
   
   ;;Make the nFlux data struct
   IF ARG_PRESENT(je_en) OR KEYWORD_SET(save_these) THEN BEGIN
-     GET_2DT_TS,'j_2d_fs_en','fa_ees',T1=t1,T2=t2,NAME='Je_en',ENERGY=energy_electrons,ANGLE=e_angle
+     GET_2DT_TS,'j_2d_fs_en','fa_' + eeb_or_ees,T1=t1,T2=t2,NAME='Je_en',ENERGY=energy_electrons,ANGLE=e_angle
      ;;GET the spectrogram data struct
      GET_DATA,'Je_en',DATA=je_en
   ENDIF
 
   IF KEYWORD_SET(save_these) THEN BEGIN
      
-     fu_spec2d,'n_2d_fs',dat,OUT_PARTIAL=dn_2d,ANGLE=e_angle ;,/integ_f,/integ_r ; plot partial density, partial integral densities
-     fu_spec2d,'j_2d_fs',dat,OUT_PARTIAL=dj_2d,ANGLE=e_angle ;,/integ_f,/integ_r ; plot partial density, partial integral densities
-
+     CASE STRUPCASE(eeb_or_ees) OF
+        'EEB': BEGIN
+           dat = GET_FA_EEB_TS (t1, t2)
+        END
+        'EES': BEGIN
+           dat = GET_FA_EES_TS (t1, t2)
+        END
+     ENDCASE
+     
+     dj_2d = !NULL
+     ;; dn_2d = !NULL
+     FOR k=0,N_ELEMENTS(dat)-1 DO BEGIN
+        tempDat = dat[k]
+        ;; fu_spec2d,'n_2d_fs',tempDat,OUT_PARTIAL=temp_dn_2d,ANGLE=e_angle,/NOPLOT ;,/integ_f,/integ_r ; plot partial density, partial integral densities
+        fu_spec2d,'j_2d_fs',tempDat,OUT_PARTIAL=temp_dj_2d,ANGLE=e_angle,/NOPLOT ;,/integ_f,/integ_r ; plot partial density, partial integral densities
+        ;; dn_2d = [dn_2d,temp_dn_2d]
+        dj_2d = [[dj_2d],[temp_dj_2d]]
+     ENDFOR
+     PRINT,'done!'
      IF ~KEYWORD_SET(saveFN) THEN BEGIN
         IF N_ELEMENTS(saveDir) EQ 0 THEN saveDir = './'
-        saveFN = GET_TODAY_STRING(/DO_YYYYMMDD_FMT) + '--eSpec_' + eSpecUnits + '__and_nFlux--' + 'orb_' + STRCOMPRESS(orb,/REMOVE_ALL) $
+        saveFN = GET_TODAY_STRING(/DO_YYYYMMDD_FMT) + '--eSpec_' + eSpecUnits + '__and_nFlux--' + eeb_or_ees + '--orb_' + STRCOMPRESS(orb,/REMOVE_ALL) $
                  + '__' + timeRangeStr + '.sav'
 
         PRINT,'Saving data for energy spectrum and density to ' + saveFN + '...'

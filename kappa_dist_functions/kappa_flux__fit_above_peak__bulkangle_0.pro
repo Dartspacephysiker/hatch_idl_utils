@@ -17,6 +17,7 @@
 PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
    T1=t1, $
    T2=t2, $
+   EEB_OR_EES=eeb_or_ees, $
    SDT_TIME_INDS=bounds, $
    DENSITY_EST=n_est, $
    TEMPERATURE_EST=T, $
@@ -71,10 +72,13 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
 
   IF N_ELEMENTS(eSpec) EQ 0 THEN BEGIN
      GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
+                                         EEB_OR_EES=eeb_or_ees, $
                                          EN_SPEC=eSpec, $
+                                         N_SPECTRA_TO_AVERAGE=n_spectra_to_average, $
                                          JE_EN=je_en, $
                                          OUT_ORB=orb, $
-                                         OUT_LC_ANGLERANGE=e_angle
+                                         OUT_LC_ANGLERANGE=e_angle ;, $
+                                         ;; /SAVE_ESPEC_AND_NFLUX
 
 
      orbStr   = STRCOMPRESS(orb,/REMOVE_ALL)
@@ -200,8 +204,10 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      yRange    = [MIN(je_en.y[bounds[i],WHERE(je_en.y[bounds[i],*] GT 0)]),MAX(je_en.y)]
 
      orbDate   = STRMID(TIME_TO_STR(je_en.x[bounds[i]]),0,10)
-     plotSN    = STRING(FORMAT='("nFlux_fit--",A0,"--orb_",I0,"__",A0,".png")', $
+     ;; plotSN    = STRING(FORMAT='("nFlux_fit--",A0,"--orb_",I0,"__",A0,".png")', $
+     plotSN    = STRING(FORMAT='("nFlux_fit--",A0,"--",A0,"--orb_",I0,"__",A0,".png")', $
                         timeFNStrs[bounds[i]], $
+                        eeb_or_ees, $
                         orbStr, $
                         orbDate)
 
