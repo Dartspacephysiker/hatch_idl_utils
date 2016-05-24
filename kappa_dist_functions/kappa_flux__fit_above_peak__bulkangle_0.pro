@@ -18,6 +18,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
    T1=t1, $
    T2=t2, $
    EEB_OR_EES=eeb_or_ees, $
+   SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
    SDT_TIME_INDS=bounds, $
    DENSITY_EST=n_est, $
    TEMPERATURE_EST=T, $
@@ -74,7 +75,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                                          EEB_OR_EES=eeb_or_ees, $
                                          EN_SPEC=eSpec, $
-                                         N_SPECTRA_TO_AVERAGE=n_spectra_to_average, $
+                                         SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                                          JE_EN=je_en, $
                                          OUT_ORB=orb, $
                                          OUT_LC_ANGLERANGE=e_angle ;, $
@@ -87,7 +88,8 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      ;; GET_DATA,'el',data=eSpec
   ENDIF
 
-  times       = eSpec.x
+  ;; times       = eSpec.x
+  times       = je_en.x
   yearStr     = STRMID(TIME_TO_STR(times[0],/MSEC),0,10)
   timeStrs    = STRMID(TIME_TO_STR(times,/MSEC),11,11)
   timeFNStrs  = timeStrs.REPLACE(':', '_')
@@ -114,6 +116,8 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
   b_offset       = KEYWORD_SET(bulk_offset) ? bulk_offset : 0
 
   ;;Loop over provided indices, plot data as well as fit, and optionally save
+  routine = 'get_fa_'+eeb_or_ees
+  IF KEYWORD_SET(spectra_average_interval) THEN routine += '_ts'
   FOR i=0,N_ELEMENTS(bounds)-1 DO BEGIN
 
      X           = REVERSE(REFORM(eSpec.v[bounds[i],*]))
@@ -149,7 +153,14 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      IF KEYWORD_SET(estimate_A_from_data) THEN BEGIN 
 
         t                     = times[bounds[i]]
-        dat                   = get_fa_ees(t)     ; get electron esa survey
+        ;; dat                   = get_fa_ees(t)     ; get electron esa survey
+
+        IF KEYWORD_SET(spectra_average_interval) THEN BEGIN
+           dat                = CALL_FUNCTION(routine,t,CALIB=calib,NPTS=spectra_average_interval)
+           dat                = AVERAGE_SUM3D(dat,spectra_average_interval)
+        ENDIF ELSE BEGIN
+           dat                = CALL_FUNCTION(routine,t,CALIB=calib)
+        ENDELSE
 
         min_energy            = peak_energy 
         ;; min_energy            = 50 
@@ -205,9 +216,15 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
 
      orbDate   = STRMID(TIME_TO_STR(je_en.x[bounds[i]]),0,10)
      ;; plotSN    = STRING(FORMAT='("nFlux_fit--",A0,"--orb_",I0,"__",A0,".png")', $
-     plotSN    = STRING(FORMAT='("nFlux_fit--",A0,"--",A0,"--orb_",I0,"__",A0,".png")', $
+     IF KEYWORD_SET(spectra_average_interval) THEN BEGIN
+        avgStr = STRING(FORMAT='("--",I0,"_avgs")',spectra_average_interval)
+     ENDIF ELSE BEGIN
+        avgStr = ''
+     ENDELSE
+     plotSN    = STRING(FORMAT='("nFlux_fit--",A0,"--",A0,A0,"--orb_",I0,"__",A0,".png")', $
                         timeFNStrs[bounds[i]], $
                         eeb_or_ees, $
+                        avgStr, $
                         orbStr, $
                         orbDate)
 

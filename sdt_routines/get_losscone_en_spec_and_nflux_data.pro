@@ -3,7 +3,7 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                                         EEB_OR_EES=eeb_or_ees, $
                                         EN_SPEC=eSpec, $
                                         JE_EN=je_en, $
-                                        N_SPECTRA_TO_AVERAGE=n_spectra_to_average, $
+                                        SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                                         OUT_ORB=orb, $
                                         OUT_LC_ANGLERANGE=e_angle, $
                                         ESPECUNITS=eSpecUnits, $
@@ -14,7 +14,7 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
 
   COMPILE_OPT idl2
 
-  @startup
+  ;; @startup
 
   IF ~KEYWORD_SET(eeb_or_ees) THEN eeb_or_ees = 'ees'
 
@@ -102,7 +102,10 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
   
   ;;Make the nFlux data struct
   IF ARG_PRESENT(je_en) OR KEYWORD_SET(save_these) THEN BEGIN
-     GET_2DT_TS,'j_2d_fs_en','fa_' + eeb_or_ees,T1=t1,T2=t2,NAME='Je_en',ENERGY=energy_electrons,ANGLE=e_angle
+     GET_2DT_TS,'j_2d_fs_en','fa_' + eeb_or_ees,T1=t1,T2=t2,NAME='Je_en', $
+                ENERGY=energy_electrons, $
+                ANGLE=e_angle, $
+                AVG_INTERVAL=spectra_average_interval
      ;;GET the spectrogram data struct
      GET_DATA,'Je_en',DATA=je_en
   ENDIF
