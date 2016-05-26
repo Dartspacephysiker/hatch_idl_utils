@@ -97,6 +97,7 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
   minForBroad                  = 6
   minForBroadStrict            = 8
   monoenergetic_n_to_check     = 4
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;MONOENERGETIC EVENTS
   ;;I. Identify peak in differential energy flux
