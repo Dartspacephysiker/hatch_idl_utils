@@ -10,6 +10,8 @@ FUNCTION ALIGN_FLUX_EFLUX_AND_ESPEC,flux_time,flux_data, $
                                     BATCH_MODE=batch_mode, $
                                     QUIET=quiet
 
+  maxDiff                                     = 2.0 ;seconds
+
   IF ~KEYWORD_SET(names) THEN fluxStrArr = ['Flux','Energy flux','Energy spec']
   IF ~KEYWORD_SET(orbStr) THEN orbStr = '???'
   todayStr                                    = GET_TODAY_STRING(/DO_YYYYMMDD_FMT)
@@ -29,21 +31,21 @@ FUNCTION ALIGN_FLUX_EFLUX_AND_ESPEC,flux_time,flux_data, $
                               /APPEND
      ;;We'll handle energy flux first. The energy spectrum is the gold standard
      tmpClosest                               = VALUE_CLOSEST(energySpec_time,eFlux_time,diffs,QUIET=quiet,BATCH_MODE=batch_mode)
-     keep                                     = WHERE(ABS(diffs) LT 0.05)
+     keep                                     = WHERE(ABS(diffs) LT maxDiff)
      IF keep[0] NE -1 THEN BEGIN
         eFlux_time                          = eFlux_time[keep]
         eFlux_data                          = eFlux_data[keep]
      ENDIF ELSE BEGIN
         WRITE_MESSAGE_TO_LOGFILE,logFile, $
                                  STRING(FORMAT='(A0,T20,A0,T40,A0)',orbStr,todayStr,'No ' + fluxStrArr[1] + $
-                                        'inds within 0.05 s of ' + fluxStrArr[2]), $
+                                        'inds within ' + STRCOMPRESS(maxDiff,/REMOVE_ALL) + ' s of ' + fluxStrArr[2]), $
                                  /APPEND
-        success                               = 1
+        success                               = 0
      ENDELSE
 
      ;;Now handle flux
      tmpClosest                               = VALUE_CLOSEST(energySpec_time,flux_time,diffs,QUIET=quiet,BATCH_MODE=batch_mode)
-     keep                                     = WHERE(ABS(diffs) LT 0.05)
+     keep                                     = WHERE(ABS(diffs) LT maxDiff)
      IF keep[0] NE -1 THEN BEGIN
         flux_time                        = flux_time[keep]
         flux_data                        = flux_data[keep]
@@ -53,7 +55,7 @@ FUNCTION ALIGN_FLUX_EFLUX_AND_ESPEC,flux_time,flux_data, $
      ENDIF ELSE BEGIN
         WRITE_MESSAGE_TO_LOGFILE,logFile, $
                                  STRING(FORMAT='(A0,T20,A0,T40,A0)',orbStr,todayStr,'No ' + fluxStrArr[0] + $
-                                        ' inds within 0.05 s of ' + fluxStrArr[2]), $
+                                        ' inds within ' + STRCOMPRESS(maxDiff,/REMOVE_ALL) + ' s of ' + fluxStrArr[2]), $
                                  /APPEND
         success                               = 1
      ENDELSE

@@ -4,6 +4,7 @@
 PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
                 N_DUPES=n_dupes, $
                 PRINTDUPES=printDupes, $
+                NOPRINTDUPES=noPrintDupes, $
                 PRINT_SAMPLE=print_sample, $
                 NSAMPLETOPRINT=nSampleToPrint, $
                 HAS_DUPES=has_dupes, $
@@ -55,52 +56,73 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
      IF totDupes GT 500  THEN BEGIN 
 
         answer     = ''
-        IF N_ELEMENTS(printDupes) EQ 0 THEN BEGIN
+        IF N_ELEMENTS(printDupes) EQ 0 AND N_ELEMENTS(noPrintDupes) EQ 0 THEN BEGIN
            IF ~KEYWORD_SET(print_sample) THEN BEGIN
               READ,answer, PROMPT="More than 500 duplicates (" + STRCOMPRESS(totDupes,/REMOVE_ALL) + ", in fact)!  Print them? [y/n/s(=print sample)]"
            ENDIF ELSE BEGIN
               PRINT,"Printing sample of dupes ..."
            ENDELSE
         ENDIF ELSE BEGIN
-           PRINT,"printDupes: " + printDupes
-           answer  = printDupes
+           yes = 'y'
+           no  = 'n'
+           CASE 1 OF
+              N_ELEMENTS(printDupes) NE 0 AND N_ELEMENTS(noPrintDupes) NE 0: BEGIN
+                 PRINT,'Only set one keyword! Assuming I shouldn''t print?'
+                 answer = no
+              END
+              N_ELEMENTS(printDupes) NE 0: BEGIN
+                 answer = (printDupes) ? yes : no
+                 PRINT,"printDupes: " + answer
+              END
+              N_ELEMENTS(noPrintDupes) NE 0: BEGIN
+                 answer = (noPrintDupes) ? no : yes
+                 PRINT,"printDupes: " + answer
+              END
+           ENDCASE
+           IF N_ELEMENTS(printDupes) NE 0 THEN BEGIN
+              PRINT,"printDupes: " + printDupes
+              answer  = printDupes
+           ENDIF
         ENDELSE
 
-        IF STRLOWCASE(STRMID(answer,0,1)) NE 'y' AND STRLOWCASE(STRMID(answer,0,1)) NE 's' THEN BEGIN
-           PRINT,"OK, exiting..."
-           RETURN
-        ENDIF
+        ;; IF STRLOWCASE(STRMID(answer,0,1)) NE 'y' AND STRLOWCASE(STRMID(answer,0,1)) NE 's' THEN BEGIN
+        ;;    ;; PRINT,"OK, exiting..."
+        ;;    ;; RETURN
+        ;; ENDIF
      ENDIF ELSE BEGIN
         answer = 'y' 
      ENDELSE
 
-     IF STRLOWCASE(STRMID(answer,0,1)) EQ 'y' THEN BEGIN
-        print, "Duplicate elements"
-        print, "==================="
-        Print, dataenum[dupes]
-        print, ''
-        
-        print, "Indices of dupes"
-        print, "================"
-        FOR i=0,N_ELEMENTS(dupes)-1 DO BEGIN
-           print,'ELEMENT: ' + STRCOMPRESS(dataenum(dupes[i]),/REMOVE_ALL)
-           print,R[R[dupes[i]] : R[dupes[i]+1]-1]
-           print,''
-        ENDFOR
-        
-     ENDIF ELSE BEGIN
-        PRINT,"Sample of dupes"
-        PRINT,"==============="
-        PRINT,FORMAT='("Index",T10,"Value",T20,"N")'
-        fmtString             = '(I0,T10,G9.2,T20,I0)'
-        nSampleToPrint        = totDupes < nSampleToPrint
-        FOR i=0,nSampleToPrint-1 DO BEGIN
-           iDupe              = out_dupe_i[FIX(RANDOMU(seed)*totDupes)]
-           PRINT,FORMAT=fmtString,iDupe,data[iDupe],N_ELEMENTS(WHERE(data EQ data[iDupe]))
-        ENDFOR
-     ENDELSE
+     CASE STRLOWCASE(STRMID(answer,0,1)) OF
+        'y': BEGIN
+           print, "Duplicate elements"
+           print, "==================="
+           Print, dataenum[dupes]
+           print, ''
+           
+           print, "Indices of dupes"
+           print, "================"
+           FOR i=0,N_ELEMENTS(dupes)-1 DO BEGIN
+              print,'ELEMENT: ' + STRCOMPRESS(dataenum(dupes[i]),/REMOVE_ALL)
+              print,R[R[dupes[i]] : R[dupes[i]+1]-1]
+              print,''
+           ENDFOR
+        END
+        's': BEGIN
+           PRINT,"Sample of dupes"
+           PRINT,"==============="
+           PRINT,FORMAT='("Index",T10,"Value",T20,"N")'
+           fmtString             = '(I0,T10,G9.2,T20,I0)'
+           nSampleToPrint        = totDupes < nSampleToPrint
+           FOR i=0,nSampleToPrint-1 DO BEGIN
+              iDupe              = out_dupe_i[FIX(RANDOMU(seed)*totDupes)]
+              PRINT,FORMAT=fmtString,iDupe,data[iDupe],N_ELEMENTS(WHERE(data EQ data[iDupe]))
+           ENDFOR
+        END
+        ELSE:
+     ENDCASE
 
-     print,"Total number of dupes: " + STRCOMPRESS(totDupes)
+     PRINT,"Total number of dupes: " + STRCOMPRESS(totDupes)
   ENDIF
 
   ;;Get the unique inds if either requested or else if we're returning a dupeless array

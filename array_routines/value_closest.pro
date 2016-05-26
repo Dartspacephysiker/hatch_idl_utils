@@ -7,16 +7,19 @@
 ;;vector vals with /ONLY_GE, and vice versa with /ONLY_LE.
 
 FUNCTION VALUE_CLOSEST,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
+                       SUCCESS=success, $
                        BATCH_MODE=batch_mode, $
                        QUIET=quiet
 
   COMPILE_OPT idl2
 
   BADVAL                        = -9999
+  success                       = 0 ;assume no success
 
   IF N_ELEMENTS(vector) EQ 0 OR N_ELEMENTS(values) EQ 0 THEN BEGIN
      IF ~KEYWORD_SET(QUIET) THEN PRINT,"You gave me junk, son. 'vector' and 'values' have to have more than zero elements."
      RETURN,!NULL
+
   ENDIF
 
   check_sorted,vector,is_sorted,/QUIET
@@ -96,6 +99,7 @@ FUNCTION VALUE_CLOSEST,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
      ENDELSE
   ENDELSE
   
+  success                       = 1
   RETURN,closest_i
 
 END
