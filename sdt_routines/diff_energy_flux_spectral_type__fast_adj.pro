@@ -270,14 +270,14 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ,eSpec,Je,Jee, $
   min_eV                      = (MLT GT 9.5 AND MLT LT 14.5) ? cusp_mineV : notCusp_mineV
 
   ;;**
-  ;;3. Get N_wild(=number of N_good energies at or above min_eV). N_wild GE 3?
+  ;;3. Get N_wild(=number of N_good energies at or above min_eV). N_wild GE 1?
   ;;   i.   YES: broadband! Go to 4.
   ;;   ii.  NO : Not broadband. Broadband = -3
   IF cont THEN BEGIN
      wild_ii                  = WHERE(energy_e[broad_i] GE min_eV,N_wild)
-     IF N_wild GE 3 THEN BEGIN
-        ;; strictBroad_candidate = N_wild GE 4
-        broad                 = 1 + (N_wild GE 8)
+     IF N_wild GE 1 THEN BEGIN
+        ;; strictBroad = nBroad GE minForBroadStrict
+        broad                 = 1 + (nBroad GE minForBroadStrict)
      ENDIF ELSE BEGIN
         broad                 = -3
      ENDELSE
