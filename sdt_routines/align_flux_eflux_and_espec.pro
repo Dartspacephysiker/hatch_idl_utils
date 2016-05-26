@@ -10,7 +10,7 @@ FUNCTION ALIGN_FLUX_EFLUX_AND_ESPEC,flux_time,flux_data, $
                                     BATCH_MODE=batch_mode, $
                                     QUIET=quiet
 
-  maxDiff                                     = 2.0 ;seconds
+  maxDiff                                     = 5.0 ;seconds, one spin period
 
   IF ~KEYWORD_SET(names) THEN fluxStrArr = ['Flux','Energy flux','Energy spec']
   IF ~KEYWORD_SET(orbStr) THEN orbStr = '???'
@@ -33,8 +33,9 @@ FUNCTION ALIGN_FLUX_EFLUX_AND_ESPEC,flux_time,flux_data, $
      tmpClosest                               = VALUE_CLOSEST(energySpec_time,eFlux_time,diffs,QUIET=quiet,BATCH_MODE=batch_mode)
      keep                                     = WHERE(ABS(diffs) LT maxDiff)
      IF keep[0] NE -1 THEN BEGIN
-        eFlux_time                          = eFlux_time[keep]
-        eFlux_data                          = eFlux_data[keep]
+        eFlux_time                            = eFlux_time[keep]
+        eFlux_data                            = eFlux_data[keep]
+        success                               = 1
      ENDIF ELSE BEGIN
         WRITE_MESSAGE_TO_LOGFILE,logFile, $
                                  STRING(FORMAT='(A0,T20,A0,T40,A0)',orbStr,todayStr,'No ' + fluxStrArr[1] + $
@@ -52,12 +53,14 @@ FUNCTION ALIGN_FLUX_EFLUX_AND_ESPEC,flux_time,flux_data, $
         IF KEYWORD_SET(out_sc_pot) THEN out_sc_pot                        = out_sc_pot[keep]
         IF KEYWORD_SET(out_sc_time) THEN out_sc_time                      = out_sc_time[keep]
         IF KEYWORD_SET(out_sc_min_energy_ind) THEN out_sc_min_energy_ind  = out_sc_min_energy_ind[keep]
+
+        success                               = 1
      ENDIF ELSE BEGIN
         WRITE_MESSAGE_TO_LOGFILE,logFile, $
                                  STRING(FORMAT='(A0,T20,A0,T40,A0)',orbStr,todayStr,'No ' + fluxStrArr[0] + $
                                         ' inds within ' + STRCOMPRESS(maxDiff,/REMOVE_ALL) + ' s of ' + fluxStrArr[2]), $
                                  /APPEND
-        success                               = 1
+        success                               = 0
      ENDELSE
 
      RETURN, success
