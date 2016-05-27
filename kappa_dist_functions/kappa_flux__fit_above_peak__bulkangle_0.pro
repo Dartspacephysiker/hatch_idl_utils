@@ -33,6 +33,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
    FIT_TOLERANCE=fit_tol, $
    MAX_ITERATIONS=max_iter, $
    ADD_GAUSSIAN_ESTIMATE=add_gaussian_estimate, $
+   ADD_ONECOUNT_CURVE=add_oneCount_curve, $
    ADD_FITPARAMS_TEXT=add_fitParams_text, $
    SAVE_FITPLOTS=save_fitplots
    ;; SAVE_FITS=save_fits
@@ -58,18 +59,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
   IF N_ELEMENTS(estimate_A_from_data) EQ 0 THEN BEGIN
      PRINT,'Estimating fit params from SDT data...'
      estimate_A_from_data = 1
-     ;; @startup
   ENDIF
-
-  ;; IF KEYWORD_SET(estimate_A_from_data) AND N_ELEMENTS(dat) EQ 0 THEN BEGIN
-  ;;    PRINT,'Requested that we use SDT data to estimate, but no SDT data provided! Pulling it in...'
-  ;;    @startup
-  ;;    timeStr = '99-3-2/18:08:42'
-  ;;    t=str_to_time(timeStr) 
-  ;;    dat = get_fa_ees(t)        ; get electron esa survey
-
-  ;; ENDIF
-
 
   IF N_ELEMENTS(eSpec) EQ 0 THEN BEGIN
      GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
@@ -78,17 +68,22 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
                                          SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                                          JE_EN=je_en, $
                                          OUT_ORB=orb, $
+                                         ELECTRON_ENERGY_LIMS=energy_electrons, $
                                          OUT_LC_ANGLERANGE=e_angle ;, $
                                          ;; /SAVE_ESPEC_AND_NFLUX
 
 
      orbStr   = STRCOMPRESS(orb,/REMOVE_ALL)
-     ;; GET_EN_SPEC,'fa_ees',UNITS=eSpecUnits,NAME='el',RETRACE=1,T1=t1,T2=t2,ANGLE=e_angle
-     ;; ;;GET the spectrogram data struct
-     ;; GET_DATA,'el',data=eSpec
   ENDIF
 
-  ;; times       = eSpec.x
+  IF KEYWORD_SET(add_oneCount_curve) THEN BEGIN
+     GET_ONECOUNT_NFLUX_CURVE,t1,t2,oneCurve, $
+                              EEB_OR_EES=eeb_or_ees, $
+                              ANGLE=e_angle, $
+                              ENERGY=energy_electrons, $
+                              SPECTRA_AVERAGE_INTERVAL=spectra_average_interval
+  ENDIF
+
   times       = je_en.x
   yearStr     = STRMID(TIME_TO_STR(times[0],/MSEC),0,10)
   timeStrs    = STRMID(TIME_TO_STR(times,/MSEC),11,11)
@@ -110,17 +105,29 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
   ENDIF
 
   IF ~KEYWORD_SET(bounds) THEN BEGIN
-     bounds      = 15           ;minute 10
+     ;; bounds      = 15
+     bounds      = 0            ;just do one
   ENDIF
 
   b_offset       = KEYWORD_SET(bulk_offset) ? bulk_offset : 0
 
   ;;Loop over provided indices, plot data as well as fit, and optionally save
-  routine = 'get_fa_'+eeb_or_ees
+  routine        = 'get_fa_'+eeb_or_ees
   IF KEYWORD_SET(spectra_average_interval) THEN routine += '_ts'
+
+  IF KEYWORD_SET(add_oneCount_curve) THEN BEGIN
+     oneCurveMod = oneCurve.y[bounds,*]
+     yMin        = MIN(oneCurveMod[WHERE(oneCurveMod GT 0)])
+     ;; yMin        = MIN(oneCurve.y[bounds,WHERE(oneCurveMod GT 0)])
+  ENDIF ELSE BEGIN
+     je_en_mod   = je_en.y[bounds,*]
+     yMin        = MIN(je_en_mod[WHERE(je_en_mod GT 0)])
+     ;; yMin        = MIN(je_en.y[bounds,WHERE(je_en_mod GT 0)])
+  ENDELSE
+
   FOR i=0,N_ELEMENTS(bounds)-1 DO BEGIN
 
-     X           = REVERSE(REFORM(eSpec.v[bounds[i],*]))
+     Xorig       = REVERSE(REFORM(eSpec.v[bounds[i],*]))
      Y           = REVERSE(REFORM(je_en.y[bounds[i],*]))
 
      IF KEYWORD_SET(check_for_higher_flux_peaks__set_corresponding_peak_energy) THEN BEGIN
@@ -128,15 +135,15 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
         max_ys                   = GET_N_MAXIMA_IN_ARRAY(Y,N=3,OUT_I=maxima_i)
         peak_y                   = MAX(max_ys,max_y_ii)
         peak_ind                 = maxima_i[max_y_ii]
-        peak_energy              = X[peak_ind]
+        peak_energy              = Xorig[peak_ind]
         peak_tol_percent         = .25
         
         FOR i=0,N_ELEMENTS(maxima_i)-1 DO BEGIN
-           testMax_X             = X[maxima_i[i]]
+           testMax_X             = Xorig[maxima_i[i]]
            testMax               = max_ys[i]
            curMax_i              = maxima_i[i]
            PRINT,'testval:',STRCOMPRESS((ABS(testMax-peak_y)/peak_y),/REMOVE_ALL)
-           IF testMax_X GT X[peak_ind] AND (ABS(testMax-peak_y)/peak_y) LT peak_tol_percent THEN BEGIN
+           IF testMax_X GT Xorig[peak_ind] AND (ABS(testMax-peak_y)/peak_y) LT peak_tol_percent THEN BEGIN
               peak_ind           = curMax_i
               peak_energy        = testMax_X
            ENDIF
@@ -145,7 +152,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      ENDIF ELSE BEGIN
         max_y                    = MAX(Y,peak_ind)
         peak_ind                -= b_offset
-        peak_energy              = X[peak_ind]
+        peak_energy              = Xorig[peak_ind]
         PRINT,peak_ind
      ENDELSE
 
@@ -153,7 +160,6 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      IF KEYWORD_SET(estimate_A_from_data) THEN BEGIN 
 
         t                     = times[bounds[i]]
-        ;; dat                   = get_fa_ees(t)     ; get electron esa survey
 
         IF KEYWORD_SET(spectra_average_interval) THEN BEGIN
            dat                = CALL_FUNCTION(routine,t,CALIB=calib,NPTS=spectra_average_interval)
@@ -163,19 +169,12 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
         ENDELSE
 
         min_energy            = peak_energy 
-        ;; min_energy            = 50 
 
-        ;; bulk_energy           = (V_2D_FS(dat,energy=[min_energy,30000]))[2] 
-        ;; bulk_energy           = 9.1e-31*(bulk_energy*1000)^2/2/1.6e-19       ;in eV
         bulk_energy           = peak_energy
         ;; T                     = (T_2D_FS(dat,energy=[min_energy,30000]))[3] ;T_avg
         T                     = (T_2D_FS(dat,ENERGY=[min_energy,30000],ANGLE=e_angle))[3] ;T_avg
-        n_est                 = N_2D_FS(dat,ENERGY=[min_energy,30000],ANGLE=e_angle)/20.    ; print density >100 eV, #/cm3
-        ;; print,v_2d_fs(dat,ENERGY=[min_energy,30000])                        ; print Vx,Vy,Vz, km/s
-        ;; print,p_2d_fs(dat,ENERGY=[min_energy,30000])                        ; print Pxx,Pyy,Pzz,Pxy,Pxz,Pyz, eV/cm^3
-        ;; print,t_2d_fs(dat,ENERGY=[min_energy,30000])                        ; print Tx,Ty,Tz,Tavg, eV
-
-        
+        ;; n_est                 = N_2D_FS(dat,ENERGY=[min_energy,30000],ANGLE=e_angle)/20.
+        n_est                 = N_2D_FS(dat,ENERGY=[min_energy,30000],ANGLE=e_angle)*5.
         A                     = DOUBLE([bulk_energy,T,kappa,n_est]) 
         
         PRINT,"Here's my initial estimate based on spectral properties: "
@@ -188,7 +187,8 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
         bulk_energy           = peak_energy
 
         TGauss                = (T_2D_FS(dat,ENERGY=[min_energy,30000],ANGLE=e_angle))[3]/2. ;T_avg
-        n_estGauss            = n_2d_fs(dat,ENERGY=[min_energy,30000],ANGLE=e_angle)/20.    ; print density >100 eV, #/cm3
+        ;; n_estGauss            = n_2d_fs(dat,ENERGY=[min_energy,30000],ANGLE=e_angle)/20.
+        n_estGauss            = n_2d_fs(dat,ENERGY=[min_energy,30000],ANGLE=e_angle)*5.
         
         kappaGauss            = 100
 
@@ -210,12 +210,13 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
                         STRMID(TIME_TO_STR(je_en.x[bounds[i]]),0,10))
      xTitle    = "Energy (eV)"
      yTitle    = "Losscone Number flux (#/cm!U2!N-s)"
-     ;; xRange    = [eSpec.v[bounds[0],-1],eSpec.v[bounds[0],0]]
-     xRange    = [MIN(X[WHERE(X GT 0)]),MAX(X)]
-     yRange    = [MIN(je_en.y[bounds[i],WHERE(je_en.y[bounds[i],*] GT 0)]),MAX(je_en.y)]
+
+     xRange    = [MIN(Xorig[WHERE(Xorig GT 0)]),MAX(Xorig)]
+
+     yRange    = [yMin,MAX(je_en.y)]
 
      orbDate   = STRMID(TIME_TO_STR(je_en.x[bounds[i]]),0,10)
-     ;; plotSN    = STRING(FORMAT='("nFlux_fit--",A0,"--orb_",I0,"__",A0,".png")', $
+
      IF KEYWORD_SET(spectra_average_interval) THEN BEGIN
         avgStr = STRING(FORMAT='("--",I0,"_avgs")',spectra_average_interval)
      ENDIF ELSE BEGIN
@@ -229,13 +230,13 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
                         orbDate)
 
      ;;plot things
-     nPlots    = 2+KEYWORD_SET(add_gaussian_estimate)   ;Bud and me
+     nPlots    = 2+KEYWORD_SET(add_gaussian_estimate)+KEYWORD_SET(add_oneCount_curve) ;Bud and me
      window    = WINDOW(DIMENSION=[800,600])
      plotArr   = MAKE_ARRAY(nPlots,/OBJ) 
-     ;; colorList = GENERATE_LIST_OF_RANDOM_COLORS(nPlots) 
-     colorList = LIST('RED','BLACK','BLUE')
 
-     plotArr[0] = PLOT(X, $     ;x, $
+     colorList = LIST('RED','BLACK','BLUE','GRAY')
+
+     plotArr[0] = PLOT(Xorig, $     ;x, $
                        Y, $
                        TITLE=title, $
                        NAME=STRMID(TIME_TO_STR(je_en.x[bounds[i]],/MSEC),11,12), $
@@ -257,19 +258,11 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
         IF N_ELEMENTS(n_below_peak) EQ 0 THEN n_below_peak = 4
         IF N_ELEMENTS(n_after_peak) EQ 0 THEN n_after_peak = 10
 
-        nEnergies          = N_ELEMENTS(X)
-
-        ;; keepme             = WHERE(X GE peak_energy,nKeeps)
-        ;; keepme             = keepme[0:(n_after_peak < nKeeps)-1]
-        ;; minKeep            = (keepme[0] - n_below_peak) > 0
-        ;; maxKeep            = (n_after_peak < nKeeps)-1
-        ;; keepme             = [keepme[0]-4,keepme[0]-3,keepme[0]-2,keepme[0]-1,keepme] 
-        ;; X                  = X[keepme] 
-        ;; Y                  = Y[keepme] 
+        nEnergies          = N_ELEMENTS(Xorig)
 
         minKeep            = (peak_ind - n_below_peak) > 0
         maxKeep            = (peak_ind + n_after_peak) < nEnergies
-        X                  = X[minKeep:maxKeep-1] 
+        X                  = Xorig[minKeep:maxKeep-1] 
         Y                  = Y[minKeep:maxKeep-1] 
      ENDIF
 
@@ -294,7 +287,6 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      plotArr[1] = PLOT(X, $     ;x, $
                        yFit, $
                        TITLE=title, $
-                       ;; NAME=STRMID(TIME_TO_STR(je_en.x[bounds[i]]),11,9), $
                        NAME="Fitted spectrum", $
                        XTITLE=xTitle, $
                        YTITLE=yTitle, $
@@ -336,8 +328,8 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
                               TOL=KEYWORD_SET(fit_tol) ? fit_tol : 1e-3, $
                               STATUS=gaussFitStatus)
         
-        KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,AGauss,yGaussFit,pders, $
-                                              /CMSQ_S_UNITS
+        ;; KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,AGauss,yGaussFit,pders, $
+        ;;                                       /CMSQ_S_UNITS
 
         ;;need to adjust Y bounds?
         yRange[1]  = MAX(yGaussFit) > yRange[1]
@@ -346,10 +338,9 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
         PRINT_KAPPA_FLUX_FIT_PARAMS,AGauss
         PRINT,''
         
-        plotArr[2] = PLOT(X, $  ;x, $
+        plotArr[2] = PLOT(X, $
                           yGaussFit, $
                           TITLE=title, $
-                          ;; NAME=STRMID(TIME_TO_STR(je_en.x[bounds[i]]),11,9), $
                           NAME="Gaussian Fitted spectrum", $
                           XTITLE=xTitle, $
                           YTITLE=yTitle, $
@@ -379,22 +370,22 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
            END 
         ENDCASE
      ENDIF
+
+     IF KEYWORD_SET(add_oneCount_curve) THEN BEGIN
+
+        plotArr[3] = PLOT(Xorig, $
+                          REVERSE(REFORM(oneCurve.y[bounds[i],*])), $
+                          NAME="One Count", $
+                          THICK=2.2, $
+                          LINESTYLE='-:', $
+                          COLOR=colorList[3], $
+                          /OVERPLOT, $
+                          CURRENT=window) 
+
+     ENDIF
         
-     legend           = LEGEND(TARGET=plotArr[*],POSITION=[0.55,0.55],/NORMAL)
+     legend           = LEGEND(TARGET=plotArr[*],POSITION=[0.55,0.85],/NORMAL)
      IF KEYWORD_SET(add_fitParams_text) THEN BEGIN
-        ;; fitTitle      = STRING(FORMAT='("Bulk energy (eV)",T20,"Plasma temp. (eV)",T40,"Kappa",T50,"Density (cm!U-3!N)",A0)','')
-        ;; fitInfoStr    = STRING(FORMAT='(F-15.2,T20,F-15.2,T40,F-7.3,T50,F-8.4)', $
-        ;;                        A[0], $
-        ;;                        A[1], $
-        ;;                        A[2], $
-        ;;                        A[3])
-
-        ;; fitParamsText = TEXT(0.3,0.3, $
-        ;;                         fitTitle + '!C' + fitInfoStr, $
-        ;;                         FONT_SIZE=10, $
-        ;;                         FONT_NAME='Courier', $
-        ;;                         /NORMAL)
-
         fitTitle      = ["Bulk energy (eV)","Plasma temp. (eV)","Kappa","Density (cm^-3)"]
         fitInfoStr    = [STRING(FORMAT='(F-15.2)',A[0]), $
                          STRING(FORMAT='(F-15.2)',A[1]), $

@@ -63,39 +63,46 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
   ;;get_orbit data
   GET_FA_ORBIT,t1,t2 ;,/all
   
+  GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2,e_angle, $
+                                          i_angle,i_angle_up, $
+                                          north_south, $
+                                          /JUST_ONE
+
   ;;define loss cone angle
-  GET_DATA,'ALT',data=alt
-  loss_cone_alt = alt.y[0]*1000.0
-  lcw = LOSS_CONE_WIDTH(loss_cone_alt)*180.0/!DPI
+  ;; GET_DATA,'ALT',data=alt
+  ;; loss_cone_alt = alt.y[0]*1000.0
+  ;; lcw = LOSS_CONE_WIDTH(loss_cone_alt)*180.0/!DPI
 
-  GET_DATA,'ILAT',data=ilat
-  north_south = ABS(ilat.y[0])/ilat.y[0]
+  ;; GET_DATA,'ILAT',data=ilat
+  ;; north_south = ABS(ilat.y[0])/ilat.y[0]
   
-  GET_DATA,'ORBIT',data=orbit
-  orb        = orbit.y[0]
-
   ;;Loss cone stuff
-  IF north_south EQ -1 THEN BEGIN
-     e_angle = [180.-lcw,180+lcw] ; for Southern Hemis.
+  ;; IF north_south EQ -1 THEN BEGIN
+  ;;    e_angle = [180.-lcw,180+lcw] ; for Southern Hemis.
 
-     ;;i_angle=[270.0,90.0]	
-     ;;elimnate ram from data
-     i_angle = [180.0,360.0]
-     i_angle_up = [270.0,360.0]
+  ;;    ;;i_angle=[270.0,90.0]	
+  ;;    ;;elimnate ram from data
+  ;;    i_angle = [180.0,360.0]
+  ;;    i_angle_up = [270.0,360.0]
      
-  ENDIF ELSE BEGIN
-     e_angle = [360.-lcw,lcw]     ;	for Northern Hemis.
-     ;;i_angle=[90.,270.0]
-     ;;eliminate ram from data
-     i_angle = [0.0,180.0]
-     i_angle_up = [90.0,180.0]
+  ;; ENDIF ELSE BEGIN
+  ;;    e_angle = [360.-lcw,lcw]     ;	for Northern Hemis.
+  ;;    ;;i_angle=[90.,270.0]
+  ;;    ;;eliminate ram from data
+  ;;    i_angle = [0.0,180.0]
+  ;;    i_angle_up = [90.0,180.0]
      
-  ENDELSE
+  ;; ENDELSE
+
+  GET_DATA,'ORBIT',data=orbit
+  orb          = orbit.y[0]
 
   ;;Make the spectrogram data struct
   IF ARG_PRESENT(eSpec) OR KEYWORD_SET(save_these) THEN BEGIN
      
-     GET_EN_SPEC,'fa_' + eeb_or_ees,UNITS=eSpecUnits,NAME='el',RETRACE=1,T1=t1,T2=t2,ANGLE=e_angle
+     GET_EN_SPEC,'fa_' + eeb_or_ees,UNITS=eSpecUnits,NAME='el',T1=t1,T2=t2,$
+                 ANGLE=e_angle;,RETRACE=1
+
      ;;GET the spectrogram data struct
      GET_DATA,'el',DATA=eSpec
   ENDIF

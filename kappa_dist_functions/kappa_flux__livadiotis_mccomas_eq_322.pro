@@ -15,6 +15,7 @@
 ;Otherwise,                return units are s/kg-m^4
 ;
 ;2016/05/13 I think Livadiotis and McComas [2013] just muffed the units. So 2 / m^2 -> 1 / SQRT(2 * mass)
+;2016/05/27 NOTE: This equation, if not multiplied by energy, gives the DIFFERENTIAL NUMBER FLUX, dJ/dE (or #/cm^2-s-eV, if I ever manage to figure out the conversions)
 PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,F,pder, $
                                           MULTIPLY_BY_ENERGY=multiply_by_energy, $
                                           CMSQ_S_UNITS=cmsq_s_units
@@ -32,7 +33,10 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,F,pder, $
      factor             = DOUBLE(1)
   ENDELSE
 
-  electron_mass          = DOUBLE(5.109989e5)   ;eV/c^2
+  ;; electron_mass          = DOUBLE(5.109989e5)   ;eV/c^2
+  ;; speedOfLight           = DOUBLE(29979245800.) ;cm / s
+  
+  electron_mass          = DOUBLE(5.109989e9)   ;eV/c^2 (where c is in cm/s)
   speedOfLight           = DOUBLE(29979245800.) ;cm / s
   
   IF N_ELEMENTS(A) LT 4 THEN BEGIN
@@ -64,7 +68,7 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,F,pder, $
   ;;Chunks of the function
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
 
-  Finv                   = normFac *  n * energy
+  Finv                   = normFac * n * energy
 
   IF KEYWORD_SET(multiply_by_energy) THEN BEGIN
      Finv                = Finv * energy
@@ -77,7 +81,7 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,F,pder, $
      
 
   ;;First chunk
-  FK1                    = (DOUBLE((!PI * T * (kappa - 1.5) )))^(-1.5)
+  FK1                    = (DOUBLE((!PI * T * (kappa - 1.5D) )))^(-1.5D)
 
   ;;Second chunk
   FK2                    = GAMMA(kappa + 1.D) / GAMMA(kappa - 0.5D)
