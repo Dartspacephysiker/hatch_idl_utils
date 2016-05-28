@@ -14,7 +14,7 @@
 ;; timeStr = '99-3-2/18:08:42' & t=str_to_time(timeStr) &  dat = get_fa_ees(t) ; get electron esa survey
 ;; kappa_flux__fit_above_peak__bulkangle_0,TEMPERATURE=100,SDT_DAT=dat
 
-PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
+PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
    T1=t1, $
    T2=t2, $
    EEB_OR_EES=eeb_or_ees, $
@@ -36,6 +36,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
    ADD_ONECOUNT_CURVE=add_oneCount_curve, $
    ADD_FITPARAMS_TEXT=add_fitParams_text, $
    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
+   GET_MASS_AND_DT=get_mass_and_dt, $
    SAVE_FITPLOTS=save_fitplots
    ;; SAVE_FITS=save_fits
 
@@ -71,7 +72,10 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
                                          OUT_ORB=orb, $
                                          OUT_LC_ANGLERANGE=e_angle, $
                                          ELECTRON_ENERGY_LIMS=energy_electrons, $
-                                         ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle
+                                         ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
+                                         /GET_MASS_AND_DT, $
+                                         OUT_MASS=mass, $
+                                         OUT_DT=dt
                                          ;; /SAVE_ESPEC_AND_NFLUX, $
                                          ;; SAVEFILENAME=saveFN
 
@@ -87,7 +91,8 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
                               SPECTRA_AVERAGE_INTERVAL=spectra_average_interval
   ENDIF
 
-  times       = je_en.x
+  ;; times       = je_en.x
+  times       = eSpec.x
   yearStr     = STRMID(TIME_TO_STR(times[0],/MSEC),0,10)
   timeStrs    = STRMID(TIME_TO_STR(times,/MSEC),11,11)
   timeFNStrs  = timeStrs.REPLACE(':', '_')
@@ -163,6 +168,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      minEInd                     = (peak_ind - n_below_peak) > 0
      maxEInd                     = (peak_ind + n_after_peak) < nEnergies-1
 
+     Y                           = REVERSE(REFORM(eSpec.y[bounds[i],*]))
 
      ;;estimate from the data!
      IF KEYWORD_SET(estimate_A_from_data) THEN BEGIN 
@@ -190,7 +196,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
         T                     = (T_2D_FS(dat,ENERGY=eRange,ANGLE=e_angle))[3] ;T_avg
         ;; n_est                 = N_2D_FS(dat,ENERGY=eRange,ANGLE=e_angle)/20.
         n_est                 = N_2D_FS(dat,ENERGY=eRange,ANGLE=e_angle)*5.
-        A                     = DOUBLE([bulk_energy,T,kappa,n_est]) 
+        A                     = DOUBLE([bulk_energy,T,kappa,n_est,dt[i],mass]) 
         
         PRINT,"Here's my initial estimate based on spectral properties: "
         PRINT_KAPPA_FLUX_FIT_PARAMS,A
@@ -207,7 +213,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
         
         kappaGauss            = 100
 
-        AGauss                = DOUBLE([bulk_energy,TGauss,kappaGauss,n_estGauss]) 
+        AGauss                = DOUBLE([bulk_energy,TGauss,kappaGauss,n_estGauss,dt[i],mass])
 
         PRINT,"Here's my initial Gaussian estimate based on spectral properties: "
         PRINT_KAPPA_FLUX_FIT_PARAMS,AGauss
@@ -224,11 +230,13 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
                         orbStr, $
                         STRMID(TIME_TO_STR(je_en.x[bounds[i]]),0,10))
      xTitle    = "Energy (eV)"
-     yTitle    = "Losscone Number flux (#/cm!U2!N-s)"
+     ;; yTitle    = "Losscone Number flux (#/cm!U2!N-s)"
+     yTitle    = "Differential Energy Flux!C(eV/cm!U2!N-sr-s)"
 
      xRange    = [MIN(Xorig[WHERE(Xorig GT 0)]),MAX(Xorig)]
 
-     yRange    = [yMin,MAX(je_en.y)]
+     ;; yRange    = [yMin,MAX(je_en.y)]
+     yRange    = [yMin,MAX(eSpec.y)]
 
      orbDate   = STRMID(TIME_TO_STR(je_en.x[bounds[i]]),0,10)
 
@@ -281,9 +289,10 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      ;;                                       /CMSQ_S_UNITS
 
      weights    = 1./SQRT(ABS(Y))
-     yFit = CURVEFIT(X, Y, weights, A, SIGMA, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322' , $
+     yFit = CURVEFIT(X, Y, weights, A, SIGMA, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F' , $
                      /DOUBLE, $
-                     ITMAX=KEYWORD_SET(max_iter) ? max_iter : 50, $
+                     FITA=[1,1,0,1,0,0], $
+                     ITMAX=KEYWORD_SET(max_iter) ? max_iter : 150, $
                      ITER=itNum, $
                      TOL=KEYWORD_SET(fit_tol) ? fit_tol : 1e-3, $
                      STATUS=fitStatus)
@@ -331,10 +340,10 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
         
         bulk_energy           = peak_energy
         
-        yGaussFit  = CURVEFIT(X, Y, weights, AGauss, SIGMA, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322' , $
+        yGaussFit  = CURVEFIT(X, Y, weights, AGauss, SIGMA, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F' , $
                               /DOUBLE, $
-                              FITA=[1,1,0,1], $
-                              ITMAX=KEYWORD_SET(max_iter) ? max_iter : 50, $
+                              FITA=[1,1,0,1,0,0], $
+                              ITMAX=KEYWORD_SET(max_iter) ? max_iter : 150, $
                               ITER=itNum, $
                               TOL=KEYWORD_SET(fit_tol) ? fit_tol : 1e-3, $
                               STATUS=gaussFitStatus)
