@@ -18,8 +18,12 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,A,F,pder
   
   energy                 = X
 
-  electron_mass          = DOUBLE(5.109989e9)   ;eV/c^2 (where c is in cm/s)
-  speedOfLight           = DOUBLE(29979245800.) ;cm / s
+  ;; speedOfLight           = DOUBLE(29979245800.) ;cm / s
+  speedOfLight           = DOUBLE(299792.458) ;km / s
+
+  ;; electron_mass          = DOUBLE(5.685e-16)   ;eV/(cm/s)^2
+  electron_mass          = DOUBLE(5.1099891e5)/speedOfLight^2   ;eV/c^2
+
   
   IF N_ELEMENTS(A) LT 4 THEN BEGIN
      PRINT,"Must have all four estimates for kappa dist! ( E_b, T, kappa, n[, bulkAngle, m] )"
@@ -34,9 +38,9 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,A,F,pder
   kappa                  = DOUBLE(A[2])
   n                      = DOUBLE(A[3])
   inDT                   = DOUBLE(A[4])
-  inMass                 = N_ELEMENTS(A) GT 5 ? DOUBLE(A[5]) : 5.6856602e-06 ;mass in eV/(km/s)^2
-  bulkAngle              = N_ELEMENTS(A) GT 6 ? DOUBLE(A[6]) : 0
-  m                      = N_ELEMENTS(A) GT 7 ? DOUBLE(A[7]) : electron_mass
+  inMass                 = N_ELEMENTS(A) GT 5 ? DOUBLE(A[5])             : 5.6856602e-06 ;mass in eV/(km/s)^2
+  bulkAngle              = N_ELEMENTS(A) GT 6 ? DOUBLE(A[6])*!PI / 180.0 : 0
+  m                      = N_ELEMENTS(A) GT 7 ? DOUBLE(A[7])             : electron_mass
 
   ;;Make sure kappa is fo' real
   IF kappa LE 1.5D THEN BEGIN
@@ -50,10 +54,10 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,A,F,pder
   ;;Chunks of the function
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
 
-  ;; Finv                   = n * ( m / 2.D ) ^ (1.5D) * DOUBLE(1e15)
+  Finv                   = n * ( m / 2.D ) ^ (1.5D) ;* DOUBLE(1e15)
 
   ;;Converts to eFlux units
-  Finv                   = n * ( m / 2.D ) ^ (1.5D) * DOUBLE(1e15) * 2.D * energy^2 / inMass^2 / DOUBLE(1e5) / inDT
+  Finv                   = n * ( m / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
 
   ;;First chunk
   FK1                    = (DOUBLE((!PI * T * (kappa - 1.5D) )))^(-1.5D)
@@ -114,7 +118,8 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,A,F,pder
                             [pdwrtkappa], $
                             [pdwrtn]    , $
                             [REPLICATE(0,N_ELEMENTS(pdwrtn))], $
-                            [REPLICATE(0,N_ELEMENTS(pdwrtn))]]                            
+                            [REPLICATE(0,N_ELEMENTS(pdwrtn))], $
+                            [REPLICATE(0,N_ELEMENTS(pdwrtn))]]
   ENDIF
 
 END

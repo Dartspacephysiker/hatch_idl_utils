@@ -63,19 +63,20 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
      estimate_A_from_data = 1
   ENDIF
 
-  IF N_ELEMENTS(eSpec) EQ 0 THEN BEGIN
+  IF N_ELEMENTS(eSpec) EQ 0 OR N_ELEMENTS(diff_eFlux) EQ 0 THEN BEGIN
      GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                                          EEB_OR_EES=eeb_or_ees, $
                                          EN_SPEC=eSpec, $
                                          SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                                         DIFF_EFLUX=diff_eFlux, $
                                          JE_EN=je_en, $
                                          OUT_ORB=orb, $
                                          OUT_LC_ANGLERANGE=e_angle, $
                                          ELECTRON_ENERGY_LIMS=energy_electrons, $
                                          ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                                          /GET_MASS_AND_DT, $
-                                         OUT_MASS=mass, $
-                                         OUT_DT=dt
+                                         OUT_MASS=mass
+                                         ;; OUT_DT=dt
                                          ;; /SAVE_ESPEC_AND_NFLUX, $
                                          ;; SAVEFILENAME=saveFN
 
@@ -92,7 +93,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
   ENDIF
 
   ;; times       = je_en.x
-  times       = eSpec.x
+  times       = diff_eFlux.time
   yearStr     = STRMID(TIME_TO_STR(times[0],/MSEC),0,10)
   timeStrs    = STRMID(TIME_TO_STR(times,/MSEC),11,11)
   timeFNStrs  = timeStrs.REPLACE(':', '_')
@@ -104,11 +105,11 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
 
 
   IF ~KEYWORD_SET(n_est) THEN  BEGIN
-     n_est = 0.004
+     n_est = 20.
      PRINT,FORMAT='("Default density estimate  : ",F-10.4)',n_est
   ENDIF
   IF ~KEYWORD_SET(kappa) THEN BEGIN
-     kappa    = 2.0             ;Why not?
+     kappa    = 3.0             ;Why not?
      PRINT,FORMAT='("Default kappa estimate    : ",F-10.4)',kappa
   ENDIF
 
@@ -128,19 +129,22 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
      yMin        = MIN(oneCurveMod[WHERE(oneCurveMod GT 0)])
      ;; yMin        = MIN(oneCurve.y[bounds,WHERE(oneCurveMod GT 0)])
   ENDIF ELSE BEGIN
-     je_en_mod   = je_en.y[bounds,*]
-     yMin        = MIN(je_en_mod[WHERE(je_en_mod GT 0)])
+     ;; je_en_mod   = je_en.y[bounds,*]
+     ;; yMin        = MIN(je_en_mod[WHERE(je_en_mod GT 0)])
+     yMin        = MIN(diff_eFlux.y[WHERE(diff_eFlux.y GT 0)])
      ;; yMin        = MIN(je_en.y[bounds,WHERE(je_en_mod GT 0)])
   ENDELSE
 
   FOR i=0,N_ELEMENTS(bounds)-1 DO BEGIN
 
-     Xorig       = REVERSE(REFORM(eSpec.v[bounds[i],*]))
-     Y           = REVERSE(REFORM(je_en.y[bounds[i],*]))
+     Xorig       = REVERSE(REFORM(diff_eFlux.x[bounds[i],*]))
+     Je_tmp      = REVERSE(REFORM(je_en.y[bounds[i],*]))
+     ;; Y           = REVERSE(REFORM(je_en.y[bounds[i],*]))
+     Y           = REVERSE(REFORM(diff_eFlux.y[bounds[i],*]))
 
      IF KEYWORD_SET(check_for_higher_flux_peaks__set_corresponding_peak_energy) THEN BEGIN
         ;;Figure out where most energetic maximum is
-        max_ys                   = GET_N_MAXIMA_IN_ARRAY(Y,N=3,OUT_I=maxima_i)
+        max_ys                   = GET_N_MAXIMA_IN_ARRAY(Je_tmp,N=3,OUT_I=maxima_i)
         peak_y                   = MAX(max_ys,max_y_ii)
         peak_ind                 = maxima_i[max_y_ii]
         peak_energy              = Xorig[peak_ind]
@@ -158,7 +162,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
         ENDFOR
         PRINT,peak_ind
      ENDIF ELSE BEGIN
-        max_y                    = MAX(Y,peak_ind)
+        max_y                    = MAX(Je_tmp,peak_ind)
         peak_ind                -= b_offset
         peak_energy              = Xorig[peak_ind]
         PRINT,peak_ind
@@ -168,7 +172,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
      minEInd                     = (peak_ind - n_below_peak) > 0
      maxEInd                     = (peak_ind + n_after_peak) < nEnergies-1
 
-     Y                           = REVERSE(REFORM(eSpec.y[bounds[i],*]))
+     ;; Y                           = REVERSE(REFORM(eSpec.y[bounds[i],*]))
 
      ;;estimate from the data!
      IF KEYWORD_SET(estimate_A_from_data) THEN BEGIN 
@@ -193,10 +197,10 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
         bulk_energy           = peak_energy
         ;; T                     = (T_2D_FS(dat,energy=eRange))[3] ;T_avg
         T                     = (T_2D_FS(dat,ENERGY=eRange,ANGLE=e_angle))[3] ;T_avg
-        T                     = (T_2D_FS(dat,ENERGY=eRange,ANGLE=e_angle))[3] ;T_avg
         ;; n_est                 = N_2D_FS(dat,ENERGY=eRange,ANGLE=e_angle)/20.
-        n_est                 = N_2D_FS(dat,ENERGY=eRange,ANGLE=e_angle)*5.
-        A                     = DOUBLE([bulk_energy,T,kappa,n_est,dt[i],mass]) 
+        n_est                 = N_2D_FS(dat,ENERGY=eRange,ANGLE=e_angle)*10.
+        A                     = DOUBLE([bulk_energy,T,kappa,n_est, $
+                                        dat.integ_t,mass,diff_eFlux.angles[bounds[i]]]) 
         
         PRINT,"Here's my initial estimate based on spectral properties: "
         PRINT_KAPPA_FLUX_FIT_PARAMS,A
@@ -207,13 +211,14 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
         
         bulk_energy           = peak_energy
 
-        TGauss                = (T_2D_FS(dat,ENERGY=eRange,ANGLE=e_angle))[3]/2. ;T_avg
+        TGauss                = (T_2D_FS(dat,ENERGY=eRange,ANGLE=e_angle))[3] ;T_avg
         ;; n_estGauss            = n_2d_fs(dat,ENERGY=eRange,ANGLE=e_angle)/20.
-        n_estGauss            = n_2d_fs(dat,ENERGY=eRange,ANGLE=e_angle)*5.
+        n_estGauss            = n_2d_fs(dat,ENERGY=eRange,ANGLE=e_angle)*10.
         
         kappaGauss            = 100
 
-        AGauss                = DOUBLE([bulk_energy,TGauss,kappaGauss,n_estGauss,dt[i],mass])
+        AGauss                = DOUBLE([bulk_energy,TGauss,kappaGauss,n_estGauss, $
+                                        dat.integ_t,mass,diff_eFlux.angles[bounds[i]]])
 
         PRINT,"Here's my initial Gaussian estimate based on spectral properties: "
         PRINT_KAPPA_FLUX_FIT_PARAMS,AGauss
@@ -221,7 +226,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
      ENDIF
 
      ENDIF ELSE BEGIN
-        A                     = DOUBLE([peak_energy,T,kappa,n_est])
+        A                     = DOUBLE([peak_energy,T,kappa,n_est,0.000001,5.68e-6,0])
      ENDELSE
      
 
@@ -291,7 +296,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
      weights    = 1./SQRT(ABS(Y))
      yFit = CURVEFIT(X, Y, weights, A, SIGMA, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F' , $
                      /DOUBLE, $
-                     FITA=[1,1,0,1,0,0], $
+                     FITA=[1,1,1,1,0,0,0], $
                      ITMAX=KEYWORD_SET(max_iter) ? max_iter : 150, $
                      ITER=itNum, $
                      TOL=KEYWORD_SET(fit_tol) ? fit_tol : 1e-3, $
@@ -342,7 +347,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $;X,A,F,pders, $
         
         yGaussFit  = CURVEFIT(X, Y, weights, AGauss, SIGMA, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F' , $
                               /DOUBLE, $
-                              FITA=[1,1,0,1,0,0], $
+                              FITA=[1,1,0,1,0,0,0], $
                               ITMAX=KEYWORD_SET(max_iter) ? max_iter : 150, $
                               ITER=itNum, $
                               TOL=KEYWORD_SET(fit_tol) ? fit_tol : 1e-3, $

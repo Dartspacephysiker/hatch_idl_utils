@@ -3,6 +3,7 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                                         EEB_OR_EES=eeb_or_ees, $
                                         EN_SPEC=eSpec, $
                                         JE_EN=je_en, $
+                                        DIFF_EFLUX=diff_eFlux, $
                                         SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                                         OUT_ORB=orb, $
                                         OUT_LC_ANGLERANGE=e_angle, $
@@ -103,6 +104,15 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
      GET_DATA,'Je_en',DATA=je_en
   ENDIF
 
+  IF ARG_PRESENT(diff_eflux) OR KEYWORD_SET(save_these) THEN BEGIN
+     GET_DIFF_EFLUX,T1=t1,T2=t2, $
+                    EEB_OR_EES=eeb_or_ees, $
+                    ANGLE=e_angle, $
+                    NAME__DIFF_EFLUX=name__diff_eFlux, $
+                    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval
+     GET_DATA,name__diff_eFlux,DATA=diff_eFlux
+  ENDIF
+
   IF KEYWORD_SET(save_these) THEN BEGIN
      
      CASE STRUPCASE(eeb_or_ees) OF
@@ -130,7 +140,7 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                  + '__' + timeRangeStr + '.sav'
 
         PRINT,'Saving data for energy spectrum and density to ' + saveFN + '...'
-        SAVE,je_en,dn_2d,dj_2d,eSpec,orb,lcw,FILENAME=saveDir + saveFN
+        SAVE,je_en,dn_2d,dj_2d,eSpec,diff_eflux,orb,lcw,FILENAME=saveDir + saveFN
      ENDIF
 
   ENDIF
