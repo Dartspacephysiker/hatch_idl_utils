@@ -133,6 +133,7 @@ FUNCTION DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ_V2,eSpec,Je,Jee, $
   below_i                           = WHERE(energy_e LT peakEnergy,nBelow)
   nAbove                            = nAbove < MONO_N_TO_CHECK
   nBelow                            = nBelow < MONO_N_TO_CHECK
+  mono                              = 0
   CASE nAbove OF
      0: BEGIN
         cont                        = 1

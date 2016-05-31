@@ -22,11 +22,11 @@ FUNCTION VALUE_CLOSEST,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
 
   ENDIF
 
-  check_sorted,vector,is_sorted,/QUIET
-  IF ~is_sorted THEN BEGIN
-     IF ~KEYWORD_SET(QUIET) THEN PRINT,"'vector' isn't sorted! Can't work with it as it is...Sort, then try again."
-     RETURN,!NULL
-  ENDIF
+  ;; check_sorted,vector,is_sorted,/QUIET
+  ;; IF ~is_sorted THEN BEGIN
+  ;;    IF ~KEYWORD_SET(QUIET) THEN PRINT,"'vector' isn't sorted! Can't work with it as it is...Sort, then try again."
+  ;;    RETURN,!NULL
+  ;; ENDIF
 
   ;; locs                       = VALUE_LOCATE(vector,values)
 

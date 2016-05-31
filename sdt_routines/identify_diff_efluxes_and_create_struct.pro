@@ -1,6 +1,7 @@
 PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je, $
    mlt,ilat, $
    events, $
+   CHECK_FOR_DUDS=check_for_duds, $
    SC_POT=sc_pot, $
    IND_SC_POT=ind_sc_pot, $
    QUIET=quiet, $
@@ -14,6 +15,8 @@ PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je, $
   ;;    ON_ERROR, 2
   ;; ENDIF
 
+  IF SIZE(Jee,/TYPE) EQ 8 THEN jee_vars = Jee.y ELSE jee_vars = jee
+  IF SIZE(Je,/TYPE)  EQ 8 THEN je_vars  = Je.y  ELSE je_vars  = je
 
   ;;A little error checking
   IF NDIMEN(eSpec.v) NE 2 OR NDIMEN(eSpec.y) NE 2 THEN BEGIN
@@ -50,12 +53,19 @@ PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je, $
 
      ;; The old way
      ;; tempeSpec = {x:eSpec.x[i],y:REVERSE(REFORM(eSpec.y[i,0:-2])),v:REVERSE(REFORM(eSpec.v[i,0:-2]))}
-     ;; tempEvent = DIFF_ENERGY_FLUX_SPECTRAL_TYPE__NEWELL_ET_AL_2009(tempeSpec,Je.y[0],Jee.y[i],MLT[i])
+     ;; tempEvent = DIFF_ENERGY_FLUX_SPECTRAL_TYPE__NEWELL_ET_AL_2009(tempeSpec,je_vars[0],jee_vars[i],MLT[i])
 
      ;; The FAST-adjusted way
+     IF KEYWORD_SET(check_for_duds) THEN BEGIN
+        IF eSpec.x[i] LT 1 THEN BEGIN
+           ADD_EVENT_TO_SPECTRAL_STRUCT,events,MAKE_BLANK_ESPEC_STRUCTS(1)
+           CONTINUE
+        ENDIF 
+     ENDIF
+
      tempeSpec = {x:eSpec.x[i],y:REVERSE(REFORM(eSpec.y[i,0:max_en_ind[i]])),v:REVERSE(REFORM(eSpec.v[i,0:max_en_ind[i]]))}
      IF KEYWORD_SET(produce_failCodes) THEN BEGIN
-        tempEvent = DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ(tempeSpec,Je.y[i],Jee.y[i], $
+        tempEvent = DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ_V2(tempeSpec,je_vars[i],jee_vars[i], $
                                                              mlt[i],ilat[i], $
                                                              PRODUCE_FAILCODE_OUTPUT=produce_failCodes, $
                                                              OUT_FAILCODES=tempFailCodes, $
@@ -66,7 +76,7 @@ PRO IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,eSpec,Jee,Je, $
         ADD_ESPEC_FAILCODES_TO_FAILCODE_STRUCT,failCodes,tempFailCodes
      
      ENDIF ELSE BEGIN
-        tempEvent = DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ(tempeSpec,Je.y[i],Jee.y[i], $
+        tempEvent = DIFF_ENERGY_FLUX_SPECTRAL_TYPE__FAST_ADJ(tempeSpec,je_vars[i],jee_vars[i], $
                                                              mlt[i],ilat[i], $
                                                              QUIET=quiet, $
                                                              BATCH_MODE=batch_mode, $
