@@ -11,7 +11,7 @@
 
 PRO CAT_EVENTS_FROM_PARSED_SPECTRAL_STRUCT,events,eSpecs_parsed,cat_i
 
-  IF KEYWORD_SET(cat_i) THEN BEGIN
+  IF N_ELEMENTS(cat_i) NE 0 THEN BEGIN
      temp_parsed = { x:eSpecs_parsed.x[cat_i], $
                      MLT:eSpecs_parsed.mlt[cat_i], $
                      ILAT:eSpecs_parsed.ilat[cat_i], $

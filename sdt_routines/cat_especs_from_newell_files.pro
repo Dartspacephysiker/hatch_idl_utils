@@ -1,6 +1,6 @@
 PRO CAT_ESPECS_FROM_NEWELL_FILES,eSpec,eSpecs_newell,cat_i
 
-  IF KEYWORD_SET(cat_i) THEN BEGIN
+  IF N_ELEMENTS(cat_i) NE 0 THEN BEGIN
      tmpeSpec = { x:eSpecs_newell.x[cat_i], $
                   y:eSpecs_newell.y[cat_i,*], $
                   v:eSpecs_newell.v[cat_i,*]}
