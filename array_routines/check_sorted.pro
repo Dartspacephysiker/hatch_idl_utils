@@ -8,9 +8,9 @@ PRO CHECK_SORTED,ARRAY,is_sorted, $
      RETURN
   ENDIF
 
-  sorted_i=sort(array)
+  sorted_i  = SORT(array)
 
-  is_sorted=ARRAY_EQUAL(ARRAY[sorted_i],ARRAY)
+  is_sorted = ARRAY_EQUAL(ARRAY[sorted_i],ARRAY)
 
   IF is_sorted THEN BEGIN
      IF ~KEYWORD_SET(quiet) THEN PRINT,"This array is sorted!"
