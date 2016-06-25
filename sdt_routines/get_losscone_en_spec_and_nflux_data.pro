@@ -140,7 +140,9 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                  + '__' + timeRangeStr + '.sav'
 
         PRINT,'Saving data for energy spectrum and density to ' + saveFN + '...'
-        SAVE,je_en,dn_2d,dj_2d,eSpec,diff_eflux,orb,lcw,FILENAME=saveDir + saveFN
+        SAVE,je_en, $
+             out_mass,out_dt,e_angle,dat, $
+             dn_2d,dj_2d,eSpec,diff_eflux,orb,lcw,FILENAME=saveDir + saveFN
      ENDIF
 
   ENDIF
