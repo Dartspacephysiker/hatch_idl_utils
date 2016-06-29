@@ -18,9 +18,8 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
   FOR i=0,N_ELEMENTS(dat)-1 DO BEGIN
      tempDat     = dat[i]
 
-     spec2d,tempDat, units='eflux',msec=msec,angle=angle, $
-            out_dat=tempdiff_eFlux,/NO_PLOT
-
+     spec2d,tempDat,UNITS='eflux',MSEC=msec,ANGLE=angle, $
+            OUT_DAT=tempdiff_eFlux,/NO_PLOT
 
      REDUCE_EFLUX_TO_MIN_ANGLE,tempdiff_eFlux     
 
