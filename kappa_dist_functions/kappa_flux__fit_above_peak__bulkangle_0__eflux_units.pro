@@ -194,6 +194,15 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
      nEnergies                                         = N_ELEMENTS(Xorig)
      minEInd                                           = (peak_ind - n_below_peak) > 0
      maxEInd                                           = (peak_ind + n_after_peak) < nEnergies-1
+  ;;    these = WHERE( ( (Y-0.001) LE 0.) 
+  ;;    those = WHERE(Xorig GT minEInd)
+  ;;    IF these[0] NE -1 THEN BEGIN
+  ;;       maxEInd = MIN(CGSETINTERSECTION(these
+  ;;    ENDIF ELSE BEGIN
+
+  ;; ENDELSE
+  ;;    last_bef_zero                                     = MIN()-1
+  ;;    maxEInd                                           = (peak_ind + n_after_peak) < last_bef_zero
 
      ;;Get the data for various purposes
      IF KEYWORD_SET(estimate_A_from_data) OR $

@@ -33,7 +33,7 @@ PRO PRINT_DENS_ESTIMATE_STRUCT_V2,N_est, $
   dFormat        = 'F-10.5'     ;density
 
 
-  space          = 20
+  space          = 15
   spaceStr       = 'T' + STRCOMPRESS((INDGEN(10)+1)*space,/REMOVE_ALL)
 
   ;;Header format
@@ -72,8 +72,8 @@ PRO PRINT_DENS_ESTIMATE_STRUCT_V2,N_est, $
             N_est.angles[1,iLoop], $
             N_est.N[iLoop], $
             N_est.N_delta[iLoop], $
-            N_est.N_Gauss, $
-            N_est.N_SDT
+            N_est.N_Gauss[iLoop], $
+            N_est.N_SDT[iLoop]
   ENDFOR
   ;;Print the last one, where no delta exists
   PRINTF,fLun,FORMAT=pFormat, $
@@ -83,8 +83,8 @@ PRO PRINT_DENS_ESTIMATE_STRUCT_V2,N_est, $
          N_est.angles[1,iLoop], $
          N_est.N[iLoop], $
          0, $
-         N_est.N_Gauss, $
-         N_est.N_SDT
+         N_est.N_Gauss[iLoop], $
+         N_est.N_SDT[iLoop]
 
   IF KEYWORD_SET(to_file) THEN BEGIN
      PRINT,'Closing ' + to_file + ' ...'
