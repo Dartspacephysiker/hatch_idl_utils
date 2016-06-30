@@ -36,7 +36,8 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
    ADD_ONECOUNT_CURVE=add_oneCount_curve, $
    ADD_FITPARAMS_TEXT=add_fitParams_text, $
    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
-   SAVE_FITPLOTS=save_fitplots
+   SAVE_FITPLOTS=save_fitplots, $
+   PLOTDIR=plotDir
    ;; SAVE_FITS=save_fits
 
 ;;   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -435,8 +436,12 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0, $;X,A,F,pders, $
      ENDIF
 
      IF KEYWORD_SET(save_fitplots) THEN BEGIN
-        PRINT,'Saving plot to ' + plotSN + '...'
-        WINDOW.save,plotSN
+        IF N_ELEMENTS(plotDir) EQ 0 THEN BEGIN
+           SET_PLOT_DIR,plotDir,/FOR_SDT
+        ENDIF
+
+        PRINT,'Saving plot to ' + plotDir + plotSN + '...'
+        WINDOW.save,plotDir + plotSN
         WINDOW.close
      ENDIF
 

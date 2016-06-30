@@ -48,6 +48,14 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,A,F,pder
      ;; PRINT,"Returning..."
      ;; RETURN
      kappa = 1.5001D
+     ;; A[2]  = kappa
+  ENDIF
+
+  IF n LE 0.0D THEN BEGIN
+     PRINT,"Density must be GT 0, or else this is total bogus!"
+     ;; PRINT,"Returning..."
+     ;; RETURN
+     n = 0.00000001D
   ENDIF
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

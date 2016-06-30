@@ -139,6 +139,7 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                     EEB_OR_EES=eeb_or_ees, $
                     ANGLE=e_angle, $
                     NAME__DIFF_EFLUX=name__diff_eFlux, $
+                    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                     SPECTRA_AVERAGE_INTERVAL=spectra_average_interval
      GET_DATA,name__diff_eFlux,DATA=diff_eFlux
   ENDIF
