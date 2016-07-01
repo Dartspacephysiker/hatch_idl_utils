@@ -154,7 +154,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
   IF KEYWORD_SET(add_oneCount_curve) THEN BEGIN
      dEF_oneCountMod                                   = dEF_oneCount.y[bounds,*]
      yMin                                              = MIN(dEF_oneCountMod[WHERE(dEF_oneCountMod GT 0)])
-     ;; yMin                                           = MIN(dEF_oneCount.y[bounds,WHERE(dEF_oneCountMod GT 0)])
+     yMin                                              = 10.^(FLOOR(ALOG10(yMin)))
   ENDIF ELSE BEGIN
      yMin                                              = MIN(diff_eFlux.y[WHERE(diff_eFlux.y GT 0)])
   ENDELSE
