@@ -17,6 +17,7 @@
 PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
    T1=t1, $
    T2=t2, $
+   LOAD_DAT_FROM_FILE=loadFile, $
    EEB_OR_EES=eeb_or_ees, $
    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
    SDT_TIME_INDS=bounds, $
@@ -83,6 +84,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
 
   IF N_ELEMENTS(eSpec) EQ 0 OR N_ELEMENTS(diff_eFlux) EQ 0 THEN BEGIN
      GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
+                                         LOAD_DAT_FROM_FILE=loadFile, $
                                          EEB_OR_EES=eeb_or_ees, $
                                          EN_SPEC=eSpec, $
                                          SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $

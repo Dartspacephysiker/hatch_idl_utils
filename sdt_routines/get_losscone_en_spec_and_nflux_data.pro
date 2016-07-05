@@ -1,5 +1,6 @@
 ;2016/05/15
 PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
+                                        LOAD_DAT_FROM_FILE=loadFile, $
                                         EEB_OR_EES=eeb_or_ees, $
                                         EN_SPEC=eSpec, $
                                         JE_EN=je_en, $
@@ -33,6 +34,20 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
 
   IF N_ELEMENTS(t2) EQ 0 THEN BEGIN
      t2                = t1
+  ENDIF
+
+  IF KEYWORD_SET(loadFile) THEN BEGIN
+
+     IF FILE_TEST(loadFile) THEN BEGIN
+        PRINT,'Restoring ' + loadFile + '...'
+        RESTORE,loadFile
+
+     ENDIF ELSE BEGIN
+        PRINT,"Couldn't find " + loadFile + "!!!"
+        STOP
+     ENDELSE
+
+     RETURN
   ENDIF
 
   CASE SIZE(t1,/TYPE) OF
