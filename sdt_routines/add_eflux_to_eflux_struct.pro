@@ -15,6 +15,11 @@ PRO ADD_EFLUX_TO_EFLUX_STRUCT,diff_eflux,tempDiff_eflux, $
                       angles:[diff_eflux.angles,tempDiff_eflux.angles], $
                       time:  [diff_eFlux.time  ,tempDiff_eFlux.time  ]}
      ENDIF ELSE BEGIN
+        IF ~ARRAY_EQUAL(SIZE(diff_eflux.x[*,*,0],/DIM),SIZE(tempDiff_eflux.x,/DIM)) THEN BEGIN
+           PRINT,"Unequal numbers of angles, and I don't know what it means."
+           STOP
+        ENDIF 
+
         diff_eFlux = {x:     [ [[diff_eFlux.x]]   ,[[tempDiff_eflux.x]]    ], $
                       y:     [ [[diff_eFlux.y]]   ,[[tempDiff_eflux.y]]    ], $
                       angles:[ [diff_eflux.angles],[tempDiff_eflux.angles] ], $

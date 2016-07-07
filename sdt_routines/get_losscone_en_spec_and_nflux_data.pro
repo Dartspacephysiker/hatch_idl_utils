@@ -24,14 +24,6 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
 
   ;; @startup
 
-  IF ~KEYWORD_SET(eeb_or_ees) THEN BEGIN
-     eeb_or_ees        = 'ees'
-  ENDIF
-
-  IF ~KEYWORD_SET(energy_electrons) THEN BEGIN
-     energy_electrons  = [3e1,3.6e4]
-  ENDIF
-
   IF N_ELEMENTS(t2) EQ 0 THEN BEGIN
      t2                = t1
   ENDIF
@@ -91,34 +83,11 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                                           i_angle,i_angle_up, $
                                           north_south, $
                                           ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
+                                          CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
+                                          OUT_E_ANGLE=e_angle, $
+                                          ANGLESTR=angleStr, $
                                           /JUST_ONE
   
-  ;;Handle angle ranges
-  IF N_ELEMENTS(custom_e_angleRange) EQ 0 THEN BEGIN
-     PRINT,FORMAT='("Using loss-cone angle range: [",F0.2,",",F0.2,"]")', $
-           lc_angleRange[0], $
-           lc_angleRange[1]
-     e_angle           = lc_angleRange
-
-     IF KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
-        angleStr       = STRING(FORMAT='("--loss-cone_e_angle_",F0.1,"-",F0.1)', $
-                          lc_angleRange[0], $
-                          lc_angleRange[1])
-     ENDIF ELSE BEGIN
-        angleStr       = STRING(FORMAT='("--only_field-aligned_e_angle_",F0.1,"-",F0.1)', $
-                          lc_angleRange[0], $
-                          lc_angleRange[1])
-     ENDELSE
-  ENDIF ELSE BEGIN
-     PRINT,FORMAT='("Using provided angle range: [",F0.2,",",F0.2,"]")', $
-           custom_e_angleRange[0], $
-           custom_e_angleRange[1]
-     e_angle           = custom_e_angleRange
-     angleStr          = STRING(FORMAT='("--e_angle_",F0.1,"-",F0.1)', $
-                       custom_e_angleRange[0], $
-                       custom_e_angleRange[1])
-  ENDELSE
-
   GET_DATA,'ORBIT',DATA=orbit
   orb                  = orbit.y[0]
 

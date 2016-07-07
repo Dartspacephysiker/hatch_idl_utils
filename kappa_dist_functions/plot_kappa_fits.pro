@@ -6,14 +6,21 @@ PRO PLOT_KAPPA_FITS,orig,kappaFit,gaussFit,oneCurve, $
                     XLOG=xLog, $
                     YLOG=yLog, $
                     STRINGS=strings, $
+                    ADD_FITPARAMS_TEXT=add_fitParams_text, $
+                    ADD_GAUSSIAN_ESTIMATE=add_gaussian_estimate, $
                     SAVE_FITPLOTS=save_fitPlots, $
+                    USING_SDT_DATA=using_SDT_data, $
                     ;; PLOT_SAVENAME=plotSN, $
                     PLOTDIR=plotDir
 
   COMPILE_OPT idl2
 
-  plotSN               = STRING(FORMAT='(A0,"--nFlux_fit--",A0,"--",A0,A0,"--orb_",I0,"__",A0,A0,".png")', $
+  ;;Need to know if OMNI2D is responsible for this, or something else
+  pref                 = KEYWORD_SET(using_sdt_data) ? '--nFlux_fit__SDT_data--' : '--nFlux_fit--'
+
+  plotSN               = STRING(FORMAT='(A0,A0,A0,"--",A0,A0,"--orb_",I0,"__",A0,A0,".png")', $
                                 strings.today, $
+                                pref, $
                                 strings.timeFNStrs[bounds_i], $
                                 strings.eeb_or_ees, $
                                 strings.avgStr, $

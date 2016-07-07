@@ -33,7 +33,7 @@
 ;; RESTORE,restFile
 
 
-PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
+PRO KAPPA_FIT__USE_SDT_DATA_STRUCT, $ ;X,A,F,pders, $
    T1=t1, $
    T2=t2, $
    LOAD_DAT_FROM_FILE=loadFile, $
@@ -70,6 +70,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
    OUTPUT_DENS__ANGLES=output_dens__angles, $
    OUT_DENS_STRUCT=out_dens, $
    OUT_PEAK_DENS_STRUCT=out_peak_dens, $
+   ;; OUT_DENS_FILEPREF=out_dens_filePref, $
    ONLY_DENS_ESTIMATES=only_dens_estimates, $
    OUT_FITTED_PARAMS=out_fitted_params, $
    OUT_FITTED_GAUSS_PARAMS=out_fitted_Gauss_params, $
@@ -93,86 +94,79 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
      ENERGY_ELECTRONS=energy_electrons, $
      ESTIMATE_A_FROM_DATA=estimate_A_from_data
 
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Get data
-  IF N_ELEMENTS(eSpec) EQ 0 OR N_ELEMENTS(diff_eFlux) EQ 0 THEN BEGIN
-     GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
-                                         LOAD_DAT_FROM_FILE=loadFile, $
-                                         EEB_OR_EES=eeb_or_ees, $
-                                         EN_SPEC=eSpec, $
-                                         SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
-                                         DIFF_EFLUX=diff_eFlux, $
-                                         JE_EN=je_en, $
-                                         OUT_ORB=orb, $
-                                         OUT_ANGLERANGE=e_angle, $
-                                         ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
-                                         CUSTOM_E_ANGLERANGE=electron_angleRange, $
-                                         ANGLESTR=angleStr, $
-                                         ELECTRON_ENERGY_LIMS=energy_electrons, $
-                                         /GET_MASS_AND_DT, $
-                                         OUT_MASS=mass
-
-     IF ~KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
-        REDUCE_DIFF_EFLUX,diff_eFlux
-     ENDIF
-
-     orbStr                            = STRCOMPRESS(orb,/REMOVE_ALL)
+  IF N_ELEMENTS(eSpecUnits) EQ 0 THEN BEGIN
+     ;; eSpecUnits     = 'DF'
+     eSpecUnits        = 'eflux'
   ENDIF
+
+  ;;get_orbit data
+  GET_FA_ORBIT,t1,t2            ;,/all
+  
+  GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2,lc_angleRange, $
+                                          i_angle,i_angle_up, $
+                                          north_south, $
+                                          ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
+                                          CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
+                                          OUT_E_ANGLE=e_angle, $
+                                          ANGLESTR=angleStr, $
+                                          /JUST_ONE
+  
+  ;;Get orbstring
+  GET_DATA,'ORBIT',DATA=orbit
+  orb                       = orbit.y[0]
+  orbStr                    = STRCOMPRESS(orb,/REMOVE_ALL)
+
+  ;;The data
+  GET_EFLUX_OMNI_2D,t1,t2, $
+                    EEB_OR_EES=eeb_or_ees, $
+                    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                    SDT_NAME=name, $
+                    ANGLE=e_angle, $
+                    OUT_DAT=omniDat, $
+                    QUIET=quiet
+
 
   ;;Onecount curve?
   IF KEYWORD_SET(add_oneCount_curve) THEN BEGIN
-     GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
-                                   EEB_OR_EES=eeb_or_ees, $
-                                   SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
-                                   SDT_NAME=dEF_oneCount_name, $
-                                   ANGLE=e_angle, $
-                                   ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
-                                   OUT_ONEDAT=out_oneDat, $
-                                   QUIET=quiet
+     GET_ONECOUNT_OMNI_2D,t1,t2, $
+                          EEB_OR_EES=eeb_or_ees, $
+                          SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                          SDT_NAME=omni_oneCount_name, $
+                          ANGLE=e_angle, $
+                          ;; ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
+                          OUT_ONEDAT=out_oneDat, $
+                          QUIET=quiet
 
-     GET_DATA,dEF_oneCount_name,DATA=dEF_oneCount
+     GET_DATA,omni_oneCount_name,DATA=oneCount_omni
 
-     IF ~KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
-        REDUCE_DIFF_EFLUX,dEF_oneCount
-     ENDIF
   ENDIF
 
   ;;Times and strings
-  times                                = diff_eFlux.time
-  strings                              = {today:GET_TODAY_STRING(/DO_YYYYMMDD_FMT), $
-                                          eeb_or_ees:eeb_or_ees, $
-                                          avgStr:KEYWORD_SET(spectra_average_interval) ? $
-                                          STRING(FORMAT='("--",I0,"_avgs")',spectra_average_interval) : '' , $
-                                          orbStr:orbStr, $
-                                          orbDate:STRMID(TIME_TO_STR(diff_eFlux.time),0,10), $
-                                          yearStr:STRMID(TIME_TO_STR(times[0],/MSEC),0,10), $
-                                          timeStrs:STRMID(TIME_TO_STR(times,/MSEC),11,11), $
-                                          timeFNStrs:STRMID(TIME_TO_STR(times,/MSEC),11,11), $
-                                          plotTimes:STRMID(TIME_TO_STR(diff_eFlux.time,/MSEC),11,12), $
-                                          angleStr:angleStr}
-  strings.timeFNStrs                   = strings.timeFNStrs.REPLACE(':', '_')
-  strings.timeFNStrs                   = strings.timeFNStrs.REPLACE('.', '__')
+  times                        = omniDat.time
+  strings                      = {today:GET_TODAY_STRING(/DO_YYYYMMDD_FMT), $
+                                  eeb_or_ees:eeb_or_ees, $
+                                  avgStr:KEYWORD_SET(spectra_average_interval) ? $
+                                  STRING(FORMAT='("--",I0,"_avgs")',spectra_average_interval) : '' , $
+                                  orbStr:STRCOMPRESS(orb,/REMOVE_ALL), $
+                                  orbDate:STRMID(TIME_TO_STR(omniDat.time),0,10), $
+                                  yearStr:STRMID(TIME_TO_STR(times[0],/MSEC),0,10), $
+                                  timeStrs:STRMID(TIME_TO_STR(times,/MSEC),11,11), $
+                                  timeFNStrs:STRMID(TIME_TO_STR(times,/MSEC),11,11), $
+                                  plotTimes:STRMID(TIME_TO_STR(omniDat.time,/MSEC),11,12), $
+                                  angleStr:angleStr}
+  strings.timeFNStrs           = strings.timeFNStrs.REPLACE(':', '_')
+  strings.timeFNStrs           = strings.timeFNStrs.REPLACE('.', '__')
 
-
-  ;;Loop over provided indices, plot data as well as fit, and optionally save
-  routine                              = 'get_fa_'+eeb_or_ees
-  IF KEYWORD_SET(spectra_average_interval) THEN routine += '_ts'
-
-  IF KEYWORD_SET(add_oneCount_curve) THEN BEGIN
-     dEF_oneCountMod                   = dEF_oneCount.y[bounds,*]
-     yMin                              = MIN(dEF_oneCountMod[WHERE(dEF_oneCountMod GT 0)])
-     yMin                              = 10.^(FLOOR(ALOG10(yMin)))
-  ENDIF ELSE BEGIN
-     yMin                              = MIN(diff_eFlux.y[WHERE(diff_eFlux.y GT 0)])
-  ENDELSE
-
-  energies                             = TRANSPOSE(diff_eFlux.x)
-  data                                 = TRANSPOSE(diff_eFlux.y)
-  oneCount_data                        = KEYWORD_SET(add_oneCount_curve) ? TRANSPOSE(dEF_oneCount.y) : !NULL
-  angles                               = diff_eFlux.angles
+  energies                     = omniDat.energy
+  data                         = omniDat.data
+  oneCount_data                = KEYWORD_SET(add_oneCount_curve) ? oneCount_omni.data : !NULL
+  angles                       = TOTAL(omniDat.theta,1)/N_ELEMENTS(omniDat.theta[*,0])
 
   KAPPA_FIT__LOOP,times,energies,data,oneCount_data,angles, $
-                  USING_SDT_DATA=0, $
+                  /USING_SDT_DATA, $
                   KAPPA=kappa, $
                   BOUNDS=bounds, $
                   EEB_OR_EES=eeb_or_ees, $
@@ -212,7 +206,5 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
                   OUT_ERANGE_PEAK=out_eRange_peak, $
                   OUT_PARAMSTR=out_paramStr, $
                   TXTOUTPUTDIR=txtOutputDir
-
-  PRINT,"DONE!"
-
+  
 END
