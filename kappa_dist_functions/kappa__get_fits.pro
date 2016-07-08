@@ -15,6 +15,9 @@ PRO KAPPA__GET_FITS,Xorig,Yorig, $
                     TRIM_ENERGIES_BELOW_PEAK=trim_energies_below_peak, $
                     OUT_FITTED_PARAMS=out_fitted_params, $
                     OUT_FITTED_GAUSS_PARAMS=out_fitted_Gauss_params, $
+                    OUT_KAPPA_FIT_STRUCTS=out_kappa_fit_structs, $
+                    OUT_GAUSS_FIT_STRUCTS=out_gauss_fit_structs, $
+                    ADD_FULL_FITS=add_full_fits, $
                     OUT_ERANGE_PEAK=out_eRange_peak, $
                     OUT_PARAMSTR=out_paramStr
 
@@ -32,15 +35,21 @@ PRO KAPPA__GET_FITS,Xorig,Yorig, $
      Y                        = Yorig[energy_inds[0]:energy_inds[1]] 
   ENDIF
 
-  weights                     = 1./SQRT(ABS(Y))
+  weights                     = 1./ABS(Y)
   yFit                        = CURVEFIT(X,Y,weights,A,SIGMA, $
                                          FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F' , $
                                          /DOUBLE, $
                                          FITA=[1,1,1,1,0,0,0], $
                                          ITMAX=KEYWORD_SET(max_iter) ? max_iter : 150, $
+                                         CHI2=chi2, $
                                          ITER=itNum, $
                                          TOL=KEYWORD_SET(fit_tol) ? fit_tol : 1e-3, $
                                          STATUS=fitStatus)
+  IF FINITE(chi2) THEN BEGIN
+     pVal                        = 1 - CHISQR_PDF(chi2,N_ELEMENTS(X)-4) ;4 for the 4 params that were allowed to participate in this fit
+  ENDIF ELSE BEGIN
+     pVal                        = -1
+  ENDELSE
 
   ;;need to adjust Y bounds?
   yMax                        = MAX(yFit) 
@@ -82,12 +91,25 @@ PRO KAPPA__GET_FITS,Xorig,Yorig, $
                                  ;; YRANGE:yRange, $
                                  ;; XLOG:1, $
                                  ;; YLOG:1, $
-                                 fitStatus:fitStatus}
+                                 fitStatus:fitStatus, $
+                                 chi2:chi2, $
+                                 pVal:pVal}
 
+  IF KEYWORD_SET(add_full_fits) THEN BEGIN
+     KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,Xorig,A,yFull
+     kappaFit                 = CREATE_STRUCT(kappaFit,"xFull",Xorig,"yFull",yFull)
+  ENDIF
+
+  ;; out_kappa_fit_structs       = N_ELEMENTS(out_kappa_fit_structs) EQ 0 ? kappaFit : [out_kappa_fit_structs,kappaFit]
+  IF N_ELEMENTS(out_kappa_fit_structs) EQ 0 THEN BEGIN
+     out_kappa_fit_structs    = LIST(kappaFit)
+  ENDIF ELSE BEGIN
+     out_kappa_fit_structs.Add,kappaFit
+  ENDELSE
 
   IF KEYWORD_SET(add_gaussian_estimate) THEN BEGIN
      ;; weights               = SQRT(ABS(Y))
-     weights                  = 1/ABS(Y)
+     weights                  = 1./ABS(Y)
      ;; weights[0]            = SQRT(SQRT(weights[0]))
      ;; weights[0:-1]         = 1.
 
@@ -95,23 +117,38 @@ PRO KAPPA__GET_FITS,Xorig,Yorig, $
         KEYWORD_SET(use_SDT_Gaussian_fit): BEGIN
            X_SDT              = Xorig[peak_ind-2:energy_inds[1]]
            Y_SDT              = Yorig[peak_ind-2:energy_inds[1]]
-           yGaussFit          = CURVEFIT(X_SDT, Y_SDT, weights, AGauss, sigmaa, FUNCTION_NAME='MAXWELLIAN_1', $
+           yGaussFit          = CURVEFIT(X_SDT, Y_SDT, weights, AGauss, sigma, FUNCTION_NAME='MAXWELLIAN_1', $
                                          /DOUBLE, $
-                                         ITER=itNum, $
                                          ITMAX=KEYWORD_SET(max_iter) ? max_iter : 150, $
+                                         ITER=itNum, $
                                          CHI2=chi2, $
                                          TOL=KEYWORD_SET(fit_tol) ? fit_tol : 1e-3, $
                                          STATUS=gaussFitStatus)
            PRINT,'Final fit     : afit=',AGauss
+           IF FINITE(chi2) THEN BEGIN
+              pValGauss       = 1 - CHISQR_PDF(chi2,N_ELEMENTS(X_SDT)-2) ;2 for the 2 params that participated in this fit
+              real_chi2       = TOTAL((yGaussFit-Y_SDT)^2*weights)/(N_ELEMENTS(yGaussFit) - 3) ; 3 for the number that could have participated
+              real_pValGauss  = 1 - CHISQR_PDF(real_chi2,N_ELEMENTS(X_SDT) - 3)
+           ENDIF ELSE BEGIN
+              pValGauss       = -1
+              real_chi2       = -1
+              real_pValGauss  = -1
+           ENDELSE
         END
         ELSE: BEGIN
-           yGaussFit          = CURVEFIT(X, Y, weights, AGauss, SIGMA, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F' , $
+           yGaussFit          = CURVEFIT(X, Y, weights, AGauss, sigma, FUNCTION_NAME='KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F' , $
                                          /DOUBLE, $
                                          FITA=[1,1,0,1,0,0,0], $
                                          ITMAX=KEYWORD_SET(max_iter) ? max_iter : 150, $
                                          ITER=itNum, $
+                                         CHI2=chi2, $
                                          TOL=KEYWORD_SET(fit_tol) ? fit_tol : 1e-3, $
                                          STATUS=gaussFitStatus)
+           IF FINITE(chi2) THEN BEGIN
+              pValGauss       = 1 - CHISQR_PDF(chi2,N_ELEMENTS(X)-3) ;3 for the 3 params that were allowed to participate in this fit
+           ENDIF ELSE BEGIN
+              pValGauss       = -1
+           ENDELSE
         END
      ENDCASE
 
@@ -143,6 +180,7 @@ PRO KAPPA__GET_FITS,Xorig,Yorig, $
 
         ;;Get AGauss in the form we like it
         maxThing              = MAX(yGaussFit,maxGaussInd)
+        AGauss_SDT            = AGauss
         AGauss                = [X_SDT[maxGaussInd],T,999,density,A[4],A[5]]
 
      ENDIF
@@ -158,7 +196,34 @@ PRO KAPPA__GET_FITS,Xorig,Yorig, $
                                  ;; YRANGE:yRange, $
                                  ;; XLOG:1, $
                                  ;; YLOG:1, $
-                                 fitStatus:gaussFitStatus}
+                                 fitStatus:gaussFitStatus, $
+                                 chi2:chi2, $
+                                 pVal:pValGauss, $
+                                 is_sdt_fit:KEYWORD_SET(use_SDT_Gaussian_fit)}
+
+     IF KEYWORD_SET(use_SDT_Gaussian_fit) THEN BEGIN
+        gaussFit              = CREATE_STRUCT(gaussFit,"chi2_3vars",real_chi2,"pVal_3vars",real_pValGauss)
+     ENDIF
+
+     IF KEYWORD_SET(add_full_fits) THEN BEGIN
+        CASE 1 OF
+           KEYWORD_SET(use_SDT_Gaussian_fit): BEGIN
+              MAXWELLIAN_1,Xorig,AGauss_SDT,yGaussFull
+           END
+           ELSE: BEGIN
+              KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,Xorig,AGauss,yGaussFull
+           END
+        ENDCASE
+        gaussFit                 = CREATE_STRUCT(gaussFit,"xFull",Xorig,"yFull",yGaussFull)
+
+     ENDIF
+
+     ;; out_gauss_fit_structs    = N_ELEMENTS(out_gauss_fit_structs) EQ 0 ? gaussFit : [out_gauss_fit_structs,gaussFit]
+     IF N_ELEMENTS(out_gauss_fit_structs) EQ 0 THEN BEGIN
+        out_gauss_fit_structs    = LIST(gaussFit)
+     ENDIF ELSE BEGIN
+        out_gauss_fit_structs.Add,gaussFit
+     ENDELSE
 
      out_fitted_Gauss_params  = N_ELEMENTS(out_fitted_Gauss_params) GT 0 ? $
                                 [[out_fitted_Gauss_params],[AGauss]] : $

@@ -37,6 +37,9 @@ PRO KAPPA_FIT__LOOP,times,energies,data,oneCount_data,angles, $
                     ONLY_DENS_ESTIMATES=only_dens_estimates, $
                     OUT_FITTED_PARAMS=out_fitted_params, $
                     OUT_FITTED_GAUSS_PARAMS=out_fitted_Gauss_params, $
+                    OUT_KAPPA_FIT_STRUCTS=out_kappa_fit_structs, $
+                    OUT_GAUSS_FIT_STRUCTS=out_gauss_fit_structs, $
+                    ADD_FULL_FITS=add_full_fits, $
                     OUT_ERANGE_PEAK=out_eRange_peak, $
                     OUT_PARAMSTR=out_paramStr, $
                     TXTOUTPUTDIR=txtOutputDir
@@ -67,6 +70,12 @@ PRO KAPPA_FIT__LOOP,times,energies,data,oneCount_data,angles, $
      
      minEInd                   = (peak_ind - n_below_peak) > 0
      maxEInd                   = (peak_ind + n_after_peak) < nEnergies-1
+
+     nAbove                    = nEnergies-maxEInd
+     killIt                    = WHERE( (Xorig GE peak_ind) AND (Yorig LE 1e7),nStink)
+     IF (nAbove GE 5) AND nStink NE 0 THEN BEGIN
+        maxEInd                = maxEInd < MIN(killIt)
+     ENDIF
 
      ;;Get the data for various purposes
      IF KEYWORD_SET(estimate_A_from_data) OR $
@@ -134,6 +143,9 @@ PRO KAPPA_FIT__LOOP,times,energies,data,oneCount_data,angles, $
                      TRIM_ENERGIES_BELOW_PEAK=trim_energies_below_peak, $
                      OUT_FITTED_PARAMS=out_fitted_params, $
                      OUT_FITTED_GAUSS_PARAMS=out_fitted_Gauss_params, $
+                     OUT_KAPPA_FIT_STRUCTS=out_kappa_fit_structs, $
+                     OUT_GAUSS_FIT_STRUCTS=out_gauss_fit_structs, $
+                     ADD_FULL_FITS=add_full_fits, $
                      OUT_ERANGE_PEAK=out_eRange_peak, $
                      OUT_PARAMSTR=out_paramStr
 

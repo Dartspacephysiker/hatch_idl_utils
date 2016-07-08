@@ -40,6 +40,7 @@ PRO KAPPA_FIT__USE_SDT_DATA_STRUCT, $ ;X,A,F,pders, $
    EEB_OR_EES=eeb_or_ees, $
    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
    SDT_TIME_INDS=bounds, $
+   DO_ALL_TIMES=do_all_times, $
    MIN_PEAK_ENERGY=min_peak_energy, $
    DENSITY_EST=n_est, $
    TEMPERATURE_EST=T, $
@@ -74,6 +75,9 @@ PRO KAPPA_FIT__USE_SDT_DATA_STRUCT, $ ;X,A,F,pders, $
    ONLY_DENS_ESTIMATES=only_dens_estimates, $
    OUT_FITTED_PARAMS=out_fitted_params, $
    OUT_FITTED_GAUSS_PARAMS=out_fitted_Gauss_params, $
+   OUT_KAPPA_FIT_STRUCTS=out_kappa_fit_structs, $
+   OUT_GAUSS_FIT_STRUCTS=out_gauss_fit_structs, $
+   ADD_FULL_FITS=add_full_fits, $
    OUT_ERANGE_PEAK=out_eRange_peak, $
    OUT_PARAMSTR=out_paramStr, $
    TXTOUTPUTDIR=txtOutputDir
@@ -85,6 +89,7 @@ PRO KAPPA_FIT__USE_SDT_DATA_STRUCT, $ ;X,A,F,pders, $
   KAPPA_FIT_DEFAULTS, $
      KAPPA=kappa, $
      BOUNDS=bounds, $
+     DO_ALL_TIMES=do_all_times, $
      EEB_OR_EES=eeb_or_ees, $
      SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
      ROUTINE=routine, $
@@ -128,6 +133,11 @@ PRO KAPPA_FIT__USE_SDT_DATA_STRUCT, $ ;X,A,F,pders, $
                     OUT_DAT=omniDat, $
                     QUIET=quiet
 
+
+  IF KEYWORD_SET(do_all_times) THEN BEGIN
+     PRINT,"Doing all times ..."
+     bounds                 = INDGEN(N_ELEMENTS(omniDat.time))
+  END
 
   ;;Onecount curve?
   IF KEYWORD_SET(add_oneCount_curve) THEN BEGIN
@@ -203,6 +213,9 @@ PRO KAPPA_FIT__USE_SDT_DATA_STRUCT, $ ;X,A,F,pders, $
                   ONLY_DENS_ESTIMATES=only_dens_estimates, $
                   OUT_FITTED_PARAMS=out_fitted_params, $
                   OUT_FITTED_GAUSS_PARAMS=out_fitted_Gauss_params, $
+                  OUT_KAPPA_FIT_STRUCTS=out_kappa_fit_structs, $
+                  OUT_GAUSS_FIT_STRUCTS=out_gauss_fit_structs, $
+                  ADD_FULL_FITS=add_full_fits, $
                   OUT_ERANGE_PEAK=out_eRange_peak, $
                   OUT_PARAMSTR=out_paramStr, $
                   TXTOUTPUTDIR=txtOutputDir
