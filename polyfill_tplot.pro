@@ -14,7 +14,7 @@ PRO POLYFILL_TPLOT,x,y,OVERPLOT=overplot,LIMITS=lim,DATA=data
   ENDIF
   EXTRACT_TAGS,stuff,lim
 
-  STOP
+
   STR_ELEMENT,stuff,'nocolor',VALUE=nocolor
   STR_ELEMENT,stuff,'colors',VALUE=colors
   STR_ELEMENT,stuff,'nsums',VALUE=nsums & n_nsums = N_ELEMENTS(nsums) & nsum=1
@@ -39,12 +39,89 @@ PRO POLYFILL_TPLOT,x,y,OVERPLOT=overplot,LIMITS=lim,DATA=data
   STR_ELEMENT,plotstuff,'max_value',VALUE=max_value
   STR_ELEMENT,plotstuff,'min_value',VALUE=min_value
 
-  chsize = !p.charsize
-  IF NOT KEYWORD_SET(chsize) THEN chsize = 1.
+xrange=[0.,0.]
+yrange=[0.,0.]
+charsize = !p.charsize
+if charsize eq 0 then charsize = 1.
 
 
-  IF NOT KEYWORD_SET(overplot) THEN $
-     PLOT,/NODATA,x,y,YRANGE=[-1+di,nb+di],/YSTYLE,_EXTRA=plotstuff
+extract_tags,stuff,limits
+
+str_element,stuff,'fill_color',value=fill_color
+str_element,stuff,'nocolor',value=nocolor
+str_element,stuff,'colors',value=colors
+str_element,stuff,'nsums',value=nsums & n_nsums = n_elements(nsums) & nsum=1
+str_element,stuff,'linestyles',value=linestyles
+n_linestyles = n_elements(linestyles) & linestyle=0
+str_element,stuff,'labflag',value=labflag
+str_element,stuff,'labels',value=labels
+str_element,stuff,'labpos',value=labpos
+str_element,stuff,'labsize',value=lbsize
+str_element,stuff,'bins',value=bins
+str_element,stuff,'charsize',value=charsize
+ 
+extract_tags,plotstuff,stuff,/plot
+extract_tags,oplotstuff,stuff,/oplot
+
+
+str_element,plotstuff,'xrange',value=xrange
+str_element,plotstuff,'xtype',value=xtype
+str_element,plotstuff,'xlog',value=xtype
+str_element,plotstuff,'yrange',value=yrange
+str_element,plotstuff,'ytype',value=ytype
+str_element,plotstuff,'ylog',value=ytype
+str_element,plotstuff,'max_value',value=max_value
+str_element,plotstuff,'min_value',value=min_value
+
+
+d1 = dimen1(y)
+d2 = dimen2(y)
+ndx = ndimen(x)
+if n_elements(bins) eq 0 then bins = replicate(1b,d2)
+
+
+if xrange(0) eq xrange(1) then xrange = minmax_range(x,positive=xtype)
+
+good = where(finite(x),count) 
+if count eq 0 then message,'No valid X data.'
+
+ind = where(x(good) ge xrange(0) and x(good) le xrange(1),count)
+
+psym_lim = 0
+psym= -1
+str_element,stuff,'psym',value=psym
+str_element,stuff,'psym_lim',value=psym_lim
+if count lt psym_lim then add_str_element,plotstuff,'psym',psym
+if count lt psym_lim then add_str_element,oplotstuff,'psym',psym
+
+if count eq 0 then ind = indgen(n_elements(x))  else ind = good(ind)
+if yrange(0) eq yrange(1) then begin
+    if ndx eq 1 then $
+      yrange = minmax_range(y(ind,*),posi=ytype,max=max_value,min=min_value) $
+    else $
+      yrange = minmax_range(y(ind),posi=ytype,max=max_value,min=min_value)
+endif
+
+if keyword_set(noxlab) then $
+    add_str_element,plotstuff,'xtickname',replicate(' ',22)
+
+if n_elements(colors) ne 0 then col = colors  $
+;else if d2 gt 1 then col=bytescale(pure_col=d2) $
+else if d2 gt 1 then col=bytescale(findgen(d2)) $
+else col = !p.color
+
+if keyword_set(nocolor) then if nocolor ne 2 or !d.name eq 'PS' then $
+   col = !p.color
+
+nc = n_elements(col)
+blankstuff = plotstuff
+
+
+if keyword_set(oplot) eq 0 then $
+   plot,/nodata,xrange,yrange,_EXTRA = blankstuff
+
+  ;; IF NOT KEYWORD_SET(overplot) THEN $
+  ;;    PLOT,/NODATA,x,y,_EXTRA=plotstuff
 
   ;;first, get everywhere that the sign changes
   pos_i           = WHERE(y GE 0,nPos)
@@ -65,14 +142,14 @@ PRO POLYFILL_TPLOT,x,y,OVERPLOT=overplot,LIMITS=lim,DATA=data
      ;;get relevant data, adjust
      xTemp = [x[pos_i[start_pos_ii[i]]],x[pos_i[start_pos_ii[i]:stop_pos_ii[i]]],x[pos_i[stop_pos_ii[i]]]]
      yTemp = [0,y[pos_i[start_pos_ii[i]:stop_pos_ii[i]]],0]
-     POLYFILL,xTemp,yTemp,_EXTRA=plotstuff
+     POLYFILL,xTemp,yTemp,_EXTRA=plotstuff,/DATA,COLOR=fill_color
   ENDFOR
 
   FOR i=0,n_neg_streaks-1 DO BEGIN
      ;;get relevant data, adjust
      xTemp = [x[neg_i[start_neg_ii[i]]],x[neg_i[start_neg_ii[i]:stop_neg_ii[i]]],x[neg_i[stop_neg_ii[i]]]]
      yTemp = [0,y[neg_i[start_neg_ii[i]:stop_neg_ii[i]]],0]
-     POLYFILL,xTemp,yTemp,_EXTRA=plotstuff
+     POLYFILL,xTemp,yTemp,_EXTRA=plotstuff,/DATA,COLOR=fill_color
   ENDFOR
 
   IF KEYWORD_SET(labels) AND KEYWORD_SET(labflag) THEN BEGIN
