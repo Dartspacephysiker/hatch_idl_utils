@@ -89,7 +89,7 @@ PRO KAPPA_FIT__USE_SDT_DATA_STRUCT, $ ;X,A,F,pders, $
   KAPPA_FIT_DEFAULTS, $
      KAPPA=kappa, $
      BOUNDS=bounds, $
-     DO_ALL_TIMES=do_all_times, $
+     ;; DO_ALL_TIMES=do_all_times, $
      EEB_OR_EES=eeb_or_ees, $
      SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
      ROUTINE=routine, $

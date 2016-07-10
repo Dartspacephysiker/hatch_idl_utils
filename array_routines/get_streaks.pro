@@ -30,16 +30,28 @@ PRO GET_STREAKS,input, $
 
   diff                              = input - shift(input,1)
 
-  start_i                           = WHERE(diff NE 1)
+  start_i                           = WHERE(diff NE 1,nStart)
   WHERECHECK,start_i  ;;Make sure this is OK
 
-  stop_i                            = [start_i[1:-1]-1,N_ELEMENTS(input)-1]
-  single_ii                         = WHERE(start_i EQ stop_i,COMPLEMENT=keep_ii,/NULL)
-  WHERECHECK,single_ii,keep_ii
+  CASE nStart OF
+     0: BEGIN
+        RETURN
+     END
+     1: BEGIN
+        stop_i = N_ELEMENTS(input)-1
+        single_i = -1
+     END
+     ELSE: BEGIN
+        stop_i                            = [start_i[1:-1]-1,N_ELEMENTS(input)-1]
+        single_ii                         = WHERE(start_i EQ stop_i,COMPLEMENT=keep_ii,/NULL)
+        WHERECHECK,single_ii,keep_ii
 
-  start_i                           = start_i[keep_ii]
-  stop_i                            = stop_i[keep_ii]
-  single_i                          = start_i[single_ii]
+        start_i                           = start_i[keep_ii]
+        stop_i                            = stop_i[keep_ii]
+        single_i                          = start_i[single_ii]
+
+     END
+  ENDCASE
 
   IF KEYWORD_SET(min_streak) THEN BEGIN
      PRINTF,lun,'Minimum streak for keeping: ' + STRCOMPRESS(min_streak,/REMOVE_ALL)
@@ -56,12 +68,14 @@ PRO GET_STREAKS,input, $
         stop_i                      = stop_i[minStreak_ii]
         n_streaks++
      ENDIF
-  ENDIF
+  ENDIF ELSE BEGIN
+     n_streaks = N_ELEMENTS(start_i)
+  ENDELSE
 
   IF ~no_print_summary THEN BEGIN
      PRINTF,lun,""
      PRINTF,lun,FORMAT='("**GET_STREAKS**")'
-     PRINTF,lun,FORMAT='("N Streaks                     :",T35,I0)',N_ELEMENTS(start_i)
+     PRINTF,lun,FORMAT='("N Streaks                     :",T35,I0)',n_streaks
      PRINTF,lun,FORMAT='("N single values               :",T35,I0)',N_ELEMENTS(single_i)
   ENDIF
 

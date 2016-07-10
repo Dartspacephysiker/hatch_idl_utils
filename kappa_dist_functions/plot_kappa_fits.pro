@@ -9,6 +9,7 @@ PRO PLOT_KAPPA_FITS,orig,kappaFit,gaussFit,oneCurve, $
                     ADD_FITPARAMS_TEXT=add_fitParams_text, $
                     ADD_GAUSSIAN_ESTIMATE=add_gaussian_estimate, $
                     SAVE_FITPLOTS=save_fitPlots, $
+                    PLOT_FULL_FIT=plot_full_fit, $
                     USING_SDT_DATA=using_SDT_data, $
                     ;; PLOT_SAVENAME=plotSN, $
                     PLOTDIR=plotDir
@@ -66,8 +67,8 @@ PRO PLOT_KAPPA_FITS,orig,kappaFit,gaussFit,oneCurve, $
 
   ;;Kappa fit
   IF N_ELEMENTS(kappaFit) GT 0 THEN BEGIN
-     plotArr[iPlot]    = PLOT(kappaFit.x, $ ;x, $
-                              kappaFit.y, $
+     plotArr[iPlot]    = PLOT(KEYWORD_SET(plot_full_fit) ? kappaFit.xFull : kappaFit.x, $ ;x, $
+                              KEYWORD_SET(plot_full_fit) ? kappaFit.yFull : kappaFit.y, $
                               ;; TITLE=title, $
                               NAME=kappaFit.name, $
                               ;; XTITLE=xTitle, $
@@ -86,8 +87,8 @@ PRO PLOT_KAPPA_FITS,orig,kappaFit,gaussFit,oneCurve, $
 
   ;;GaussFit
   IF N_ELEMENTS(gaussFit) GT 0 THEN BEGIN
-     plotArr[iPlot]    = PLOT(gaussFit.X, $
-                              gaussFit.y, $
+     plotArr[iPlot]    = PLOT(KEYWORD_SET(plot_full_fit) ? gaussFit.xFull : gaussFit.X, $
+                              KEYWORD_SET(plot_full_fit) ? gaussFit.yFull : gaussFit.y, $
                               ;; TITLE=title, $
                               NAME=gaussFit.name, $
                               ;; XTITLE=xTitle, $

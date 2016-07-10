@@ -26,6 +26,7 @@ PRO KAPPA_FIT__LOOP,times,energies,data,oneCount_data,angles, $
                     ELECTRON_ANGLERANGE=electron_angleRange, $
                     NO_PLOTS=no_plots, $
                     SAVE_FITPLOTS=save_fitplots, $
+                    PLOT_FULL_FIT=plot_full_fit, $
                     PLOTDIR=plotDir, $
                     OUTPUT_DENSITY_ESTIMATES=output_density_estimates, $
                     OUTPUT_DENSITY__ERANGE=dens_est_eRange, $
@@ -72,7 +73,7 @@ PRO KAPPA_FIT__LOOP,times,energies,data,oneCount_data,angles, $
      maxEInd                   = (peak_ind + n_after_peak) < nEnergies-1
 
      nAbove                    = nEnergies-maxEInd
-     killIt                    = WHERE( (Xorig GE peak_ind) AND (Yorig LE 1e7),nStink)
+     killIt                    = WHERE( (Xorig GE peak_energy) AND (Yorig LE 5e6),nStink)
      IF (nAbove GE 5) AND nStink NE 0 THEN BEGIN
         maxEInd                = maxEInd < MIN(killIt)
      ENDIF
@@ -145,7 +146,7 @@ PRO KAPPA_FIT__LOOP,times,energies,data,oneCount_data,angles, $
                      OUT_FITTED_GAUSS_PARAMS=out_fitted_Gauss_params, $
                      OUT_KAPPA_FIT_STRUCTS=out_kappa_fit_structs, $
                      OUT_GAUSS_FIT_STRUCTS=out_gauss_fit_structs, $
-                     ADD_FULL_FITS=add_full_fits, $
+                     ADD_FULL_FITS=KEYWORD_SET(add_full_fits) OR KEYWORD_SET(plot_full_fit), $
                      OUT_ERANGE_PEAK=out_eRange_peak, $
                      OUT_PARAMSTR=out_paramStr
 
@@ -172,6 +173,7 @@ PRO KAPPA_FIT__LOOP,times,energies,data,oneCount_data,angles, $
                         ADD_FITPARAMS_TEXT=add_fitParams_text, $
                         ADD_GAUSSIAN_ESTIMATE=add_gaussian_estimate, $
                         SAVE_FITPLOTS=save_fitPlots, $ ;, $
+                        PLOT_FULL_FIT=plot_full_fit, $
                         USING_SDT_DATA=using_sdt_data, $
                         ;; PLOT_SAVENAME=plotSN
                         PLOTDIR=plotDir

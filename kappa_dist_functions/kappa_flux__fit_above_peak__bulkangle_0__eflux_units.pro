@@ -65,6 +65,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
    GET_MASS_AND_DT=get_mass_and_dt, $
    NO_PLOTS=no_plots, $
    SAVE_FITPLOTS=save_fitplots, $
+   PLOT_FULL_FIT=plot_full_fit, $
    PLOTDIR=plotDir, $
    OUTPUT_DENSITY_ESTIMATES=output_density_estimates, $
    OUTPUT_DENSITY__ERANGE=dens_est_eRange, $
@@ -210,6 +211,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
                   ELECTRON_ANGLERANGE=electron_angleRange, $
                   NO_PLOTS=no_plots, $
                   SAVE_FITPLOTS=save_fitplots, $
+                  PLOT_FULL_FIT=plot_full_fit, $
                   PLOTDIR=plotDir, $
                   OUTPUT_DENSITY_ESTIMATES=output_density_estimates, $
                   OUTPUT_DENSITY__ERANGE=dens_est_eRange, $
