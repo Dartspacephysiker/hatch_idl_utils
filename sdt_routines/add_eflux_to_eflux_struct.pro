@@ -25,6 +25,7 @@ PRO ADD_EFLUX_TO_EFLUX_STRUCT,diff_eflux,tempDiff_eflux, $
 
            diff_eFlux = {x:     [ [[diff_eFlux.x]]   ,[[tempDiff_eflux.x]]    ], $
                          y:     [ [[diff_eFlux.y]]   ,[[tempDiff_eflux.y]]    ], $
+                         complete_angles:[ [diff_eflux.complete_angles],[tempDiff_eflux.complete_angles] ], $
                          angles:[ [diff_eflux.angles],[tempDiff_eflux.angles] ], $
                          time:  [  diff_eFlux.time   ,tempDiff_eFlux.time     ]}
         ENDIF ELSE BEGIN
@@ -46,7 +47,8 @@ PRO ADD_EFLUX_TO_EFLUX_STRUCT,diff_eflux,tempDiff_eflux, $
                          data:[ [[diff_eFlux.data]]   , [[tempDiff_eFlux.data]] ], $
                          ddata:[ [[diff_eFlux.ddata]]   , [[tempDiff_eFlux.ddata]] ], $
                          energy:[ [[diff_eFlux.energy]]   , [[tempDiff_eFlux.energy]] ], $
-                         theta:[ [[diff_eFlux.theta]], [[tempDiff_eflux.theta]] ], $
+                         complete_theta:[ [[diff_eFlux.complete_theta]], [[tempDiff_eflux.complete_theta]] ], $
+                         theta:[ [diff_eFlux.theta], [tempDiff_eflux.theta] ], $
                          geom:[ [diff_eFlux.geom], [tempDiff_eFlux.geom] ], $
                          denergy:[ [[diff_eFlux.denergy]]   , [[tempDiff_eFlux.denergy]] ], $
                          ;; denergy:diff_eFlux.denergy[*,minAngleInd], $

@@ -5,6 +5,8 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                                         EN_SPEC=eSpec, $
                                         JE_EN=je_en, $
                                         DIFF_EFLUX=diff_eFlux, $
+                                        TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct, $
+                                        SYNTH_DIFF_EFLUX=diff_eFluxSDT, $
                                         SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                                         OUT_ORB=orb, $
                                         OUT_ANGLERANGE=e_angle, $
@@ -118,14 +120,19 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
      GET_DATA,'Je_en',DATA=je_en
   ENDIF
 
-  IF ARG_PRESENT(diff_eflux) OR KEYWORD_SET(save_these) THEN BEGIN
+  IF ARG_PRESENT(diff_eFlux) OR KEYWORD_SET(save_these) THEN BEGIN
      GET_DIFF_EFLUX,T1=t1,T2=t2, $
                     EEB_OR_EES=eeb_or_ees, $
                     ANGLE=e_angle, $
                     NAME__DIFF_EFLUX=name__diff_eFlux, $
                     ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
-                    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval
+                    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                    TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct
+
      GET_DATA,name__diff_eFlux,DATA=diff_eFlux
+     IF KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
+        GET_DATA,name__diff_eFlux+"SDT",DATA=diff_eFluxSDT
+     ENDIF
   ENDIF
 
   IF KEYWORD_SET(save_these) THEN BEGIN
@@ -157,9 +164,15 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                  + '__' + timeRangeStr + '.sav'
 
         PRINT,'Saving data for energy spectrum and density to ' + saveFN + '...'
-        SAVE,je_en, $
-             out_mass,out_dt,e_angle,dat, $
-             dn_2d,dj_2d,eSpec,diff_eflux,orb,lcw,FILENAME=saveDir + saveFN
+        IF KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
+           SAVE,je_en, $
+                out_mass,out_dt,e_angle,dat, $
+                dn_2d,dj_2d,eSpec,diff_eFlux,diff_eFluxSDT,orb,lcw,FILENAME=saveDir + saveFN
+        ENDIF ELSE BEGIN
+           SAVE,je_en, $
+                out_mass,out_dt,e_angle,dat, $
+                dn_2d,dj_2d,eSpec,diff_eFlux,orb,lcw,FILENAME=saveDir + saveFN
+        ENDELSE
      ENDIF
 
   ENDIF

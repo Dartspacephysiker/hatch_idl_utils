@@ -18,13 +18,10 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
   ENDELSE
 
   ;;a few constants
-  speedOfLight           = DOUBLE(299792.458)*1e3             ;km / s
+  speedOfLight           = DOUBLE(299792458)                  ;m / s
   electron_mass          = DOUBLE(5.1099891e5)/speedOfLight^2 ;eV/c^2
   
   eCharge                = DOUBLE(1.6e-19) ;Coulombs
-
-  PRINT,'Reminder: Fix electron mass'
-  ;; WAIT,1
 
   ;;Convert input params
   n                      = DOUBLE(Dens_m * 1000000.D) ;dens_m in m^-3

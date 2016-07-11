@@ -11,7 +11,7 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
 
   IF KEYWORD_SET(t1) THEN BEGIN
      CASE SIZE(t1,/TYPE) OF
-        5: 
+        5: time1 = t1
         7: time1 = STR_TO_TIME(t1)
         ELSE: BEGIN
            IF ~KEYWORD_SET(quiet) THEN BEGIN
@@ -24,7 +24,7 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
 
   IF KEYWORD_SET(t2) THEN BEGIN
      CASE SIZE(t2,/TYPE) OF
-        5: 
+        5: time2 = t2
         7: time2 = STR_TO_TIME(t2)
         ELSE: BEGIN
            IF ~KEYWORD_SET(quiet) THEN BEGIN
@@ -65,8 +65,8 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
   ENDIF ELSE BEGIN
 
      IF N_ELEMENTS(time1) NE 0 AND N_ELEMENTS(time2) NE 0 THEN BEGIN
-        mintime          = MIN(ABS(time1-db_fac.x),ind1)
-        mintime          = MIN(ABS(time2-db_fac.x),ind2)
+        mintime          = MIN(ABS(time1-magStr.x),ind1)
+        mintime          = MIN(ABS(time2-magStr.x),ind2)
         
         magx             = {x:magStr.x[ind1:ind2],y:magStr.y[ind1:ind2,0]}
         magy             = {x:magStr.x[ind1:ind2],y:magStr.y[ind1:ind2,2]}
@@ -107,11 +107,11 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
   deltaBX                = DERIV(position,SMOOTH(magz.y,100))
   jMag                   = {x:magz.x, $
                             y:1.0e-3*(deltaBx)/1.26e-6, $
-                            units:CGGREEK('micro')+'A/m!U2!N'}
+                            units:CGGREEK('mu')+'A/m!U2!N'}
   ;; jtemp               = 1.0e-3*(deltaBx)/1.26e-6
 
   IF ~KEYWORD_SET(quiet) THEN PRINT,'Storing magnetometer-derived current as ' + jMagName + ' ...'
-  STORE_DATA,jMagName,DATA={x:magz.x,y:jtemp}
+  STORE_DATA,jMagName,DATA={x:magz.x,y:jMag}
 
   sign_jtemp             = ABS(deltaBx)/deltaBx
 

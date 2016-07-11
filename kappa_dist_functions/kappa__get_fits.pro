@@ -87,7 +87,8 @@ PRO KAPPA__GET_FITS,Xorig,Yorig, $
                                  y:yFit, $
                                  NAME:"Fitted spectrum", $
                                  A:A, $
-                                 time:STR_TO_TIME(strings.plotTimes[bounds_i]), $
+                                 ;; time:STR_TO_TIME(strings.yearstr[bounds_i]+'/'+strings.plotTimes[bounds_i]), $
+                                 time:STR_TO_TIME(strings.yearstr+'/'+strings.plotTimes[bounds_i]), $
                                  ;; XRANGE:xRange, $
                                  ;; YRANGE:yRange, $
                                  ;; XLOG:1, $
@@ -193,7 +194,8 @@ PRO KAPPA__GET_FITS,Xorig,Yorig, $
                                  y:yGaussFit, $
                                  name:"Gaussian Fitted spectrum" + (KEYWORD_SET(use_SDT_Gaussian_fit) ? "_SDT" : ''), $
                                  A:AGauss, $
-                                 time:STR_TO_TIME(strings.plotTimes[bounds_i]), $
+                                 ;; time:STR_TO_TIME(strings.yearstr[bounds_i]+'/'+strings.plotTimes[bounds_i]), $
+                                 time:STR_TO_TIME(strings.yearstr+'/'+strings.plotTimes[bounds_i]), $
                                  ;; XRANGE:xRange, $
                                  ;; YRANGE:yRange, $
                                  ;; XLOG:1, $
