@@ -3,7 +3,9 @@
 ;;T_m   :  Magnetospheric temperature of electrons  (eV)
 ;;Dens_m:  Magnetospheric plasma density            (cm^-3)
 ;;R_B   :  Magnetic field ratio, B_ionos/B_msphere  (dimensionless)
-;;Pot   ;  Potential drop                           (eV)
+;;Pot   :  Potential drop                           (eV)
+
+;;Potbar:  (electron_charge)*Delta_Phi/(k_B*T)      (potential drop normalized by temperature in eV)
 FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
    IN_POTBAR=in_potBar, $
    OUT_POTBAR=potBar

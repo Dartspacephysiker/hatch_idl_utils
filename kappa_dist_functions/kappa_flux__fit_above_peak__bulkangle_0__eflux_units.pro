@@ -78,6 +78,8 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
    OUT_FITTED_GAUSS_PARAMS=out_fitted_Gauss_params, $
    OUT_KAPPA_FIT_STRUCTS=out_kappa_fit_structs, $
    OUT_GAUSS_FIT_STRUCTS=out_gauss_fit_structs, $
+   OUT_SYNTHETIC_SDT_KAPPA_STRUCTS=out_synthetic_SDT_kappa_structs, $
+   OUT_SYNTHETIC_SDT_GAUSS_STRUCTS=out_synthetic_SDT_gauss_structs, $
    ADD_FULL_FITS=add_full_fits, $
    OUT_ERANGE_PEAK=out_eRange_peak, $
    OUT_PARAMSTR=out_paramStr, $
@@ -128,7 +130,8 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
 
   IF KEYWORD_SET(do_all_times) THEN BEGIN
      PRINT,"Doing all times ..."
-     bounds                            = INDGEN(N_ELEMENTS(diff_eFlux.time))
+     nBounds                           = N_ELEMENTS(diff_eFlux.time)
+     bounds                            = INDGEN(nBounds)
   END
 
   ;;Onecount curve?
@@ -171,17 +174,33 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
   IF KEYWORD_SET(spectra_average_interval) THEN routine += '_ts'
 
   IF KEYWORD_SET(add_oneCount_curve) THEN BEGIN
-     dEF_oneCountMod                   = dEF_oneCount.y[bounds,*]
+     IF KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
+        dEF_oneCountMod                = dEF_oneCount.data[bounds,*]
+     ENDIF ELSE BEGIN
+        dEF_oneCountMod                = dEF_oneCount.y[bounds,*]
+     ENDELSE
+     ;; dEF_oneCountMod                   = dEF_oneCount.data[bounds,*]
      yMin                              = MIN(dEF_oneCountMod[WHERE(dEF_oneCountMod GT 0)])
      yMin                              = 10.^(FLOOR(ALOG10(yMin)))
   ENDIF ELSE BEGIN
-     yMin                              = MIN(diff_eFlux.y[WHERE(diff_eFlux.y GT 0)])
+     IF KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
+        yMin                           = MIN(diff_eFlux.data[WHERE(diff_eFlux.data GT 0)])
+     ENDIF ELSE BEGIN
+        yMin                           = MIN(diff_eFlux.y[WHERE(diff_eFlux.y GT 0)])
+     ENDELSE
   ENDELSE
 
-  energies                             = TRANSPOSE(diff_eFlux.x)
-  data                                 = TRANSPOSE(diff_eFlux.y)
-  oneCount_data                        = KEYWORD_SET(add_oneCount_curve) ? TRANSPOSE(dEF_oneCount.y) : !NULL
-  angles                               = diff_eFlux.angles
+  IF KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN 
+     energies                          = TRANSPOSE(diff_eFlux.energy)
+     data                              = TRANSPOSE(diff_eFlux.data)
+     oneCount_data                     = KEYWORD_SET(add_oneCount_curve) ? TRANSPOSE(dEF_oneCount.data) : !NULL
+     angles                            = diff_eFlux.theta
+  ENDIF ELSE BEGIN
+     energies                          = TRANSPOSE(diff_eFlux.x)
+     data                              = TRANSPOSE(diff_eFlux.y)
+     oneCount_data                     = KEYWORD_SET(add_oneCount_curve) ? TRANSPOSE(dEF_oneCount.y) : !NULL
+     angles                            = diff_eFlux.angles
+  ENDELSE
 
   KAPPA_FIT__LOOP,times,energies,data,oneCount_data,angles, $
                   USING_SDT_DATA=0, $
@@ -229,6 +248,22 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
                   OUT_PARAMSTR=out_paramStr, $
                   TXTOUTPUTDIR=txtOutputDir
 
-  PRINT,"DONE!"
+  IF KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN 
+     IF ARG_PRESENT(out_synthetic_SDT_kappa_structs) THEN BEGIN
+        out_synthetic_SDT_kappa_structs = diff_eFlux
+        FOR i=0,N_ELEMENTS(out_synthetic_SDT_kappa_structs)-1 DO BEGIN
+           out_synthetic_SDT_kappa_structs.energy[i,*] = TRANSPOSE(out_kappa_fit_structs[i].xFull)
+           out_synthetic_SDT_kappa_structs.data[i,*] = TRANSPOSE(out_kappa_fit_structs[i].yFull)
+        ENDFOR
+     ENDIF
+
+     IF ARG_PRESENT(out_synthetic_SDT_gauss_structs) THEN BEGIN
+        out_synthetic_SDT_gauss_structs = diff_eFlux
+        FOR i=0,N_ELEMENTS(out_synthetic_SDT_gauss_structs)-1 DO BEGIN
+           out_synthetic_SDT_gauss_structs.energy[i,*] = TRANSPOSE(out_gauss_fit_structs[i].xFull)
+           out_synthetic_SDT_gauss_structs.data[i,*] = TRANSPOSE(out_gauss_fit_structs[i].yFull)
+        ENDFOR
+     ENDIF
+  ENDIF
 
 END
