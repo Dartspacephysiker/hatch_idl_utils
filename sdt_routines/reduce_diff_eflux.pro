@@ -49,14 +49,17 @@ PRO REDUCE_DIFF_EFLUX,diff_eFlux, $
         STOP
      END
      3: BEGIN
-        xNew        = MEAN(xNew,DIMENSION=2) ;Sum over angles
-        yNew        = TOTAL(yNew,2)
-
         nAngles     = N_ELEMENTS(aNew[0,*])
+        xNew        = MEAN(xNew,DIMENSION=2) ;Sum over angles
+
+        yNew        = TOTAL(yNew,2) 
+        IF KEYWORD_SET(average_diff_eFlux_over_angles) THEN BEGIN
+           yNew = yNew/nAngles
+        ENDIF
+
         aNew        = TOTAL(aNew,2)/FLOAT(nAngles)
 
         IF ~KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
-
            diff_eFlux  = {x:xNew, $
                           y:yNew, $
                           angles:aNew, $

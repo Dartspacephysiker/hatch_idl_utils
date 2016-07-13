@@ -183,7 +183,7 @@ PRO KAPPA__GET_FITS,Xorig,Yorig, $
         ;;Get AGauss in the form we like it
         maxThing              = MAX(yGaussFit,maxGaussInd)
         AGauss_SDT            = AGauss
-        AGauss                = [X_SDT[maxGaussInd],T,999,density,A[4],A[5]]
+        AGauss                = [X_SDT[maxGaussInd],T,999,density,A[4],A[5],A[6]]
 
      ENDIF
 

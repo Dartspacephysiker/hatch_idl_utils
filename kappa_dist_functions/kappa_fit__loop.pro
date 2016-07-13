@@ -7,6 +7,7 @@ PRO KAPPA_FIT__LOOP,times,energies,data,oneCount_data,angles, $
                     ROUTINE=routine, $
                     ESTFACS=estFacs, $
                     TRIM_ENERGIES_BELOW_PEAK=trim_energies_below_peak, $
+                    DONT_FIT_BELOW_THRESH_VALUE=dont_fit_below_thresh_value, $
                     N_ENERGIES_BELOW_PEAK=n_below_peak, $
                     N_ENERGIES_AFTER_PEAK=n_after_peak, $
                     ENERGY_ELECTRONS=energy_electrons, $
@@ -72,10 +73,18 @@ PRO KAPPA_FIT__LOOP,times,energies,data,oneCount_data,angles, $
      minEInd                   = (peak_ind - n_below_peak) > 0
      maxEInd                   = (peak_ind + n_after_peak) < nEnergies-1
 
-     nAbove                    = nEnergies-maxEInd
-     killIt                    = WHERE( (Xorig GE peak_energy) AND (Yorig LE 5e6),nStink)
-     IF (nAbove GE 5) AND nStink NE 0 THEN BEGIN
-        maxEInd                = maxEInd < MIN(killIt)
+     IF KEYWORD_SET(dont_fit_below_thresh_value) THEN BEGIN
+        
+        nAbove                    = nEnergies-1-maxEInd
+        killIt                    = WHERE( (Xorig GE peak_energy) AND (Yorig LE 1e5),nStink)
+        IF (nAbove GE 4) AND nStink NE 0 THEN BEGIN
+           PRINT,'Old nAbove : ' + STRCOMPRESS(nAbove,/REMOVE_ALL)
+           PRINT,'Old maxEInd: ' + STRCOMPRESS(maxEInd,/REMOVE_ALL)
+           maxEInd                = maxEInd < MIN(killIt)
+           PRINT,'New nAbove: ' + STRCOMPRESS(nEnergies-1-maxEInd,/REMOVE_ALL)
+           PRINT,'New maxEInd: ' + STRCOMPRESS(maxEInd,/REMOVE_ALL)
+
+        ENDIF
      ENDIF
 
      ;;Get the data for various purposes

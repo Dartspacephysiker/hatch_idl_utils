@@ -40,6 +40,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
    LOAD_DAT_FROM_FILE=loadFile, $
    EEB_OR_EES=eeb_or_ees, $
    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+   FIT_EACH_ANGLE=fit_each_angle, $
    SDT_TIME_INDS=bounds, $
    DO_ALL_TIMES=do_all_times, $
    MIN_PEAK_ENERGY=min_peak_energy, $
@@ -51,6 +52,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
    ESTIMATE_FITPARAMS_FROM_SDT_DAT=estimate_A_from_data, $
    ESTIMATE_FACTORS=estFacs, $
    TRIM_ENERGIES_BELOW_PEAK=trim_energies_below_peak, $
+   DONT_FIT_BELOW_THRESH_VALUE=dont_fit_below_thresh_value, $
    N_ENERGIES_BELOW_PEAK=n_below_peak, $
    N_ENERGIES_AFTER_PEAK=n_after_peak, $
    CHECK_FOR_HIGHER_FLUX_PEAKS__SET_CORRESPONDING_PEAK_ENERGY=check_for_higher_flux_peaks__set_corresponding_peak_energy, $
@@ -124,7 +126,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
                                          /GET_MASS_AND_DT, $
                                          OUT_MASS=mass
 
-     IF ~KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
+     IF ~KEYWORD_SET(only_fit_fieldaligned_angle) AND ~KEYWORD_SET(fit_each_angle) THEN BEGIN
         REDUCE_DIFF_EFLUX,diff_eFlux ;, $
         ;; TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct
         IF KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
@@ -259,6 +261,7 @@ PRO KAPPA_FLUX__FIT_ABOVE_PEAK__BULKANGLE_0__EFLUX_UNITS, $ ;X,A,F,pders, $
                   USE_SDT_GAUSSIAN_FIT=use_SDT_Gaussian_fit, $
                   ESTFACS=estFacs, $
                   TRIM_ENERGIES_BELOW_PEAK=trim_energies_below_peak, $
+                  DONT_FIT_BELOW_THRESH_VALUE=dont_fit_below_thresh_value, $
                   N_ENERGIES_BELOW_PEAK=n_below_peak, $
                   N_ENERGIES_AFTER_PEAK=n_after_peak, $
                   ENERGY_ELECTRONS=energy_electrons, $

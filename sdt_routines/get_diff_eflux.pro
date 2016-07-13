@@ -27,7 +27,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
      IF KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
         SPEC2D,tempDat,UNITS='eflux',MSEC=msec,ANGLE=angle, $
-               OUT_DAT=tempDiff_eFlux, $
+               OUT_DAT=tempDiff_eFlux, $ ;RETRACE=1, $
                OUT_FASTSTR=tempDiff_eFluxSDT, $
                /NO_PLOT
      ENDIF ELSE BEGIN
