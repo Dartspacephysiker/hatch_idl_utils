@@ -11,6 +11,7 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                                         OUT_ORB=orb, $
                                         OUT_ANGLERANGE=e_angle, $
                                         ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
+                                        FIT_EACH_ANGLE=fit_each_angle, $
                                         CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
                                         ANGLESTR=angleStr, $
                                         GET_MASS_AND_DT=get_mass_and_dt, $
@@ -126,6 +127,7 @@ PRO GET_LOSSCONE_EN_SPEC_AND_NFLUX_DATA,T1=t1,T2=t2, $
                     ANGLE=e_angle, $
                     NAME__DIFF_EFLUX=name__diff_eFlux, $
                     ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
+                    FIT_EACH_ANGLE=fit_each_angle, $
                     SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                     TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct
 
