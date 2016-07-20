@@ -1,6 +1,7 @@
 PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
                                   EEB_OR_EES=eeb_or_ees, $
                                   SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                                  IN_PROTOSTRUCT=in_protoStruct, $
                                   SDT_NAME=name, $
                                   ANGLE=angle, $
                                   ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
@@ -23,11 +24,15 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
   ENDIF
 
   routine                                        = 'get_fa_'+eeb_or_ees+'_ts'
-  dat                                            = CALL_FUNCTION(routine,t1,t2,CALIB=calib)
+  IF KEYWORD_SET(in_protoStruct) THEN BEGIN
+     dat = MAKE_ARRAY_OF_SDT_STRUCTS_FROM_PREPPED_EFLUX(in_protoStruct)
+  ENDIF ELSE BEGIN
+     dat                                            = CALL_FUNCTION(routine,t1,t2,CALIB=calib)
   
-  IF KEYWORD_SET(spectra_average_interval) THEN BEGIN
-     dat                                         = AVERAGE_SUM3D(dat,spectra_average_interval)
-  ENDIF
+     IF KEYWORD_SET(spectra_average_interval) THEN BEGIN
+        dat                                         = AVERAGE_SUM3D(dat,spectra_average_interval)
+     ENDIF
+  ENDELSE
   
   shiftVals                                      = !NULL
   FOR i=0,N_ELEMENTS(dat)-1 DO BEGIN
