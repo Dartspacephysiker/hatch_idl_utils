@@ -1,4 +1,5 @@
 PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
+                                  ;; LOAD_DAT_FROM_FILE=loadFile, $
                                   EEB_OR_EES=eeb_or_ees, $
                                   SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                                   IN_PROTOSTRUCT=in_protoStruct, $
