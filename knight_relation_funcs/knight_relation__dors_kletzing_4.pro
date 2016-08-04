@@ -18,7 +18,7 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
   ENDELSE
 
   ;;a few constants
-  speedOfLight           = DOUBLE(299792458)                  ;m / s
+  speedOfLight           = DOUBLE(299792458)                  ;m/s
   electron_mass          = DOUBLE(5.1099891e5)/speedOfLight^2 ;eV/c^2
   
   eCharge                = DOUBLE(1.6e-19) ;Coulombs
