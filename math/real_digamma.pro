@@ -15,7 +15,9 @@
 FUNCTION REAL_DIGAMMA,x
 
 
-  gamma_prime   = IMAGINARY(GAMMA(DCOMPLEX(x,DOUBLE(1e-10)))/DOUBLE(1e-10))
+  divVal        = DOUBLE(1e-6)
+
+  gamma_prime   = IMAGINARY(GAMMA(DCOMPLEX(x,divVal))/divVal)
   real_digamma  = gamma_prime / GAMMA(x)
 
   RETURN,real_digamma

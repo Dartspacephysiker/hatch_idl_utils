@@ -20,6 +20,13 @@ PRO STR_ELEMENT_FROM_LIST_OF_STRUCTS,list,name, $
      RETURN
   ENDIF
 
+  ;;Give one a test
+  STR_ELEMENT,list[0],name,VALUE=temp,INDEX=index
+
+  IF index LT 0 THEN BEGIN
+     RETURN
+ENDIF
+
   nStr = N_ELEMENTS(list)
 
   retThing = !NULL
