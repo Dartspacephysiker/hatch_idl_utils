@@ -64,7 +64,7 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;If the procedure is called with four parameters, calculate the
   ;;partial derivatives.
-  IF N_PARAMS() GE 3 THEN BEGIN
+  IF N_PARAMS() GT 2 THEN BEGIN
 
      requested              = dp
      dp                     = MAKE_ARRAY(N_ELEMENTS(x),N_ELEMENTS(p),VALUE=X[0]*0)
