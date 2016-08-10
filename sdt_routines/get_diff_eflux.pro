@@ -2,6 +2,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    EEB_OR_EES=eeb_or_ees, $
                    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                    NAME__DIFF_EFLUX=name__diff_eFlux, $
+                   CALC_GEOM_FACTORS=calc_geom_factors, $
                    ANGLE=angle, $
                    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                    FIT_EACH_ANGLE=fit_each_angle, $
@@ -23,7 +24,11 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
   name__diff_eFluxSDT                         = 'diff_eFluxSDT'
 
   routine                                     = 'get_fa_'+eeb_or_ees+'_ts'
-  dat                                         = CALL_FUNCTION(routine,t1,t2,CALIB=calib)
+
+  IF KEYWORD_SET(calc_geom_factors) THEN PRINT, "Calculating geometry factors for " + $
+     routine + ' ...'
+  dat                                         = CALL_FUNCTION(routine,t1,t2, $
+                                                              CALIB=calc_geom_factors)
   
   IF KEYWORD_SET(spectra_average_interval) THEN BEGIN
      dat                                      = AVERAGE_SUM3D(dat,spectra_average_interval)

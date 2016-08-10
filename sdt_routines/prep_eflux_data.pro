@@ -75,6 +75,7 @@ FUNCTION PREP_EFLUX_DATA,tempdat,   $
   ;; IF NDIMEN(data3d.theta) eq 2 THEN BEGIN
   thetaDim                    = NDIMEN(data3d.theta)
   theta                       = data3d.theta
+  geom                        = data3d.geom
   ;; theta                    = REFORM(data3d.theta[FIX(data3d.nenergy/2),*]) 
   ;; ENDIF ELSE BEGIN
   ;;    theta                 = data3d.theta
@@ -147,8 +148,14 @@ FUNCTION PREP_EFLUX_DATA,tempdat,   $
            dydat        = REVERSE(dydat,2)
            bins2        = REVERSE(bins2)
            CASE thetaDim OF
-              1: theta  = REVERSE(theta)
-              2: theta  = REVERSE(theta,2)
+              1: BEGIN
+                 theta  = REVERSE(theta)
+                 geom   = REVERSE(geom)
+              END
+              2: BEGIN
+                 theta  = REVERSE(theta,2)
+                 geom   = REVERSE(geom,2)
+              END
            ENDCASE
         ENDIF
      ENDIF ELSE BEGIN
@@ -186,11 +193,18 @@ FUNCTION PREP_EFLUX_DATA,tempdat,   $
      bins2              = SHIFT(bins2,-indminvar)
 
      CASE thetaDim OF
-        1: theta        = SHIFT(theta,-indminvar)
+        1: BEGIN
+           theta        = SHIFT(theta,-indminvar)
+           geom         = SHIFT(geom ,-indminvar)
+        END
         2: BEGIN
            theta        = TRANSPOSE(theta)
            theta        = SHIFT(theta,-indminvar,0)
            theta        = TRANSPOSE(theta)
+
+           geom        = TRANSPOSE(geom)
+           geom        = SHIFT(geom,-indminvar,0)
+           geom        = TRANSPOSE(geom)
         END
      ENDCASE
      
@@ -205,8 +219,14 @@ FUNCTION PREP_EFLUX_DATA,tempdat,   $
   dydat                 = dydat[*,i]
   xdat                  = xdat[*,i]
   CASE thetaDim OF
-     1: theta           = theta[i]
-     2: theta           = theta[*,i]
+     1: BEGIN
+        theta           = theta[i]
+        geom            = geom[i]
+     END
+     2: BEGIN
+        theta           = theta[*,i]
+        geom            = geom[*,i]
+     END
   ENDCASE
 
 
@@ -226,10 +246,10 @@ FUNCTION PREP_EFLUX_DATA,tempdat,   $
                            ddata:dydat, $
                            energy:xdat, $
                            ;; complete_theta:data3d.theta[*,i], $
-                           theta:theta[*,i], $
-                           geom:data3d.geom, $
+                           theta:theta, $
+                           geom:geom, $
                            denergy:data3d.denergy[*,i], $
-                           dtheta:data3d.dtheta, $
+                           dtheta:data3d.dtheta[i], $
                            eff:data3d.eff, $
                            mass:data3d.mass, $
                            geomfactor:data3d.geomfactor, $

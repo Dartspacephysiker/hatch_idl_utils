@@ -67,7 +67,7 @@ PRO ADD_EFLUX_TO_EFLUX_STRUCT,diff_eflux,tempDiff_eflux, $
                          ddata:[ [[diff_eFlux.ddata]]   , [[tempDiff_eFlux.ddata]] ], $
                          energy:[ [[diff_eFlux.energy]]   , [[tempDiff_eFlux.energy]] ], $
                          theta:[ [[diff_eFlux.theta]], [[tempDiff_eflux.theta]] ], $
-                         geom:[ [diff_eFlux.geom], [tempDiff_eFlux.geom] ], $
+                         geom:[ [[diff_eFlux.geom]], [[tempDiff_eFlux.geom]] ], $
                          denergy:[ [[diff_eFlux.denergy]]   , [[tempDiff_eFlux.denergy]] ], $
                          dtheta:[ [diff_eFlux.dtheta],[tempDiff_eFlux.dtheta] ], $
                          eff:[ [diff_eFlux.eff],[tempDiff_eFlux.eff] ], $
