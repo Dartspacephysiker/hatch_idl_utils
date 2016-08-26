@@ -10,7 +10,7 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
   COMPILE_OPT IDL2
 
   dbDir  = '/home/spencerh/software/sdt/batch_jobs/saves_output_etc/Alfven_study/20160520--get_Newell_identification_for_Alfven_events--NOT_despun/'
-  dbPref = 'cleaned_Je__Je_tRanges__and_Je_tRange_inds__0-50000.sav--'
+  dbPref = 'cleaned_Je__Je_tRanges__and_Je_tRange_inds__0-50000.sav--orbs_'
 
 
   CASE 1 OF 
@@ -191,6 +191,15 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
      RETURN,-1
   ENDELSE
 
+  ;;Generate keys if we don't have them
+  IF N_ELEMENTS(je_keys) EQ 0 THEN BEGIN
+     PRINT,"Generating je_keys ..."
+     je_keys = je_hash.Keys()
+     PRINT,'Saving keys to file ...'
+     STOP
+     SAVE,je_hash,je_keys,je_tRange_hash,je_tRange_inds_hash,FILENAME=dbDir+dbPref+orbSuff
+  ENDIF
+     
   ;;Get us out (of the U.N.!) in case there is nothing to talk about
   IF (WHERE(je_keys EQ orbit_num))[0] EQ -1 THEN BEGIN
      RETURN,-1
