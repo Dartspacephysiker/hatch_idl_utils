@@ -1,11 +1,14 @@
-;;08/26/16
+;;2016/08/26
 ;;Each file contains je_hash, je_trange_hash, je_trange_inds_hash, and je_keys
 
 FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
-                                 JE_OUT=je, $
-                                 TIME_RANGES_OUT=time_ranges, $
-                                 TIME_RANGE_INDICES_OUT=time_range_indices, $
-                                 NINTERVALS_OUT=number_of_intervals
+                                      JE_OUT=je, $
+                                      TIME_RANGES_OUT=time_ranges, $
+                                      TIME_RANGE_INDICES_OUT=time_range_indices, $
+                                      NINTERVALS_OUT=number_of_intervals, $
+                                      OUT_JEFILENAME=jeFileName, $
+                                      ;; OUT_JEFILEDIR=jeFileDir, $
+                                      QUIET=quiet
 
   COMPILE_OPT IDL2
 
@@ -185,7 +188,7 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
   PRINT,"Restoring Je, Je time stuff for orbs " + orbSuff + ' ...'
 
   IF FILE_TEST(dbDir+dbPref+orbSuff) THEN BEGIN
-     RESTORE,dbDir+dbPref + orbSuff
+     RESTORE,dbDir+dbPref+orbSuff
   ENDIF ELSE BEGIN
      PRINT,"LOAD_JE_AND_JE_TIMES_FOR_ORB: Can't find " + dbPref+orbSuff + '!'
      RETURN,-1
@@ -201,6 +204,7 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
      
   ;;Get us out (of the U.N.!) in case there is nothing to talk about
   IF (WHERE(je_keys EQ orbit_num))[0] EQ -1 THEN BEGIN
+     IF ~KEYWORD_SET(quiet) THEN PRINT,'No data for orb ' + STRCOMPRESS(orbit_num,/REMOVE_ALL)
      RETURN,-1
   ENDIF
 
@@ -210,6 +214,8 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
 
   time_ranges          = je_trange_hash[orbit_num] 
   time_range_indices   = je_trange_inds_hash[orbit_num]  ;; PRINT,'Restoring i
+
+  IF ARG_PRESENT(jeFileName) THEN jeFileName = dbPref+orbSuff
 
   RETURN,0
 END

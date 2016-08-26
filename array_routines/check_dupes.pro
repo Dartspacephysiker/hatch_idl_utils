@@ -37,7 +37,7 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
      out_dupe_i = !NULL
      IF ARG_PRESENT(out_uniq_i) THEN out_uniq_i = SORT(data)
      n_dupes    = 0
-     has_dupes  = 0
+     has_dupes  = 0B
      RETURN
   ENDIF
 
@@ -160,7 +160,7 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
      PRINT,''
 
      out_dupe_i            = -1
-     has_dupes             = 0
+     has_dupes             = 0B
      n_dupes               = 0
      IF ARG_PRESENT(out_uniq_i) THEN BEGIN
         out_uniq_i         = LINDGEN(N_ELEMENTS(data))
@@ -168,7 +168,7 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
 
   ENDIF ELSE BEGIN
 
-     has_dupes             = 1
+     has_dupes             = 1B
      n_dupes               = totDupes
 
   ENDELSE

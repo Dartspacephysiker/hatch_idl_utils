@@ -19,6 +19,7 @@ FUNCTION TIMEGEN_EASIER,t1_julDay,t2_julDay, $
      PRINT,"No interval provided! Assuming you just want to live you life."
      PRINT,"Setting monthInterval to 3 ..."
      monthInterval        = 3
+     nTypes               = 1
   ENDIF
 
   CASE nTypes OF
