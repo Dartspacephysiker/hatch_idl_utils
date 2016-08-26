@@ -196,7 +196,6 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
      PRINT,"Generating je_keys ..."
      je_keys = je_hash.Keys()
      PRINT,'Saving keys to file ...'
-     STOP
      SAVE,je_hash,je_keys,je_tRange_hash,je_tRange_inds_hash,FILENAME=dbDir+dbPref+orbSuff
   ENDIF
      
