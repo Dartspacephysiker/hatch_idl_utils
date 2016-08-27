@@ -7,6 +7,7 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
                                       TIME_RANGE_INDICES_OUT=time_range_indices, $
                                       NINTERVALS_OUT=number_of_intervals, $
                                       OUT_JEFILENAME=jeFileName, $
+                                      CLEAN_DUPES=clean_dupes, $
                                       ;; OUT_JEFILEDIR=jeFileDir, $
                                       QUIET=quiet
 
@@ -185,7 +186,7 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
   ENDCASE
 
   orbSuff              = STRCOMPRESS(orb1,/REMOVE_ALL) + '-' + STRCOMPRESS(orb2,/REMOVE_ALL) 
-  PRINT,"Restoring Je, Je time stuff for orbs " + orbSuff + ' ...'
+  IF ~KEYWORD_SET(quiet) THEN PRINT,"Restoring Je, Je time stuff for orbs " + orbSuff + ' ...'
 
   IF FILE_TEST(dbDir+dbPref+orbSuff) THEN BEGIN
      RESTORE,dbDir+dbPref+orbSuff
@@ -216,6 +217,68 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
   time_range_indices   = je_trange_inds_hash[orbit_num]  ;; PRINT,'Restoring i
 
   IF ARG_PRESENT(jeFileName) THEN jeFileName = dbPref+orbSuff
+
+  IF KEYWORD_SET(clean_dupes) THEN BEGIN
+
+     cleanFile = dbPref+orbSuff+'--dupesRemoved'
+     CASE FILE_TEST(dbDir+cleanFile) OF
+        0: BEGIN
+           IF ~KEYWORD_SET(quiet) THEN PRINT,'Making new clean list ...'
+           cleanHash = HASH(je_keys,MAKE_ARRAY(N_ELEMENTS(je_keys),VALUE=0,/BYTE))
+        END
+        1: BEGIN
+           RESTORE,dbDir+cleanFile
+           IF (cleanHash[orbit_num]) THEN BEGIN
+              IF ~KEYWORD_SET(quiet) THEN PRINT,"Je & Co. already cleaned"
+              RETURN,0
+           ENDIF 
+        END
+     ENDCASE
+
+     IF ~KEYWORD_SET(quiet) THEN PRINT,'Cleaning stuff ...'
+     CHECK_DUPES,je.x,HAS_DUPES=hasDupes,IS_SORTED=isSort,OUT_UNIQ_I=uniq_i, $
+                 QUIET=quiet
+
+     IF hasDupes OR ~isSort THEN BEGIN
+        IF ~KEYWORD_SET(quiet) THEN PRINT,"Sorting/junking dupes ..."
+
+        je = {x:je.x[uniq_i],y:je.y[uniq_i]}
+
+        FOR k=0,number_of_intervals-1 DO BEGIN
+           ;; IF (ABS(je.x[0]-time_ranges[k,0])) GT 0.0001 THEN BEGIN
+           ;;    time_ranges[k,0] = je.x[0]
+           ;; ENDIF
+           ;; IF (ABS(je.x[-1]-time_ranges[k,1])) GT 0.0001 THEN BEGIN
+           ;;    time_ranges[k,1] = je.x[-1]
+           ;; ENDIF
+
+           ;;Update time ranges and tRange indices
+           tmpMin = MIN(ABS(je.x[0]-time_ranges[k,0]),minLow)
+           PRINT,tmpMin
+           IF tmpMin GT 3 THEN STOP
+
+           tmpMin = MIN(ABS(je.x[0]-time_ranges[k,0]),minHigh)
+           PRINT,tmpMin
+           IF tmpMin GT 3 THEN STOP
+
+           time_ranges[k,*]        = [je.x[minLow],je.x[minHigh]]
+           time_range_indices[k,*] = [minLow,minHigh]
+        ENDFOR
+
+        ;;Update hashes
+        je_hash[orbit_num]             = je
+        je_trange_hash[orbit_num]      = time_ranges
+        je_trange_inds_hash[orbit_num] = time_range_indices
+
+        cleanHash[orbit_num] = 1B
+
+        ;;Save
+        IF ~KEYWORD_SET(quiet) THEN PRINT, "Saving cleaned file: " + cleanFile
+        SAVE,je_hash,je_keys,je_tRange_hash,je_tRange_inds_hash,cleanHash, $
+             FILENAME=dbDir+cleanFile
+     ENDIF
+
+  ENDIF
 
   RETURN,0
 END
