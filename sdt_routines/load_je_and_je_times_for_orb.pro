@@ -2,6 +2,7 @@
 ;;Each file contains je_hash, je_trange_hash, je_trange_inds_hash, and je_keys
 
 FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
+                                      RETURN_STRUCT=return_struct, $
                                       JE_OUT=je, $
                                       TIME_RANGES_OUT=time_ranges, $
                                       TIME_RANGE_INDICES_OUT=time_range_indices, $
@@ -209,6 +210,7 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
      RETURN,-1
   ENDIF
 
+
   number_of_intervals  = N_ELEMENTS((je_trange_inds_hash[orbit_num])[*,0])
 
   je                   = je_hash[orbit_num]
@@ -229,55 +231,108 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
         1: BEGIN
            RESTORE,dbDir+cleanFile
            IF (cleanHash[orbit_num]) THEN BEGIN
+
+              number_of_intervals  = N_ELEMENTS((je_trange_inds_hash[orbit_num])[*,0])
+
+              je                 = je_hash[orbit_num]
+
+              time_ranges        = je_trange_hash[orbit_num] 
+              time_range_indices = je_trange_inds_hash[orbit_num]  ;; PRINT,'Restoring i
+
+
+
               IF ~KEYWORD_SET(quiet) THEN PRINT,"Je & Co. already cleaned"
-              RETURN,0
+
            ENDIF 
         END
      ENDCASE
 
-     IF ~KEYWORD_SET(quiet) THEN PRINT,'Cleaning stuff ...'
-     CHECK_DUPES,je.x,HAS_DUPES=hasDupes,IS_SORTED=isSort,OUT_UNIQ_I=uniq_i, $
-                 QUIET=quiet
+     IF ~(cleanHash[orbit_num]) THEN BEGIN
 
-     IF hasDupes OR ~isSort THEN BEGIN
-        IF ~KEYWORD_SET(quiet) THEN PRINT,"Sorting/junking dupes ..."
+        IF ~KEYWORD_SET(quiet) THEN PRINT,'Cleaning stuff ...'
+        CHECK_DUPES,je.x,HAS_DUPES=hasDupes,IS_SORTED=isSort,OUT_UNIQ_I=uniq_i, $
+                    QUIET=quiet
 
-        je = {x:je.x[uniq_i],y:je.y[uniq_i]}
+        IF hasDupes OR ~isSort THEN BEGIN
+           IF ~KEYWORD_SET(quiet) THEN PRINT,"Sorting/junking dupes ..."
 
-        FOR k=0,number_of_intervals-1 DO BEGIN
-           ;; IF (ABS(je.x[0]-time_ranges[k,0])) GT 0.0001 THEN BEGIN
-           ;;    time_ranges[k,0] = je.x[0]
-           ;; ENDIF
-           ;; IF (ABS(je.x[-1]-time_ranges[k,1])) GT 0.0001 THEN BEGIN
-           ;;    time_ranges[k,1] = je.x[-1]
-           ;; ENDIF
+           je = {x:je.x[uniq_i],y:je.y[uniq_i]}
 
-           ;;Update time ranges and tRange indices
-           tmpMin = MIN(ABS(je.x[0]-time_ranges[k,0]),minLow)
-           PRINT,tmpMin
-           IF tmpMin GT 3 THEN STOP
+           ;;It's possible for time_ranges to have dupes. Consider orbit 9859:
+           ;;PRINT,TIME_TO_STR(time_ranges,/ms)
+           ;;1999-02-17/18:33:07.831
+           ;;1999-02-17/19:42:28.676
+           ;;1999-02-17/18:33:07.831
+           ;;1999-02-17/20:14:11.895
+           ;;
+           ;;So what you actually need is to find the nearest time AFTER the last
+           ;; FOR k=0,number_of_intervals-2 DO BEGIN
+           ;;    IF time_ranges[0,k+1] LT time_ranges[1,k] THEN BEGIN
+           ;;       PRINT,FORMAT='("time_ranges[",I0,",",I0"] > time_ranges[",I0,",",I0"]!")', $
+           ;;             0,k+1,1,k
+           ;;       apropos_i = WHERE(je.x GE time_ranges[1,k],nApropos)
+           ;;       IF nApropos EQ 0 THEN BEGIN
+           ;;          PRINT,"Well now you're really in a bind."
+           ;;          STOP
+           ;;       ENDIF
+           
+           ;;       tmpMin = MIN(ABS(je.x[apropos_i]-
+           ;;    ENDIF
 
-           tmpMin = MIN(ABS(je.x[0]-time_ranges[k,0]),minHigh)
-           PRINT,tmpMin
-           IF tmpMin GT 3 THEN STOP
+           ;; ENDFOR
 
-           time_ranges[k,*]        = [je.x[minLow],je.x[minHigh]]
-           time_range_indices[k,*] = [minLow,minHigh]
-        ENDFOR
 
-        ;;Update hashes
-        je_hash[orbit_num]             = je
-        je_trange_hash[orbit_num]      = time_ranges
-        je_trange_inds_hash[orbit_num] = time_range_indices
+           FOR k=0,number_of_intervals-1 DO BEGIN
 
-        cleanHash[orbit_num] = 1B
+              ;;Update time ranges and tRange indices
+              tmpMin = MIN(ABS(je.x-time_ranges[k,0]),minLow)
+              ;; PRINT,tmpMin
 
-        ;;Save
-        IF ~KEYWORD_SET(quiet) THEN PRINT, "Saving cleaned file: " + cleanFile
-        SAVE,je_hash,je_keys,je_tRange_hash,je_tRange_inds_hash,cleanHash, $
-             FILENAME=dbDir+cleanFile
+              IF tmpMin GT 3 THEN BEGIN
+                 PRINT,FORMAT='(F0.3,"-sec diff ''twixt time_ranges[",I0,",",I0,"] ' + $
+                       'and nearest je.x")',tmpMin,k,0
+                 STOP
+              ENDIF
+
+              tmpMin = MIN(ABS(je.x-time_ranges[k,1]),minHigh)
+              ;; PRINT,tmpMin
+              IF tmpMin GT 3 THEN BEGIN
+                 PRINT,FORMAT='(F0.3,"-sec diff ''twixt time_ranges[",I0,",",I0,"] ' + $
+                       'and nearest je.x")',tmpMin,k,1
+
+                 STOP
+              ENDIF
+
+              time_ranges[k,*]        = [je.x[minLow],je.x[minHigh]]
+              time_range_indices[k,*] = [minLow,minHigh]
+           ENDFOR
+
+           ;;Update hashes
+           je_hash[orbit_num]             = je
+           je_trange_hash[orbit_num]      = time_ranges
+           je_trange_inds_hash[orbit_num] = time_range_indices
+
+           cleanHash[orbit_num] = 1B
+
+           ;;Save
+           IF ~KEYWORD_SET(quiet) THEN PRINT, "Saving cleaned file: " + cleanFile
+           SAVE,je_hash,je_keys,je_tRange_hash,je_tRange_inds_hash,cleanHash, $
+                FILENAME=dbDir+cleanFile
+
+        ENDIF
      ENDIF
 
+     IF ARG_PRESENT(jeFileName) THEN jeFileName = cleanFile
+
+  ENDIF
+
+  IF KEYWORD_SET(return_struct) THEN BEGIN
+     struct = {je                  : je, $
+               time_ranges         : time_ranges, $
+               time_range_indices  : time_range_indices, $
+               number_of_intervals : number_of_intervals}
+     
+     RETURN,struct
   ENDIF
 
   RETURN,0
