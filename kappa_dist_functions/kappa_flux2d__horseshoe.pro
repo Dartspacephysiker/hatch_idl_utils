@@ -22,6 +22,8 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE,X,Y,P, $
 
   COMPILE_OPT idl2
 
+  @kappa_unitconversion_common.pro
+
   ;;Structure of each is [energies,angles]
   nEnergies        = N_ELEMENTS(X[*,0])
   nAngles          = N_ELEMENTS(Y[0,*])
@@ -43,7 +45,10 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE,X,Y,P, $
                                 FLOAT=float, $
                                 DOUBLE=double)
 
-     gFunc[calc_i] = ABS( ( mu_vals[calc_i] - mu_0 ) / ( 1. - mu_0 ) )^0.5
+     ;; gFunc[calc_i] = ABS( ( mu_vals[calc_i] - mu_0 ) / ( 1. - mu_0 ) )^0.5
+
+     gFunc[calc_i] = ABS( ( mu_vals[calc_i] - mu_0 ) / ( 1. - mu_0 ) )^(3.0)
+
      ;; plot,y[0,*],gfunc[0,*]
 
   ENDIF ELSE BEGIN
@@ -57,9 +62,69 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE,X,Y,P, $
                                 FLOAT=float, $
                                 DOUBLE=double)
 
-  KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,P,Zmodel
+  KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,P,Zmodel
+
+  ;; KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,P,Zmodel
      
-  Zmodel *= gFunc       ; Bingham and Cairns [2000]
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;BEGIN HARD WORK
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  ;;In eFlux units
+  ;; energy        = X[*,0]
+  convFromDF    = (U__gf * U__geom) * X^2 * 2./U__mass/U__mass*1e5
+  convToDF      = 1. / (U__dt * U__gf * U__geom  * X^2 * 2./((U__mass)^2)*1e5 )
+
+  convFromEFlux = U__gf * U__geom
+  convToEflux   = 1. / (U__dt * U__gf * U__geom)
+
+  ;;First convert model to counts
+  tmp           = convFromEFlux * Zmodel
+  tmp           = ROUND(U__dt*tmp/(1.+tmp*U__dead)) ;;Remove dead-time correction
+  denom         = 1.- U__dead*tmp/U__dt
+
+  ;;Dead-time correction
+  void          = WHERE(denom LT .1,count)
+  IF count GT 0 THEN BEGIN
+     PRINT,MIN(denom,ind)
+     denom = denom > .1 
+     print,' Error: convert_esa_units2 dead time error.'
+     print,' Dead time correction limited to x10 for ',count,' bins'
+     print,' Time= ','some time or other' ;TIME_TO_STR(data.time,/msec)
+  ENDIF
+
+  ;;Now convert it to DF
+  tmp           = tmp * convToDF / denom 
+  
+  
+  ;;Now apply gFunc
+  tmp          *= gFunc       ; Bingham and Cairns [2000]
+
+  ;;Now convert back to counts
+  tmp           = convFromDF * tmp
+  tmp           = ROUND(U__dt*tmp/(1.+tmp*U__dead)) ;;Remove dead-time correction
+
+  ;;Dead time correction
+  void          = WHERE(denom LT .1,count)
+  IF count GT 0 THEN BEGIN
+     PRINT,MIN(denom,ind)
+     denom = denom > .1 
+     print,' Error: convert_esa_units2 dead time error.'
+     print,' Dead time correction limited to x10 for ',count,' bins'
+     print,' Time= ','some time or other' ;TIME_TO_STR(data.time,/msec)
+  ENDIF
+
+  ;;Now convert it BACK to eFlux
+  Zmodel        = tmp * convToEFlux / denom 
+
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;END HARD WORK
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  ;;Alternatively, skip all this
+  ;; Zmodel *= gFunc       ; Bingham and Cairns [2000]
 
 
   RETURN,Zmodel

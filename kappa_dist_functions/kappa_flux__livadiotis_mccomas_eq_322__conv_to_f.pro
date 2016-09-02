@@ -64,7 +64,7 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,A,F,pder
   ;;Chunks of the function
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
 
-  Finv                   = n * ( m / 2.D ) ^ (1.5D) ;* DOUBLE(1e15)
+  ;; Finv                   = n * ( m / 2.D ) ^ (1.5D) ;* DOUBLE(1e15)
 
   ;;Converts to eFlux units
   Finv                   = n * ( m / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
