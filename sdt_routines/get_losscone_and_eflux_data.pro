@@ -94,6 +94,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                     EEB_OR_EES=eeb_or_ees, $
                     ANGLE=e_angle, $
                     NAME__DIFF_EFLUX=name__diff_eFlux, $
+                    /CALC_GEOM_FACTORS, $
                     FIT_EACH_ANGLE=fit_each_angle, $
                     SPECTRA_AVERAGE_INTERVAL=spectra_average_interval 
 

@@ -1,0 +1,1 @@
+COMMON KF2D_HEA,K_EA__gFunc,K_EA__bFunc

@@ -41,6 +41,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
      CASE 1 OF
         KEYWORD_SET(fit_each_angle): BEGIN
            tempdiff_eflux = PREP_EFLUX_DATA(tempDat, $
+                                            CALIB=calc_geom_factors, $
                                             UNITS=units, $          
                                             RETRACE=retrace, $
                                             VEL=vel, $

@@ -16,12 +16,13 @@
 ; P[3]: n,         Plasma density (cm^-3)
 
 ;2016/09/02 Here we're trying to understand how to be the biggest helpers we can
-FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY,X,Y,P, $
+;2016/09/03 This one uses info from the ol' common block
+FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
    ;; KAPPA_1D_FITPARAMS=kappa1Dparams, $
    BINGHAM_STYLE=Bingham_style, $
    MU_0=mu_0, $
-   GFUNC=gFunc, $
-   BULK_E_ANISOTROPY=bFunc, $
+   ;; GFUNC=gFunc, $
+   ;; BULK_E_ANISOTROPY=bFunc, $
    BULK_E_ANGLE=bulk_e_angle
 
   COMPILE_OPT idl2
@@ -35,35 +36,35 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY,X,Y,P, $
   mu_vals          = COS(Y/180.*!PI)
 
   ;;Handle mu vals, gfunction
-  IF (N_ELEMENTS(gFunc) EQ 0) OR (N_ELEMENTS(gFunc) NE nAngles) THEN BEGIN
-     IF KEYWORD_SET(Bingham_style) THEN BEGIN   
+  ;; IF (N_ELEMENTS(gFunc) EQ 0) OR (N_ELEMENTS(gFunc) NE nAngles) THEN BEGIN
+  ;;    IF KEYWORD_SET(Bingham_style) THEN BEGIN   
 
-        ;;Bingham and Cairns [1999]–style
+  ;;       ;;Bingham and Cairns [1999]–style
 
-        mu_0          = N_ELEMENTS(mu_0) GT 0 ? mu_0 : 0.0 ;mu_0 must be less than one
-        calc_i        = WHERE(mu_vals GE mu_0,nCalc)
+  ;;       mu_0          = N_ELEMENTS(mu_0) GT 0 ? mu_0 : 0.0 ;mu_0 must be less than one
+  ;;       calc_i        = WHERE(mu_vals GE mu_0,nCalc)
 
-        IF nCalc EQ 0 THEN PRINT,"KAPPA_FLUX2D__HORSESHOE: All mu vals are invalid!"
+  ;;       IF nCalc EQ 0 THEN PRINT,"KAPPA_FLUX2D__HORSESHOE: All mu vals are invalid!"
 
-        gFunc         = MAKE_ARRAY(nEnergies,nAngles, $
-                                   VALUE=0.0, $
-                                   FLOAT=float, $
-                                   DOUBLE=double)
+  ;;       gFunc         = MAKE_ARRAY(nEnergies,nAngles, $
+  ;;                                  VALUE=0.0, $
+  ;;                                  FLOAT=float, $
+  ;;                                  DOUBLE=double)
 
-        gFunc[calc_i] = ABS( ( mu_vals[calc_i] - mu_0 ) / ( 1. - mu_0 ) )^(3.0)
-        ;; plot,y[0,*],gfunc[0,*]
+  ;;       gFunc[calc_i] = ABS( ( mu_vals[calc_i] - mu_0 ) / ( 1. - mu_0 ) )^(3.0)
+  ;;       ;; plot,y[0,*],gfunc[0,*]
 
-     ENDIF ELSE BEGIN
-        ;;It's going to make an upgoing horseshoe!
-        gFunc         = ( mu_vals + 1 )^2 
-     ENDELSE
-  ENDIF
+  ;;    ENDIF ELSE BEGIN
+  ;;       ;;It's going to make an upgoing horseshoe!
+  ;;       gFunc         = ( mu_vals + 1 )^2 
+  ;;    ENDELSE
+  ;; ENDIF
 
-  IF N_ELEMENTS(bFunc) EQ 0 THEN BEGIN
-     bFunc = MAKE_ARRAY(nAngles,VALUE=1.0)
-  ENDIF ELSE BEGIN
-     ;; PRINT,'Bulking out'
-  ENDELSE
+  ;; IF N_ELEMENTS(bFunc) EQ 0 THEN BEGIN
+     ;; K_EA__bFunc = MAKE_ARRAY(nAngles,VALUE=1.0)
+  ;; ENDIF ELSE BEGIN
+  ;;    ;; PRINT,'Bulking out'
+  ;; ENDELSE
 
   ;;Loop over angles
   Zmodel           = MAKE_ARRAY(nEnergies,nAngles, $
@@ -75,11 +76,11 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY,X,Y,P, $
 
      tempEn   = X[*,i]
      tempP    = P
-     tempP[0] = tempP[0]*bFunc[i]
+     tempP[0] = tempP[0]*K_EA__bFunc[i]
 
      ;; PRINT,FORMAT='("tempP, factor, angle, aIntended ",T35,": ",F0.2,T50,F0.2,T65,F0.2,T80,F0.2)', $
      ;;       tempP[0], $
-     ;;       bFunc[i], $
+     ;;       K_EA__bFunc[i], $
      ;;       MEAN(Y[*,i]), $
      ;;       bulk_e_angle[i]
 
@@ -88,7 +89,7 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY,X,Y,P, $
      
      ;; Zmodel[*,i]  = angleSlice                          ; No horseshoe nothin.
      
-     Zmodel[*,i]  = angleSlice * gFunc[*,i]                ; Bingham and Cairns [2000]
+     Zmodel[*,i]  = angleSlice * K_EA__gFunc[i]          ; Bingham and Cairns [2000]
      ;; Zmodel[*,i]  = angleSlice * ( mu_vals[*,i] + 1 )^2 ; Bingham and Cairns [2000]
      
      ;; IF KEYWORD_SET(Bingham_style) THEN BEGIN

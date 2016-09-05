@@ -26,15 +26,17 @@
 ;MOD HISTORY:
 ;		2016/07/14	Ripped from spec2d.pro
 ;-
-FUNCTION PREP_EFLUX_DATA,tempdat,   $
-                    UNITS=units,   $          
-                    RETRACE=retrace, $
-                    VEL=vel, $
-                    ANGLE=an, $
-                    ARANGE=ar, $
-                    BINS=bins,     $
-                    NO_SORT=no_sort
-
+FUNCTION PREP_EFLUX_DATA, $
+   tempdat,   $
+   CALIB=calib, $
+   UNITS=units,   $          
+   RETRACE=retrace, $
+   VEL=vel, $
+   ANGLE=an, $
+   ARANGE=ar, $
+   BINS=bins,     $
+   NO_SORT=no_sort
+  
   COMPILE_OPT idl2
 
   IF (data_type(tempdat) ne 8) OR (tempdat.valid EQ 0) THEN BEGIN
@@ -154,7 +156,14 @@ FUNCTION PREP_EFLUX_DATA,tempdat,   $
               END
               2: BEGIN
                  theta  = REVERSE(theta,2)
-                 geom   = REVERSE(geom,2)
+                 CASE 1 OF
+                    KEYWORD_SET(calib): BEGIN
+                       geom   = REVERSE(geom,2)
+                    END
+                    ELSE: BEGIN
+                       geom   = geom
+                    END
+                 ENDCASE
               END
            ENDCASE
         ENDIF
@@ -202,9 +211,16 @@ FUNCTION PREP_EFLUX_DATA,tempdat,   $
            theta        = SHIFT(theta,-indminvar,0)
            theta        = TRANSPOSE(theta)
 
-           geom        = TRANSPOSE(geom)
-           geom        = SHIFT(geom,-indminvar,0)
-           geom        = TRANSPOSE(geom)
+           CASE 1 OF
+              KEYWORD_SET(calib): BEGIN
+                 geom        = TRANSPOSE(geom)
+                 geom        = SHIFT(geom,-indminvar,0)
+                 geom        = TRANSPOSE(geom)
+              END
+              ELSE: BEGIN
+                 geom        = SHIFT(geom ,-indminvar)
+              END
+           ENDCASE
         END
      ENDCASE
      
@@ -225,7 +241,15 @@ FUNCTION PREP_EFLUX_DATA,tempdat,   $
      END
      2: BEGIN
         theta           = theta[*,i]
-        geom            = geom[*,i]
+        CASE 1 OF
+           KEYWORD_SET(calib): BEGIN
+              geom      = geom[*,i]
+
+           END
+           ELSE: BEGIN
+              geom      = geom[i]
+           END
+        ENDCASE
      END
   ENDCASE
 
