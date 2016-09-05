@@ -23,7 +23,8 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
    MU_0=mu_0, $
    ;; GFUNC=gFunc, $
    ;; BULK_E_ANISOTROPY=bFunc, $
-   BULK_E_ANGLE=bulk_e_angle
+   ;; BULK_E_ANGLE=bulk_e_angle, $
+   IS_MAXWELLIAN_FIT=is_maxwellian_fit
 
   COMPILE_OPT idl2
 
@@ -72,37 +73,58 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
                                 FLOAT=float, $
                                 DOUBLE=double)
 
-  FOR i=0,nAngles-1 DO BEGIN
+  CASE 1 OF
+     KEYWORD_SET(is_maxwellian_fit): BEGIN
 
-     tempEn   = X[*,i]
-     tempP    = P
-     tempP[0] = tempP[0]*K_EA__bFunc[i]
+        FOR i=0,nAngles-1 DO BEGIN
 
-     ;; PRINT,FORMAT='("tempP, factor, angle, aIntended ",T35,": ",F0.2,T50,F0.2,T65,F0.2,T80,F0.2)', $
-     ;;       tempP[0], $
-     ;;       K_EA__bFunc[i], $
-     ;;       MEAN(Y[*,i]), $
-     ;;       bulk_e_angle[i]
+           tempEn   = X[*,i]
+           tempP    = P
+           tempP[0] = tempP[0]*K_EA__bFunc[i]
+
+           MAXWELL_FLUX,tempEn,tempP,angleSlice
+
+           Zmodel[*,i]  = angleSlice * K_EA__gFunc[i] ; Bingham and Cairns [2000]
+           
+        ENDFOR
+
+     END
+     ELSE: BEGIN
+        FOR i=0,nAngles-1 DO BEGIN
+
+           tempEn   = X[*,i]
+           tempP    = P
+           tempP[0] = tempP[0]*K_EA__bFunc[i]
+
+           ;; PRINT,FORMAT='("tempP, factor, angle, aIntended ",T35,": ",F0.2,T50,F0.2,T65,F0.2,T80,F0.2)', $
+           ;;       tempP[0], $
+           ;;       K_EA__bFunc[i], $
+           ;;       MEAN(Y[*,i]), $
+           ;;       bulk_e_angle[i]
 
 
-     KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,tempEn,tempP,angleSlice
-     
-     ;; Zmodel[*,i]  = angleSlice                          ; No horseshoe nothin.
-     
-     Zmodel[*,i]  = angleSlice * K_EA__gFunc[i]          ; Bingham and Cairns [2000]
-     ;; Zmodel[*,i]  = angleSlice * ( mu_vals[*,i] + 1 )^2 ; Bingham and Cairns [2000]
-     
-     ;; IF KEYWORD_SET(Bingham_style) THEN BEGIN
-     ;;    Zmodel[*,i]  = angleSlice * ( mu_vals[*,i] + 1 ) ; Bingham et al.     [1999]
-     ;; ENDIF
+           KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,tempEn,tempP,angleSlice
+           
+           ;; Zmodel[*,i]  = angleSlice                          ; No horseshoe nothin.
+           
+           Zmodel[*,i]  = angleSlice * K_EA__gFunc[i] ; Bingham and Cairns [2000]
+           ;; Zmodel[*,i]  = angleSlice * ( mu_vals[*,i] + 1 )^2 ; Bingham and Cairns [2000]
+           
+           ;; IF KEYWORD_SET(Bingham_style) THEN BEGIN
+           ;;    Zmodel[*,i]  = angleSlice * ( mu_vals[*,i] + 1 ) ; Bingham et al.     [1999]
+           ;; ENDIF
 
-  ENDFOR
+        ENDFOR
 
-  ;; KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,P,Zmodel
+        ;; KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,P,Zmodel
 
-  ;; KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,P,Zmodel
-     
-  ;; Zmodel *= gFunc       ; Bingham and Cairns [2000]
+        ;; KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,P,Zmodel
+        
+        ;; Zmodel *= gFunc       ; Bingham and Cairns [2000]
+
+
+     END
+  ENDCASE
 
 
   RETURN,Zmodel
