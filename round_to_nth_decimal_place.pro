@@ -22,7 +22,7 @@ FUNCTION ROUND_TO_NTH_DECIMAL_PLACE,nums,decimal_place, $
         func   = 'FLOOR'
      END
      KEYWORD_SET(ceiling): BEGIN
-        func   = 'CEILING'
+        func   = 'CEIL'
      END
      ELSE: BEGIN
         func   = 'ROUND'

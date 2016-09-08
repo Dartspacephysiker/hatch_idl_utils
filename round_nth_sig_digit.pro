@@ -24,7 +24,7 @@ FUNCTION ROUND_NTH_SIG_DIGIT,nums,sig_digit, $
         func   = 'FLOOR'
      END
      KEYWORD_SET(ceiling): BEGIN
-        func   = 'CEILING'
+        func   = 'CEIL'
      END
      ELSE: BEGIN
         func   = 'ROUND'
