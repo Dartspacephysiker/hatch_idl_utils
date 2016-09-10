@@ -43,30 +43,37 @@ PRO GET_STREAKS,input, $
      END
      ELSE: BEGIN
         stop_i                            = [start_i[1:-1]-1,N_ELEMENTS(input)-1]
-        single_ii                         = WHERE(start_i EQ stop_i,COMPLEMENT=keep_ii,/NULL)
-        WHERECHECK,single_ii,keep_ii
+        single_ii                         = WHERE(start_i EQ stop_i,nSingle, $
+                                                  COMPLEMENT=keep_ii,NCOMPLEMENT=nKeep)
+        ;; WHERECHECK,single_ii,keep_ii
 
-        start_i                           = start_i[keep_ii]
-        stop_i                            = stop_i[keep_ii]
-        single_i                          = start_i[single_ii]
+        
+        IF nKeep GT 0 THEN BEGIN
+           start_i                        = start_i[keep_ii]
+           stop_i                         = stop_i[keep_ii]
+        ENDIF
+
+        IF nSingle GT 0 THEN BEGIN
+           single_i                       = start_i[single_ii]
+        ENDIF
 
      END
   ENDCASE
 
   IF KEYWORD_SET(min_streak) THEN BEGIN
      PRINTF,lun,'Minimum streak for keeping: ' + STRCOMPRESS(min_streak,/REMOVE_ALL)
-     minStreak_ii                   = WHERE((stop_i-start_i) GE min_streak,COMPLEMENT=lowStreak_ii,/NULL,NCOMPLEMENT=nLow)
+     minStreak_ii                   = WHERE((stop_i-start_i) GE min_streak,n_streaks, $
+                                            COMPLEMENT=lowStreak_ii,/NULL,NCOMPLEMENT=nLow)
      IF N_ELEMENTS(minStreak_ii) GT 0 THEN BEGIN
         
         IF nLow GT 0 THEN BEGIN
-           PRINT,'Losing ' + STRCOMPRESS(nLow,/REMOVE_ALL) + 'due to min streak requirement...'
+           PRINT,'Losing ' + STRCOMPRESS(nLow,/REMOVE_ALL) + ' due to min streak requirement...'
            lowStreak_start_i        = start_i[lowStreak_ii]
            lowStreak_stop_i         = stop_i[lowStreak_ii]
         ENDIF
 
         start_i                     = start_i[minStreak_ii]
         stop_i                      = stop_i[minStreak_ii]
-        n_streaks++
      ENDIF
   ENDIF ELSE BEGIN
      n_streaks = N_ELEMENTS(start_i)
