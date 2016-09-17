@@ -12,7 +12,15 @@ PRO GET_STREAKS,input, $
                 OUT_STREAKLENS=streakLens, $
                 LUN=lun, $
                 N_STREAKS=n_streaks, $
-                NO_PRINT_SUMMARY=no_print_summary
+                NO_PRINT_SUMMARY=no_print_summary, $
+                QUIET=quiet
+
+  COMPILE_OPT idl2
+
+  IF ~IS_INT_TYPE(input) THEN BEGIN
+     IF ~KEYWORD_SET(quiet) THEN PRINT,"GET_STREAKS: Input not int type!"
+     RETURN
+  ENDIF
 
   ;;Assume we have no streaks
   n_streaks                         = 0
@@ -79,13 +87,16 @@ PRO GET_STREAKS,input, $
      n_streaks = N_ELEMENTS(start_i)
   ENDELSE
 
+  streakLens                        = stop_i-start_i
+
+  n_streaks                         = N_ELEMENTS(WHERE(streakLens GT 0,/NULL))
   IF ~no_print_summary THEN BEGIN
+     nSingle_i                      = single_i[0] EQ -1 ? 0 : N_ELEMENTS(single_i)
      PRINTF,lun,""
      PRINTF,lun,FORMAT='("**GET_STREAKS**")'
      PRINTF,lun,FORMAT='("N Streaks                     :",T35,I0)',n_streaks
-     PRINTF,lun,FORMAT='("N single values               :",T35,I0)',N_ELEMENTS(single_i)
+     PRINTF,lun,FORMAT='("N single values               :",T35,I0)',nSingle_i
   ENDIF
 
-  streakLens                        = stop_i-start_i
 
 END
