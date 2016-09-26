@@ -126,7 +126,7 @@ PRO CHECK_DUPES,data,rev_ind,dupes_rev_ind,dataenum, $
   ENDIF
 
   ;;Get the unique inds if either requested or else if we're returning a dupeless array
-  IF ARG_PRESENT(out_uniq_i) OR KEYWORD_SET(return_with_dupes_removed_and_sorted) THEN BEGIN
+  IF ARG_PRESENT(out_uniq_i) OR KEYWORD_SET(return_with_dupes_removed) THEN BEGIN
 
      out_uniq_i             = UNIQ(data, SORT(data))
 

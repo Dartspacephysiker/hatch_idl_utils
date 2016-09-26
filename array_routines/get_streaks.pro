@@ -63,7 +63,9 @@ PRO GET_STREAKS,input, $
 
         IF nSingle GT 0 THEN BEGIN
            single_i                       = start_i[single_ii]
-        ENDIF
+        ENDIF ELSE BEGIN
+           single_i                       = -1
+        ENDELSE
 
      END
   ENDCASE
