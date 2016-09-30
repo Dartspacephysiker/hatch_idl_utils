@@ -1,7 +1,7 @@
 FUNCTION ROUND_NTH_SIG_DIGIT,nums,sig_digit, $
                              FLOOR=floor, $
                              CEILING=ceiling, $
-                               DOUBLE=double
+                             DOUBLE=double
 
   COMPILE_OPT idl2
 
@@ -31,7 +31,9 @@ FUNCTION ROUND_NTH_SIG_DIGIT,nums,sig_digit, $
      END
   ENDCASE
 
-  roundedNums  = (CALL_FUNCTION(func,nums/divisor))*divisor
+  roundedNums  = (KEYWORD_SET(double) ? $
+                  DOUBLE( (CALL_FUNCTION(func,nums/divisor,/L64)) )*divisor : $
+                  (CALL_FUNCTION(func,nums/divisor,/L64))*divisor           )
 
   RETURN,roundedNums
 

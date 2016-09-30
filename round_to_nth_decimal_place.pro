@@ -1,7 +1,8 @@
 FUNCTION ROUND_TO_NTH_DECIMAL_PLACE,nums,decimal_place, $
                                     FLOOR=floor, $
                                     CEILING=ceiling, $
-                                    DOUBLE=double
+                                    DOUBLE=double, $
+                                    LEAVE_AS_INTEGER=leave_as_integer
 
   COMPILE_OPT idl2
 
@@ -17,6 +18,12 @@ FUNCTION ROUND_TO_NTH_DECIMAL_PLACE,nums,decimal_place, $
 
   divisor      = divisor^decimal_place
 
+  IF KEYWORD_SET(leave_as_integer) THEN BEGIN
+     multiplier = 1LL
+  ENDIF ELSE BEGIN
+     multiplier = divisor
+  ENDELSE
+
   CASE 1 OF
      KEYWORD_SET(floor): BEGIN
         func   = 'FLOOR'
@@ -29,7 +36,11 @@ FUNCTION ROUND_TO_NTH_DECIMAL_PLACE,nums,decimal_place, $
      END
   ENDCASE
 
-  roundedNums  = (CALL_FUNCTION(func,nums/divisor))*divisor
+  roundedNums  = (KEYWORD_SET(double) ? $
+                  DOUBLE( (CALL_FUNCTION(func,nums/divisor,/L64)) ) : $
+                  (CALL_FUNCTION(func,nums/divisor,/L64))           )*multiplier
+
+  IF KEYWORD_SET(leave_as_integer) THEN roundedNums = FIX(roundedNums,TYPE=14)
 
   RETURN,roundedNums
 
