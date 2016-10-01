@@ -3,11 +3,13 @@
 ;;   For a FA_FIELDS_BUFS-style treatment of double-type time series, please see GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE.
 ;;
 PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
-                                          N=n, $
+                                          NPTS=n, $
+                                          MIN_T_STREAKLEN=min_streakLen_t, $
                                           GAP_TIME=gap_time, $
                                           START_I=start_i, $
                                           STOP_I=stop_i, $
                                           STREAKLENS=streakLens, $
+                                          T_STREAKLENS=streakLens_t, $
                                           FLOOR=floor, $
                                           CEILING=ceiling, $
                                           PRINT_START_STOP_TIMES=print_start_stop_times
@@ -198,6 +200,27 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
   goodStreak_ii  = WHERE(tmpStrk GE n,nGoodStreaks)
 
   IF nGoodStreaks EQ 0 THEN BEGIN
+     doQuit      = 1
+  ENDIF
+
+  IF KEYWORD_SET(min_streakLen_t) AND ~KEYWORD_SET(doQuit) THEN BEGIN
+     streakLens_t   = nums[stop_i] - nums[start_i]
+     goodTStreak_ii = WHERE(streakLens_t GE min_streakLen_t,nGoodStreaks)
+
+     IF nGoodStreaks EQ 0 THEN BEGIN
+        doQuit   = 1
+     ENDIF ELSE BEGIN
+
+        goodStreak_ii = CGSETINTERSECTION(goodStreak_ii,goodTStreak_ii,COUNT=nGoodStreaks)
+
+        IF nGoodStreaks EQ 0 THEN BEGIN
+           doQuit   = 1
+        ENDIF
+     ENDELSE
+
+  ENDIF
+
+  IF KEYWORD_SET(doQuit) THEN BEGIN
      start_i     = 0
      stop_i      = 0
      streakLens  = 0
@@ -205,11 +228,13 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
   ENDIF
 
   streakLens     = tmpStrk[goodStreak_ii]
+  streakLens_t   = streakLens_t[goodStreak_ii]
   start_i        = start_i[goodStreak_ii]
   stop_i         = stop_i[goodStreak_ii]
 
   sort           = SORT(start_i)
   streakLens     = streakLens[sort]
+  streakLens_t   = streakLens_t[sort]
   start_i        = start_i[sort]
   stop_i         = stop_i[sort]
 
