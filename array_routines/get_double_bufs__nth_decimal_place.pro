@@ -133,6 +133,17 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
 
   nUniq       = N_ELEMENTS(uniq_ii)
 
+  ;; uniq_ii = DOUBLE_UNIQ(nums,decimal_place, $
+                        
+  ;;                       N=n, $
+  ;;                       DELTA=delta, $
+  ;;                       FLOOR=floor, $
+  ;;                       CEILING=ceiling, $
+  ;;                       QUIET=quiet, $
+  ;;                       OUT_DELTMOD=deltMod, $
+  ;;                       OUT_DIFFTOT=diffTot, $
+  ;;                       NUNIQ=nUniq)
+
   start_ii    = !NULL
   stop_ii     = !NULL
   streakLens  = !NULL
