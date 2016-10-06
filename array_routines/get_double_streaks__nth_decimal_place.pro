@@ -180,8 +180,8 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
                          COMPLEMENT=keep_ii,NCOMPLEMENT=nKeep)
 
         IF nKeep GT 0 THEN BEGIN
-           start_i    = start_i[keep_ii]
-           stop_i     = stop_i[keep_ii]
+           start_i      = start_i[keep_ii]
+           stop_i       = stop_i[keep_ii]
 
            streaksHere  = 1
         ENDIF
@@ -189,9 +189,10 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
   ENDCASE
 
   IF ~streaksHere THEN BEGIN
-     start_i     = 0
-     stop_i      = 0
-     streakLens  = 0
+     start_i       = 0
+     stop_i        = 0
+     streakLens    = 0
+     streakLens_t  = 0
      RETURN
   ENDIF
 
@@ -203,27 +204,29 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
      doQuit      = 1
   ENDIF
 
+  streakLens_t   = nums[stop_i] - nums[start_i]
   IF KEYWORD_SET(min_streakLen_t) AND ~KEYWORD_SET(doQuit) THEN BEGIN
-     streakLens_t   = nums[stop_i] - nums[start_i]
+     
      goodTStreak_ii = WHERE(streakLens_t GE min_streakLen_t,nGoodStreaks)
 
      IF nGoodStreaks EQ 0 THEN BEGIN
-        doQuit   = 1
+        doQuit      = 1
      ENDIF ELSE BEGIN
 
         goodStreak_ii = CGSETINTERSECTION(goodStreak_ii,goodTStreak_ii,COUNT=nGoodStreaks)
 
         IF nGoodStreaks EQ 0 THEN BEGIN
-           doQuit   = 1
+           doQuit = 1
         ENDIF
      ENDELSE
 
   ENDIF
 
   IF KEYWORD_SET(doQuit) THEN BEGIN
-     start_i     = 0
-     stop_i      = 0
-     streakLens  = 0
+     start_i      = 0
+     stop_i       = 0
+     streakLens   = 0
+     streakLens_t = 0
      RETURN
   ENDIF
 
@@ -240,8 +243,19 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
 
 
   IF KEYWORD_SET(print_start_stop_times) THEN BEGIN
-     FOR k=0,n_elements(start_i)-1 DO PRINT,TIME_TO_STR(nums[start_i[k]]),"   ", $
-                                            TIME_TO_STR(nums[stop_i[k]]), $
-                                            nums[stop_i[k]]-nums[start_i[k]]
+     PRINT,FORMAT='(A0,T25,A0,T50,A0,T65,A0,T80,A0)','Start T', $
+           'Stop T', $
+           'Tot T diff', $
+           'N Diff', $
+           'Avg T diff'
+     FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
+        PRINT,FORMAT='(A0,T25,A0,T50,G-0.5,T65,I-10,T80,G-0.5)', $
+              TIME_TO_STR(nums[start_i[k]],/MSEC), $
+              TIME_TO_STR(nums[stop_i[k]],/MSEC), $
+              nums[stop_i[k]]-nums[start_i[k]], $
+              streakLens[k], $
+              MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
+                   (nums[start_i[k]:stop_i[k]])[0:-2])
+     ENDFOR
   ENDIF
 END
