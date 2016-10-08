@@ -33,7 +33,8 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
 
      ENDIF ELSE BEGIN
         PRINT,"Couldn't find " + loadFile + "!!!"
-        STOP
+        PRINT,'Attempting to get and save for you ...'
+        couldntfindLoad = 1
      ENDELSE
 
      ;; RETURN
@@ -92,7 +93,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
   IF N_ELEMENTS(diff_eFlux) EQ 0 THEN BEGIN
      GET_DIFF_EFLUX,T1=t1,T2=t2, $
                     EEB_OR_EES=eeb_or_ees, $
-                    ANGLE=e_angle, $
+                    ;; ANGLE=e_angle, $
                     NAME__DIFF_EFLUX=name__diff_eFlux, $
                     /CALC_GEOM_FACTORS, $
                     FIT_EACH_ANGLE=fit_each_angle, $
@@ -100,6 +101,18 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
 
 
      GET_DATA,name__diff_eFlux,DATA=diff_eFlux
+
+     IF SIZE(diff_eFlux,/TYPE) NE 8 THEN BEGIN
+        PRINT,"Couldn't get diff_eFlux!"
+        RETURN
+     ENDIF
+
+     IF KEYWORD_SET(save_diff_eFlux_to_file) OR KEYWORD_SET(couldntfindLoad) THEN BEGIN
+        IF KEYWORD_SET(couldntfindload) THEN save_diff_eFlux_to_file = loadFile
+        PRINT,"Saving diff_eFlux to file: " + save_diff_eFlux_to_file
+        SAVE,diff_eFlux,FILENAME=loadDir + save_diff_eFlux_to_file
+     ENDIF
+
   ENDIF
 
 END

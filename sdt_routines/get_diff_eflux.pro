@@ -3,7 +3,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                    NAME__DIFF_EFLUX=name__diff_eFlux, $
                    CALC_GEOM_FACTORS=calc_geom_factors, $
-                   ANGLE=angle, $
+                   ;; ANGLE=angle, $
                    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                    FIT_EACH_ANGLE=fit_each_angle, $
                    TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct
