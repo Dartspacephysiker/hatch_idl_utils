@@ -11,8 +11,8 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
   COMPILE_OPT IDL2
 
   IF N_ELEMENTS(R_B) EQ 0 THEN BEGIN
-     mRat                = 1.0e6
-     PRINT,'Setting R_B to 1.0e6 ...'
+     mRat                = 10
+     PRINT,'Setting R_B to 10 ...'
   ENDIF ELSE BEGIN
      mRat                = R_B
   ENDELSE
