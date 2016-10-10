@@ -2,65 +2,87 @@
 FUNCTION VARS_EXIST,saveFile,varNames,defVarnames, $
                     P0,P1,P2,P3,P4,P5,P6,P7,P8,P9, $
                     P10,P11,P12,P13,P14,P15,P16,P17,P18,P19, $
-                    P20,P21,P22,P23,P24
+                    P20,P21,P22,P23,P24, $
+                    VARNAMES_REQUIRED_UPDATE=varNames_required_update, $
+                    VARNAMES_WERE_NOT_DEFNAMES=varNames_were_not_defNames, $
+                    UPDATE_VARNAMES=update_varNames, $
+                    QUIET=quiet
 
   COMPILE_OPT IDL2
 
+  ;;Initialized
+  varNames_required_update   = 0
+  varNames_were_not_defNames = 0
   IF FILE_TEST(saveFile) THEN BEGIN
      RESTORE,saveFile
   ENDIF ELSE BEGIN
-     PRINT,"File doesn't exist: " + saveFile
-     PRINT,"Can't check for existence of vars."
+     IF ~KEYWORD_SET(quiet) THEN PRINT,"File doesn't exist: " + saveFile
+     IF ~KEYWORD_SET(quiet) THEN PRINT,"Can't check for existence of vars."
      RETURN,0
   ENDELSE
 
-  fail = 0
+  fail = !NULL
+  failNum = !NULL
   FOR k=0,N_ELEMENTS(varNames)-1 DO BEGIN
      
-     test = EXECUTE('junk = SIZE(' + varNames[k] + ',/TYPE)')
+     test = EXECUTE('junk = SIZE(' + defVarNames[k] + ',/TYPE)')
 
      IF ~test THEN BEGIN
-        fail = 1
-        failNum = k
+        fail = [fail,1]
+        failNum = [failNum,k]
         BREAK
      ENDIF
 
      IF junk EQ 0 THEN BEGIN
-        test = EXECUTE('junk = SIZE(' + defVarNames[k] + ',/TYPE)')        
+        test = EXECUTE('junk = SIZE(' + varNames[k] + ',/TYPE)')        
 
         IF ~test THEN BEGIN
-           fail = 2
-           failNum = k
+           fail = [fail,2]
+           failNum = [failNum,k]
            BREAK
         ENDIF
 
         IF junk EQ 0 THEN BEGIN
-           fail = 3
-           failNum = k
+           fail = [fail,3]
+           failNum = [failNum,k]
         ENDIF
 
-     ENDIF
+        varNames_were_not_defNames = 1
+
+     ENDIF ELSE BEGIN
+
+        IF KEYWORD_SET(update_varNames) AND (varNames[k] NE defVarNames[k]) THEN BEGIN
+           varNames[k] = defVarNames[k]
+           varNames_required_update  = 1
+        ENDIF
+
+     ENDELSE
 
   ENDFOR
 
-  IF fail NE 0 THEN BEGIN
-     CASE fail OF
-        1: BEGIN
-           PRINT,"Failed execution of 'junk = SIZE(...' looking for " + varNames[k]
-           RETURN,0
-        END
-        2: BEGIN
-           PRINT,"Failed execution of 'junk = SIZE(...' looking for " + defVarNames[k]
-           RETURN,0           
-        END
-        3: BEGIN
-           PRINT,FORMAT='(A0,A0,A0,A0,A0)',"Variables ",varNames[k], $
-                 " and ", $
-                 defVarnames[k], $
-                 " dont' exist in this file"
-           RETURN,0           
-        END
-     ENDCASE
+  IF N_ELEMENTS(fail) EQ 0 THEN fail = 0
+
+  IF fail[0] NE 0 THEN BEGIN
+     
+     FOR k=0,N_ELEMENTS(fail)-1 DO BEGIN
+        CASE fail[k] OF
+           1: BEGIN
+              IF ~KEYWORD_SET(quiet) THEN PRINT,"Failed execution of 'junk = SIZE(...' looking for " + varNames[failNum[k]]
+              RETURN,0
+           END
+           2: BEGIN
+              IF ~KEYWORD_SET(quiet) THEN PRINT,"Failed execution of 'junk = SIZE(...' looking for " + defVarNames[failNum[k]]
+              RETURN,0           
+           END
+           3: BEGIN
+              IF ~KEYWORD_SET(quiet) THEN PRINT,FORMAT='(A0,A0,A0,A0,A0)',"Variables ",varNames[failNum[k]], $
+                                                " and ", $
+                                                defVarnames[failNum[k]], $
+                                                " dont' exist in this file"
+              RETURN,0           
+           END
+        ENDCASE
+     ENDFOR
 
      RETURN,0
   ENDIF
