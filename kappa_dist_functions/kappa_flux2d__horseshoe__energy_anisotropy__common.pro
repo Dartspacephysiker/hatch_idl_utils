@@ -34,18 +34,18 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
   nEnergies        = N_ELEMENTS(X[*,0])
   nAngles          = N_ELEMENTS(Y[0,*])
 
-  IF nAngles GT N_ELEMENTS(K_EA__angles) THEN BEGIN
-     PRINT,'Trouble!'
-  ENDIF
+  ;; IF nAngles NE N_ELEMENTS(K_EA__angles) THEN BEGIN
+  ;;    PRINT,'Trouble!'
+  ;; ENDIF
   sortKEA = SORT(k_ea__angles)
   ;; sortA   = SORT(Y[0,*])
 
   ;; unsortKEA = VALUE_CLOSEST2(k_ea__angles[sortKEA],k_ea__angles)
   ;; unsortA   = VALUE_CLOSEST2((Y[0,*])[sortKEA],Y[0,*])
 
-  ;; k_ea_ii   = sortKEA[VALUE_CLOSEST2(K_EA__angles[sortKEA],REFORM(Y[0,*]))]
+  k_ea_ii   = sortKEA[VALUE_CLOSEST2(K_EA__angles[sortKEA],REFORM(Y[0,*]))]
 
-  k_ea_ii      = INDGEN(N_ELEMENTS(k_ea__angles))
+  ;; k_ea_ii      = INDGEN(N_ELEMENTS(k_ea__angles))
 
   mu_vals          = COS(Y/180.*!PI)
 
@@ -94,11 +94,13 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
            tempEn   = X[*,i]
            tempP    = P
            tempP[0] = tempP[0]*K_EA__bFunc[k_ea_ii[i]]
+           ;; tempP[0] = tempP[0]*K_EA__bFunc[i]
 
            MAXWELL_FLUX,tempEn,tempP,angleSlice
 
            Zmodel[*,i]  = angleSlice * K_EA__gFunc[k_ea_ii[i]] ; Bingham and Cairns [2000]
-           
+           ;; Zmodel[*,i]  = angleSlice * K_EA__gFunc[i]          ; Bingham and Cairns [2000]
+
         ENDFOR
 
      END
@@ -108,6 +110,7 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
            tempEn   = X[*,i]
            tempP    = P
            tempP[0] = tempP[0]*K_EA__bFunc[k_ea_ii[i]]
+           ;; tempP[0] = tempP[0]*K_EA__bFunc[i]
 
            ;; PRINT,FORMAT='("tempP, factor, angle, aIntended ",T35,": ",F0.2,T50,F0.2,T65,F0.2,T80,F0.2)', $
            ;;       tempP[0], $
@@ -121,6 +124,7 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
            ;; Zmodel[*,i]  = angleSlice                          ; No horseshoe nothin.
            
            Zmodel[*,i]  = angleSlice * K_EA__gFunc[k_ea_ii[i]] ; Bingham and Cairns [2000]
+           ;; Zmodel[*,i]  = angleSlice * K_EA__gFunc[i] ; Bingham and Cairns [2000]
            ;; Zmodel[*,i]  = angleSlice * ( mu_vals[*,i] + 1 )^2 ; Bingham and Cairns [2000]
            
            ;; IF KEYWORD_SET(Bingham_style) THEN BEGIN
