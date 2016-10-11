@@ -85,6 +85,10 @@ FUNCTION PREP_EFLUX_DATA, $
   theta                       = ((360.*(theta/360.-FLOOR(theta/360.)) + 180.) MOD 360.) - 180.
   ;; theta                       = ((360.*(theta/360.-FLOOR(theta/360.)) + 180.) MOD 360.)
 
+  IF NDIMEN(geom) LT thetaDim THEN BEGIN
+     geom = REPLICATE(1.,N_ELEMENTS(theta[*,0]))#geom
+  ENDIF
+
   ;; IF not KEYWORD_SET(vel) THEN STR_ELEMENT,limits,'velocity',VALUE=vel
 
   IF KEYWORD_SET(vel) THEN BEGIN
