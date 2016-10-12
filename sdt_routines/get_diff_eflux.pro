@@ -43,7 +43,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
            tempdiff_eflux = PREP_EFLUX_DATA(tempDat, $
                                             CALIB=calc_geom_factors, $
                                             UNITS=units, $          
-                                            RETRACE=retrace, $
+                                            RETRACE=1, $ ;;Look up 'retrace' in Carlson et al. [2001] if you want to know why
                                             VEL=vel, $
                                             ANGLE=an, $
                                             ARANGE=ar, $

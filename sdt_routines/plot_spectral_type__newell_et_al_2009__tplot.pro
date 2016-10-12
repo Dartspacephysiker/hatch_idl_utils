@@ -51,7 +51,8 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
    DATA   = data,  $
    NOXLAB = noxlab,$   ;No xlabels are printed if set
    NOCOLOR = nocolor, $ ;Colors not automatically generated if set
-   LIMITS  = limits  ;structure containing miscellaneous keyword tags:values
+   LIMITS  = limits, $  ;structure containing miscellaneous keyword tags:values
+   NO_STRICT_TYPES=no_strict_types
 
   IF KEYWORD_SET(data) THEN events = data
   
@@ -61,6 +62,9 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   ;;   str_element,data,'dy',value=dy
   ;;   extract_tags,stuff,data,except=['x','y','dy']
   ;; endif
+
+  STR_ELEMENT,limits,'no_strict_types',value=no_strict_types
+  IF no_strict_types EQ -1 THEN no_strict_types = 0
 
   nSpectra            = N_ELEMENTS(events.x)
 
@@ -92,11 +96,19 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   strictB             = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
   diffuse             = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
 
-  mono_i              = WHERE(events.mono    EQ 1,nMono)
-  strictM_i           = WHERE(events.mono    EQ 2,nStrictM)
-  broad_i             = WHERE(events.broad   EQ 1,nBroad)
-  strictB_i           = WHERE(events.broad   EQ 2,nStrictB)
-  diffuse_i           = WHERE(events.diffuse EQ 1,nDiffuse)
+  mono_i              = WHERE(events.mono    EQ 1,nMono,/NULL)
+  strictM_i           = WHERE(events.mono    EQ 2,nStrictM,/NULL)
+  broad_i             = WHERE(events.broad   EQ 1,nBroad,/NULL)
+  strictB_i           = WHERE(events.broad   EQ 2,nStrictB,/NULL)
+  diffuse_i           = WHERE(events.diffuse EQ 1,nDiffuse,/NULL)
+
+  IF KEYWORD_SET(no_strict_types) THEN BEGIN
+     mono_i           = ([mono_i,strictM_i])[SORT([mono_i,strictM_i])]
+     broad_i          = ([broad_i,strictB_i])[SORT([broad_i,strictB_i])]
+
+     strictM_i        = !NULL
+     strictB_i        = !NULL
+  ENDIF
 
   mono[mono_i]        = monoVal
   strictM[strictM_i]  = strictMVal
@@ -112,7 +124,6 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   if keyword_set(overplot) then oplot=overplot
   overplot = 1
   str_element,limits,'overplot',value=oplot
-
 
   xrange=[0.,0.]
   yrange=[0.,0.]
@@ -202,13 +213,25 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
      add_str_element,plotstuff,'xtickname',replicate(' ',22)
 
   ;; names = ['Monoenergetic','Strict Mono','Broadband','Strict Broad','Diffuse' ]
-  names = ['Mono','Strict Mono','Broad','Strict Broad','Diffuse' ]
-  add_str_element,plotstuff ,'ytickname',names
-  add_str_element,oplotstuff,'ytickname',names
-  add_str_element,plotstuff,'yticks',4,/REPLACE
-  add_str_element,oplotstuff,'yticks',4,/REPLACE
-  add_str_element,plotstuff,'ytickv',[1,2,3,4,5],/REPLACE
-  add_str_element,oplotstuff,'ytickv',[1,2,3,4,5],/REPLACE
+  IF KEYWORD_SET(no_strict_types) THEN BEGIN
+     names = ['Mono','Broad','Diffuse' ]
+     add_str_element,plotstuff ,'ytickname',names
+     add_str_element,oplotstuff,'ytickname',names
+     add_str_element,plotstuff,'yticks',2,/REPLACE
+     add_str_element,oplotstuff,'yticks',2,/REPLACE
+     add_str_element,plotstuff,'ytickv',[1,3,5],/REPLACE
+     add_str_element,oplotstuff,'ytickv',[1,3,5],/REPLACE
+     col  =   [ 100      ,250   ,!p.color]
+  ENDIF ELSE BEGIN
+     names = ['Mono','Strict Mono','Broad','Strict Broad','Diffuse' ]
+     add_str_element,plotstuff ,'ytickname',names
+     add_str_element,oplotstuff,'ytickname',names
+     add_str_element,plotstuff,'yticks',4,/REPLACE
+     add_str_element,oplotstuff,'yticks',4,/REPLACE
+     add_str_element,plotstuff,'ytickv',[1,2,3,4,5],/REPLACE
+     add_str_element,oplotstuff,'ytickv',[1,2,3,4,5],/REPLACE
+     col  =   [ 100      ,120   ,250   ,30    ,!p.color]
+  ENDELSE
   ;; add_str_element,plotstuff,'ytickv',[2,3,4,5,6],/REPLACE
   ;; add_str_element,oplotstuff,'ytickv',[2,3,4,5,6],/REPLACE
 
@@ -219,7 +242,6 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   ;; else col = !p.color
   ;; col  =   [monoCol       ,strictMCol   ,broadCol   ,strictBCol    ,diffuseCol]
   ;; col  =   [ 100      ,120   ,250   ,30    ,190]
-  col  =   [ 100      ,120   ,250   ,30    ,!p.color]
 
 ;; if keyword_set(nocolor) then if nocolor ne 2 or !d.name eq 'PS' then $
 ;;    col = !p.color
@@ -289,38 +311,5 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
 
 return
 
-
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;NOW GET PLOTS READY
-  ;; nPlots              = 5
-  ;; plotArr             = MAKE_ARRAY(nPlots,/OBJ)
-  ;; plotSym             = '*'
-  ;; symSize             = 1.0
-
-  ;; colArr              = [monoCol       ,strictMCol   ,broadCol   ,strictBCol    ,diffuseCol]
-  ;; datArr              = [[mono]        ,[strictM]    ,[broad]    ,[strictB]     ,[diffuse] ]
-  ;; nameArr             =['Monoenergetic','Strict Mono','Broadband','Strict Broad','Diffuse' ]
-
-  ;; times               = UTC_TO_JULDAY(events.time_e)
-  ;; xTitle              = 'Time since ' + TIME_TO_STR(events[0].time_e,/MSEC)
-  ;; FOR i=0,nPlots-1 DO BEGIN
-  ;;    plotArr[i]       = PLOT(times, $
-  ;;                            datArr[*,i], $
-  ;;                            NAME=nameArr[i], $
-  ;;                            TITLE=title, $
-  ;;                            YRANGE=[0.5,5.5], $
-  ;;                            XTICKUNITS=xTickUnits, $
-  ;;                            LINESTYLE='', $
-  ;;                            SYMBOL=plotSym, $
-  ;;                            SYM_COLOR=colArr[i], $
-  ;;                            SYM_SIZE=symSize, $
-  ;;                            XTITLE=xTitle, $
-  ;;                            YTITLE='Spectral type', $
-  ;;                            YTICKV=[1,2,3,4,5], $
-  ;;                            YTICKNAME=nameArr, $
-  ;;                            YMINOR=0, $
-  ;;                            OVERPLOT=i GT 1, $
-  ;;                            CURRENT=window)
-  ;; ENDFOR
 
 end
