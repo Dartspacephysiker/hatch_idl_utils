@@ -103,9 +103,32 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   diffuse_i           = WHERE(events.diffuse EQ 1,nDiffuse,/NULL)
 
   IF KEYWORD_SET(no_strict_types) THEN BEGIN
-     mono_i           = ([mono_i,strictM_i])[SORT([mono_i,strictM_i])]
-     broad_i          = ([broad_i,strictB_i])[SORT([broad_i,strictB_i])]
+     IF nMono GT 0 THEN BEGIN
+        IF nStrictM GT 0 THEN BEGIN
+           mono_i     = ([mono_i,strictM_i])[SORT([mono_i,strictM_i])]
+           nMono += nStrictM
+        ENDIF
+     ENDIF ELSE BEGIN
+        IF nStrictM GT 0 THEN BEGIN
+           mono_i     = strictM_i
+           nMono      = nStrictM
+        ENDIF
+     ENDELSE
 
+     IF nBroad GT 0 THEN BEGIN
+        IF nStrictB GT 0 THEN BEGIN
+           broad_i     = ([broad_i,strictB_i])[SORT([broad_i,strictB_i])]
+           nBroad     += nStrictB
+        ENDIF
+     ENDIF ELSE BEGIN
+        IF nStrictB GT 0 THEN BEGIN
+           broad_i     = strictB_i
+           nBroad      = nStrictB
+        ENDIF
+     ENDELSE
+
+     nStrictM         = 0
+     nStrictB         = 0
      strictM_i        = !NULL
      strictB_i        = !NULL
   ENDIF
