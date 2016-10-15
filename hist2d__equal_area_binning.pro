@@ -77,17 +77,19 @@
 ;        28-FEB-1996         Added the BINEDGE1, BINEDGE2 keywords.
 ;        14-OCT-2016         Spencer Hatch: Copped to use an equal-area binning scheme provided by Ryan McGranaghan. Stud!
 ;-
-function HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
+FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
                                      INPUT=Input, $
                                      MAX1=MaxMLT,MAX2=MaxILAT, $
                                      MIN1=MinMLT,MIN2=MinILAT,$
                                      OMAX1=OmaxMLT,OMAX2=OmaxILAT,OMIN1=OminMLT,OMIN2=OminILAT, $
                                      OBIN1=Obin1,OBIN2=Obin2, $
                                      DENSITY=Density, $
-                                     BINEDGE1=Binedge1,BINEDGE2=Binedge2, $
-                                     EQUAL_AREA_STRUCT=EA
+                                     BINEDGE1=Binedge1,BINEDGE2=Binedge2;; , $
+                                     ;; EQUAL_AREA_STRUCT=EA
 
   COMPILE_OPT idl2
+
+  @common__ea_binning.pro
 
   ;; ON_ERROR, 2                   ; on error, return control to caller
 
@@ -102,7 +104,7 @@ function HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
   ;; pflux        = maximus.pfluxest[good_i]
   ;; SAVE,mlt,ilat,pflux,FILENAME=testFile
 
-  IF N_ELEMENTS(EA) EQ 0 THEN LOAD_EQUAL_AREA_BINNING_STRUCT,EA
+  IF N_ELEMENTS(EA__s) EQ 0 THEN LOAD_EQUAL_AREA_BINNING_STRUCT
   ;; RESTORE,testFile
 
   ;; mlts = TEMPORARY(mlt)
@@ -134,10 +136,10 @@ function HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
          m2   = max(ILATS, min=mm2)
 
 ;   Take care of INPUT KEYWORDS
-         if n_elements( MAXMLT )  eq 0 then MaxMLT   = MAX([EA.maxM,EA.minM])
-         if n_elements( MAXILAT ) eq 0 then MaxILAT  = MAX([EA.maxI,EA.minI])
-         if n_elements( MINMLT )  eq 0 then MinMLT   = MIN([EA.maxM,EA.minM])
-         if n_elements( MINILAT ) eq 0 then MinILAT  = MIN([EA.maxI,EA.minI])
+         if n_elements( MAXMLT )  eq 0 then MaxMLT   = MAX([EA__s.maxM,EA__s.minM])
+         if n_elements( MAXILAT ) eq 0 then MaxILAT  = MAX([EA__s.maxI,EA__s.minI])
+         if n_elements( MINMLT )  eq 0 then MinMLT   = MIN([EA__s.maxM,EA__s.minM])
+         if n_elements( MINILAT ) eq 0 then MinILAT  = MIN([EA__s.maxI,EA__s.minI])
          ;; if n_elements( BINSIZE1 ) eq 0 then Binsize1  = 1.0
          ;; if n_elements( BINSIZE2 ) eq 0 then Binsize2 = 1.0
 
@@ -147,11 +149,11 @@ function HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
 
 
          if nin gt 0 then begin
-              MLTsc  = MLTs[iin]
+              MLTsc   = MLTs[iin]
               ILATSc  = ILATS[iin]
-              Wgtc = Wgtc[iin]
+              Wgtc    = Wgtc[iin]
          endif else begin
-              MLTsc  = MLTs
+              MLTsc   = MLTs
               ILATSc  = ILATS
          endelse
 
@@ -163,10 +165,10 @@ function HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
             tmpInds        = [latSwitch_i[k]:(latSwitch_i[k+1]-1)]
 
             FOR kk=0,N_ELEMENTS(tmpInds)-1 DO BEGIN
-               match       = WHERE((MLTsc GE EA.minM[tmpInds[kk]]) AND (MLTsc LT EA.maxM[tmpInds[kk]]) AND $
-                             (ILATsc GE EA.minI[tmpInds[kk]]) AND (ILATsc LT EA.maxI[tmpInds[kk]]),/NULL)
+               match       = WHERE((MLTsc GE EA__s.minM[tmpInds[kk]]) AND (MLTsc LT EA__s.maxM[tmpInds[kk]]) AND $
+                             (ILATsc GE EA__s.minI[tmpInds[kk]]) AND (ILATsc LT EA__s.maxI[tmpInds[kk]]),/NULL)
                sum[match]  = tmpInds[kk]
-               ;; PRINT,"Bro: ",tmpInds[kk],EA.minM[tmpInds[kk]],EA.maxM[tmpInds[kk]],EA.minI[tmpInds[kk]],EA.maxI[tmpInds[kk]],N_ELEMENTS(match)
+               ;; PRINT,"Bro: ",tmpInds[kk],EA__s.minM[tmpInds[kk]],EA__s.maxM[tmpInds[kk]],EA__s.minI[tmpInds[kk]],EA__s.maxI[tmpInds[kk]],N_ELEMENTS(match)
 
             ENDFOR
          ENDFOR
