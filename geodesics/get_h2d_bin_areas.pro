@@ -43,16 +43,17 @@
 ;
 ;-
 PRO GET_H2D_BIN_AREAS,areas, $
-                                 CENTERS1=centers1,CENTERS2=centers2, $
-                                 BINSIZE1=Binsize1, BINSIZE2=Binsize2, $
-                                 MIN1=Min1, MIN2=Min2,$
-                                 MAX1=Max1, MAX2=Max2,  $
-                                 SHIFT1=shift1,SHIFT2=shift2, $
-                                 OMIN1=Omin1, OMIN2=Omin2, $
-                                 OMAX1=Omax1, OMAX2=Omax2,  $
-                                 OBIN1=Obin1, OBIN2=Obin2, $
-                                 NBINS1=nBins1, NBINS2=nBins2 ;, $
-                                 ;; BINEDGE1=Binedge1, BINEDGE2=Binedge2
+                      CENTERS1=centers1,CENTERS2=centers2, $
+                      BINSIZE1=Binsize1, BINSIZE2=Binsize2, $
+                      MIN1=Min1, MIN2=Min2,$
+                      MAX1=Max1, MAX2=Max2,  $
+                      SHIFT1=shift1,SHIFT2=shift2, $
+                      EQUAL_AREA_BINNING=EA_binning, $
+                      OMIN1=Omin1, OMIN2=Omin2, $
+                      OMAX1=Omax1, OMAX2=Omax2,  $
+                      OBIN1=Obin1, OBIN2=Obin2, $
+                      NBINS1=nBins1, NBINS2=nBins2 ;, $
+  ;; BINEDGE1=Binedge1, BINEDGE2=Binedge2
 
          ON_ERROR, 2          ; on error, return control to caller
 
@@ -70,40 +71,78 @@ PRO GET_H2D_BIN_AREAS,areas, $
          if n_elements( SHIFT1 ) eq 0 then shift1 = 0
          if n_elements( SHIFT2 ) eq 0 then shift2 = 0
 
-;   Define histogram parameters
-         d1   = double(Binsize1)
-         d2   = double(Binsize2)
-         w1   = double(Max1 - Min1)
-         w2   = double(Max2 - Min2)
-         I1m  = floor(w1/d1)
-         I2m  = floor(w2/d2)
-         n1   = I1m + 1L
-         n2   = I2m + 1L
+  CASE 1 OF
+     KEYWORD_SET(EA_binning): BEGIN
+
+        LOAD_EQUAL_AREA_STRUCT,EA
+        nBins = N_ELEMENTS(EA.minI)
+
+        EA.minM *= 15.
+        EA.maxM *= 15.
 
 ;   Take care of OUTPUT KEYWORDS
-         Omax1 = Max1 & Omax2 = Max2
-         Omin1 = Min1 & Omin2 = Min2
+        Omax1 = Max1 & Omax2 = Max2
+        Omin1 = Min1 & Omin2 = Min2
 
-         if (N_ELEMENTS( Binedge1 ) eq 0) then Binedge1 = 0
-         if (N_ELEMENTS( Binedge2 ) eq 0) then Binedge2 = 0
-         offset1   = (Binedge1+1)*0.5
-         offset2   = (Binedge2+1)*0.5
-         Obin1     = Omin1 + (lindgen(n1)+offset1)*binsize1+shift1
-         Obin2     = Omin2 + (lindgen(n2)+offset2)*binsize2+shift2
+        if (N_ELEMENTS( Binedge1 ) eq 0) then Binedge1 = 0
+        if (N_ELEMENTS( Binedge2 ) eq 0) then Binedge2 = 0
+        offset1   = (Binedge1+1)*0.5
+        offset2   = (Binedge2+1)*0.5
+        Obin1     = EA.minM + offset1*binsize1+shift1
+        Obin2     = EA.minI + offset2*binsize2+shift2
 
-         centers1  = rebin(obin1,n1,n2)
-         centers2  = rebin(reform(obin2,1,n2),n1,n2)
-         centers   = transpose([[[centers1]],[[centers2]]],[2,0,1])
+        centers1  = TEMPORARY(Obin1)
+        centers2  = TEMPORARY(Obin2)
+        centers   = TRANSPOSE([[[centers1]],[[centers2]]],[2,0,1])
 
-         nBins1    = n1
-         nBins2    = n2
+        nBins1    = nBins
+        nBins2    = nBins
 
-         areas     = MAKE_ARRAY(n1,n2,/DOUBLE)
-         ;;first index is MLT, second index is ILAT
-         FOR i1 = 0,n1-1 DO BEGIN
-            FOR i2 = 0,n2-1 DO BEGIN
-               areas[i1,i2] = LATLONG_PAIR_AREA(centers1[i1,i2],centers2[i1,i2],centers1[i1,i2]+binsize1,centers2[i1,i2]+binsize2, $
+        areas     = MAKE_ARRAY(nBins,/DOUBLE)
+        ;;first index is MLT, second index is ILAT
+        FOR i=0,nBins1-1 DO BEGIN
+           areas[i] = LATLONG_PAIR_AREA(EA.minM[i],EA.minI[i],EA.maxM[i],EA.maxI[i], $
+                                        RADIUS_METERS=6.470949e+6) ;use radius at 100 km
+        ENDFOR
+
+     END
+     ELSE: BEGIN
+;   Define histogram parameters
+        d1   = double(Binsize1)
+        d2   = double(Binsize2)
+        w1   = double(Max1 - Min1)
+        w2   = double(Max2 - Min2)
+        I1m  = floor(w1/d1)
+        I2m  = floor(w2/d2)
+        n1   = I1m + 1L
+        n2   = I2m + 1L
+
+;   Take care of OUTPUT KEYWORDS
+        Omax1 = Max1 & Omax2 = Max2
+        Omin1 = Min1 & Omin2 = Min2
+
+        if (N_ELEMENTS( Binedge1 ) eq 0) then Binedge1 = 0
+        if (N_ELEMENTS( Binedge2 ) eq 0) then Binedge2 = 0
+        offset1   = (Binedge1+1)*0.5
+        offset2   = (Binedge2+1)*0.5
+        Obin1     = Omin1 + (lindgen(n1)+offset1)*binsize1+shift1
+        Obin2     = Omin2 + (lindgen(n2)+offset2)*binsize2+shift2
+
+        centers1  = rebin(obin1,n1,n2)
+        centers2  = rebin(reform(obin2,1,n2),n1,n2)
+        centers   = transpose([[[centers1]],[[centers2]]],[2,0,1])
+
+        nBins1    = TEMPORARY(n1)
+        nBins2    = TEMPORARY(n2)
+
+        areas     = MAKE_ARRAY(nBins1,nBins2,/DOUBLE)
+        ;;first index is MLT, second index is ILAT
+        FOR i1 = 0,nBins1-1 DO BEGIN
+           FOR i2 = 0,nBins2-1 DO BEGIN
+              areas[i1,i2] = LATLONG_PAIR_AREA(centers1[i1,i2],centers2[i1,i2],centers1[i1,i2]+binsize1,centers2[i1,i2]+binsize2, $
                                                RADIUS_METERS=6.470949e+6) ;use radius at 100 km
-            ENDFOR
-         ENDFOR
+           ENDFOR
+        ENDFOR
+
+     END
 END

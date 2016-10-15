@@ -13,7 +13,7 @@
 ;OUTFILE and PLOT_I are intended to provide more information about the statistics involved
 ;in each dataset corresponding to a given MLT/ILAT bin. PLOT_I is otherwise useless for this routine
 
-FUNCTION median_hist, MLT, ILAT, data, $
+FUNCTION MEDIAN_HIST,MLT,ILAT,data, $
                       BINSIZE1=Binsize1, BINSIZE2=Binsize2, $
                       INPUT=Input, MAX1=Max1, MAX2=Max2, MIN1=Min1, MIN2=Min2,$
                       OMAX1=Omax1, OMAX2=Omax2, OMIN1=Omin1, OMIN2=Omin2, $
