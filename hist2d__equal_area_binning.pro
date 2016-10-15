@@ -1,15 +1,15 @@
 ;+
 ; NAME:
-;        HIST2D
+;        HIST2D__EQUAL_AREA_BINNING
 ;
 ; PURPOSE:
-;        Return the weighted density function (histogram) of two variables.
+;        Return the weighted density function (histogram) of two variables, with each latitude and MLT bin being of equal area.
 ;
 ; CATEGORY:
-;        Image processing, statistics, probability.
+;        Bin up that polar region
 ;
 ; CALLING SEQUENCE:
-;        Result = hist2d(MLTs, ILATS [,Weight, ...histogram keywords])
+;        result = HIST2D__EQUAL_AREA_BINNING(MLTs, ILATS [,Weight, ...histogram keywords])
 ; INPUTS:
 ;        MLTs and ILATS = arrays containing the variables.  They MAY be
 ;             of ANY type, and MAY contain negative elements.
@@ -75,8 +75,7 @@
 ;                            array types, added weight option and added
 ;                            HISTOGRAM keywords
 ;        28-FEB-1996         Added the BINEDGE1, BINEDGE2 keywords.
-;        03-DEC-2015         Spencer Hatch: Fixed the whole 'iout' portion.
-;                            It was only keeping elements OUTSIDE the boundaries!
+;        14-OCT-2016         Spencer Hatch: Copped to use an equal-area binning scheme provided by Ryan McGranaghan. Stud!
 ;-
 function HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
                                      INPUT=Input, $
@@ -85,7 +84,8 @@ function HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
                                      OMAX1=OmaxMLT,OMAX2=OmaxILAT,OMIN1=OminMLT,OMIN2=OminILAT, $
                                      OBIN1=Obin1,OBIN2=Obin2, $
                                      DENSITY=Density, $
-                                     BINEDGE1=Binedge1,BINEDGE2=Binedge2
+                                     BINEDGE1=Binedge1,BINEDGE2=Binedge2, $
+                                     EQUAL_AREA_STRUCT=EA
 
   COMPILE_OPT idl2
 
@@ -102,11 +102,7 @@ function HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
   ;; pflux        = maximus.pfluxest[good_i]
   ;; SAVE,mlt,ilat,pflux,FILENAME=testFile
 
-  inDir        = '/SPENCEdata/Research/database/equal-area_binning/'
-  EAbins_file  = 'equalArea--20161014--struct_and_ASCII_tmplt.idl'
-
-
-  RESTORE,inDir+EAbins_file
+  IF N_ELEMENTS(EA) EQ 0 THEN LOAD_EQUAL_AREA_BINNING_STRUCT,EA
   ;; RESTORE,testFile
 
   ;; mlts = TEMPORARY(mlt)
@@ -134,20 +130,18 @@ function HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
          endif else $
               wgtc = replicate( 1.,s1[1] )
 
-         m1   = max(MLTs, min=mm1)
+         m1   = max(MLTs , min=mm1)
          m2   = max(ILATS, min=mm2)
 
 ;   Take care of INPUT KEYWORDS
-         if n_elements( MAXMLT ) eq 0 then MaxMLT = MAX([EA.maxM,EA.minM])
-         if n_elements( MAXILAT ) eq 0 then MaxILAT = MAX([EA.maxI,EA.minI])
-         if n_elements( MINMLT ) eq 0 then MinMLT = MIN([EA.maxM,EA.minM])
-         if n_elements( MINILAT ) eq 0 then MinILAT = MIN([EA.maxI,EA.minI])
-         ;; if n_elements( BINSIZE1 ) eq 0 then Binsize1 = 1.0
+         if n_elements( MAXMLT )  eq 0 then MaxMLT   = MAX([EA.maxM,EA.minM])
+         if n_elements( MAXILAT ) eq 0 then MaxILAT  = MAX([EA.maxI,EA.minI])
+         if n_elements( MINMLT )  eq 0 then MinMLT   = MIN([EA.maxM,EA.minM])
+         if n_elements( MINILAT ) eq 0 then MinILAT  = MIN([EA.maxI,EA.minI])
+         ;; if n_elements( BINSIZE1 ) eq 0 then Binsize1  = 1.0
          ;; if n_elements( BINSIZE2 ) eq 0 then Binsize2 = 1.0
 
 ;   Remove data points outside MAX/MIN range
-         ;; iout = WHERE( (MLTs gt MaxMLT) or (MLTs lt MinMLT) or $
-         ;;               (ILATS gt MaxILAT) or (ILATS lt MinILAT), nout )
          iin = WHERE( (MLTs le MaxMLT) AND (MLTs ge MinMLT) AND $
                        (ILATS le MaxILAT) AND (ILATS ge MinILAT), nin )
 
@@ -162,24 +156,22 @@ function HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
          endelse
 
          ;;Setup
-         sum = MAKE_ARRAY(N_ELEMENTS(MLTsc),VALUE=-2L,/LONG)
-         latSwitch_i = [0,WHERE((ea.mini[1:-1]-ea.mini[0:-2]) NE 0),N_ELEMENTS(ea.mini)-1]
+         sum          = MAKE_ARRAY(N_ELEMENTS(MLTsc),VALUE=-2L,/LONG)
+         latSwitch_i  = [0,WHERE((ea.mini[1:-1]-ea.mini[0:-2]) NE 0),N_ELEMENTS(ea.mini)-1]
 
          FOR k=0,N_ELEMENTS(latSwitch_i)-2 DO BEGIN
-            tmpInds = [latSwitch_i[k]:(latSwitch_i[k+1]-1)]
-            ;; PRINT,"Bro: ",tmpInds[0],tmpInds[-1]
+            tmpInds        = [latSwitch_i[k]:(latSwitch_i[k+1]-1)]
 
             FOR kk=0,N_ELEMENTS(tmpInds)-1 DO BEGIN
-               ;; PRINT,tmpInds[kk]
-               match = WHERE((MLTsc GE EA.minM[tmpInds[kk]]) AND (MLTsc LT EA.maxM[tmpInds[kk]]) AND $
+               match       = WHERE((MLTsc GE EA.minM[tmpInds[kk]]) AND (MLTsc LT EA.maxM[tmpInds[kk]]) AND $
                              (ILATsc GE EA.minI[tmpInds[kk]]) AND (ILATsc LT EA.maxI[tmpInds[kk]]),/NULL)
-               sum[match] = tmpInds[kk]
+               sum[match]  = tmpInds[kk]
                ;; PRINT,"Bro: ",tmpInds[kk],EA.minM[tmpInds[kk]],EA.maxM[tmpInds[kk]],EA.minI[tmpInds[kk]],EA.maxI[tmpInds[kk]],N_ELEMENTS(match)
 
             ENDFOR
          ENDFOR
 
-         PRINT,'!K!K!JHLKJH!LKH!'
+         PRINT,'EEEQQQUUAAALLLLL'
          dat = WHERE(sum EQ -2,nDat)
          FOR k=0,nDat-1 DO BEGIN
             STOP
