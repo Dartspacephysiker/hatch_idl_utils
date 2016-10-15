@@ -143,6 +143,11 @@ FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
          ;; if n_elements( BINSIZE1 ) eq 0 then Binsize1  = 1.0
          ;; if n_elements( BINSIZE2 ) eq 0 then Binsize2 = 1.0
 
+;   Take care of OUTPUT KEYWORDS
+         Obin1     = EA__s.minM + MEAN([[EA__s.minM],[EA__s.maxM]],DIMENSION=2)
+         Obin2     = EA__s.minI + MEAN([[EA__s.minI],[EA__s.maxI]],DIMENSION=2)
+
+
 ;   Remove data points outside MAX/MIN range
          iin = WHERE( (MLTs le MaxMLT) AND (MLTs ge MinMLT) AND $
                        (ILATS le MaxILAT) AND (ILATS ge MinILAT), nin )
@@ -159,7 +164,7 @@ FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
 
          ;;Setup
          sum          = MAKE_ARRAY(N_ELEMENTS(MLTsc),VALUE=-2L,/LONG)
-         latSwitch_i  = [0,WHERE((ea.mini[1:-1]-ea.mini[0:-2]) NE 0),N_ELEMENTS(ea.mini)-1]
+         latSwitch_i  = [0,WHERE((EA__s.mini[1:-1]-EA__s.mini[0:-2]) NE 0),N_ELEMENTS(EA__s.mini)-1]
 
          FOR k=0,N_ELEMENTS(latSwitch_i)-2 DO BEGIN
             tmpInds        = [latSwitch_i[k]:(latSwitch_i[k+1]-1)]
@@ -169,11 +174,16 @@ FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
                              (ILATsc GE EA__s.minI[tmpInds[kk]]) AND (ILATsc LT EA__s.maxI[tmpInds[kk]]),/NULL)
                sum[match]  = tmpInds[kk]
                ;; PRINT,"Bro: ",tmpInds[kk],EA__s.minM[tmpInds[kk]],EA__s.maxM[tmpInds[kk]],EA__s.minI[tmpInds[kk]],EA__s.maxI[tmpInds[kk]],N_ELEMENTS(match)
-
             ENDFOR
          ENDFOR
 
-         PRINT,'EEEQQQUUAAALLLLL'
+         ;;Last by hand; necessary because I use latSwitch_i instead of something more s'fissicated
+         match       = WHERE((MLTsc GE EA__s.minM[latSwitch_i[-1]]) AND (MLTsc LT EA__s.maxM[latSwitch_i[-1]]) AND $
+                             (ILATsc GE EA__s.minI[latSwitch_i[-1]]) AND (ILATsc LT EA__s.maxI[latSwitch_i[-1]]),/NULL)
+         sum[match]  = latSwitch_i[-1]
+         
+
+         ;; PRINT,'EEEQQQUUAAALLLLL'
          dat = WHERE(sum EQ -2,nDat)
          FOR k=0,nDat-1 DO BEGIN
             STOP
