@@ -6,10 +6,34 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    ;; ANGLE=angle, $
                    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                    FIT_EACH_ANGLE=fit_each_angle, $
-                   TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct
+                   TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct, $
+                   OUT_DIFF_EFLUX=diff_eflux, $
+                   SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
+                   LOAD_DAT_FROM_FILE=loadFile, $
+                   LOAD_DIR=loadDir
+                   
   ;; QUIET=quiet
 
   COMPILE_OPT idl2
+
+  IF KEYWORD_SET(loadFile) THEN BEGIN
+
+     IF N_ELEMENTS(loadDir) EQ 0 THEN BEGIN
+        loadDir = ''
+     ENDIF
+
+     IF FILE_TEST(loadDir+loadFile) THEN BEGIN
+        PRINT,'Restoring ' + loadFile + '...'
+        RESTORE,loadDir+loadFile
+
+     ENDIF ELSE BEGIN
+        PRINT,"Couldn't find " + loadFile + "!!!"
+        PRINT,'Attempting to get and save for you ...'
+        couldntfindLoad = 1
+     ENDELSE
+
+     ;; RETURN
+  ENDIF
 
   IF ~KEYWORD_SET(name__diff_eFlux) THEN BEGIN
      CASE 1 OF
@@ -27,16 +51,22 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
   IF KEYWORD_SET(calc_geom_factors) THEN PRINT, "Calculating geometry factors for " + $
      routine + ' ...'
-  dat                                         = CALL_FUNCTION(routine,t1,t2, $
+  dat_eFlux                                   = CALL_FUNCTION(routine,t1,t2, $
                                                               CALIB=calc_geom_factors)
   
+  IF KEYWORD_SET(save_diff_eFlux_to_file) OR KEYWORD_SET(couldntfindLoad) THEN BEGIN
+     IF KEYWORD_SET(couldntfindload) THEN save_diff_eFlux_to_file = loadFile
+     PRINT,"Saving diff_eFlux to file: " + save_diff_eFlux_to_file
+     SAVE,dat_eFlux,FILENAME=loadDir + save_diff_eFlux_to_file
+  ENDIF
+
   IF KEYWORD_SET(spectra_average_interval) THEN BEGIN
-     dat                                      = AVERAGE_SUM3D(dat,spectra_average_interval)
+     dat_eFlux                                = AVERAGE_SUM3D(dat_eFlux,spectra_average_interval)
   ENDIF
   
   shiftVals                                   = !NULL
-  FOR i=0,N_ELEMENTS(dat)-1 DO BEGIN
-     tempDat                                  = dat[i]
+  FOR i=0,N_ELEMENTS(dat_eFlux)-1 DO BEGIN
+     tempDat                                  = dat_eFlux[i]
 
      CASE 1 OF
         KEYWORD_SET(fit_each_angle): BEGIN
@@ -159,9 +189,14 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
   ENDELSE
 
-  STORE_DATA,name__diff_eFlux,DATA=diff_eFlux
+  IF KEYWORD_SET(old_mode) THEN BEGIN
+     STORE_DATA,name__diff_eFlux,DATA=diff_eFlux
 
      IF KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
         STORE_DATA,name__diff_eFluxSDT,DATA=diff_eFluxSDT
      ENDIF
+  ENDIF;;  ELSE BEGIN
+  ;;    out_diff_eflux = TEMPORARY(diff_eFlux)
+  ;; ENDELSE
+
 END
