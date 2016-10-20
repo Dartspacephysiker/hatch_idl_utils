@@ -31,7 +31,7 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
   north_south       = ABS(ilat.y)/ilat.y
   
   ;;Loss cone stuff
-  lc_angleRange           = !NULL
+  lc_angleRange     = !NULL
   i_angle           = !NULL
   i_angle_up        = !NULL
 
