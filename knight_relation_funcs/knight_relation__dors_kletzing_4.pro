@@ -25,6 +25,7 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
 
   ;;Convert input params
   n                      = DOUBLE(Dens_m * 1000000.D) ;dens_m in m^-3
+  helpMeNotBeZero        = 0.000001D
   IF KEYWORD_SET(in_potBar) THEN BEGIN
      potBar              = in_potBar
   ENDIF ELSE BEGIN
@@ -35,7 +36,7 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
   ;;Equation segments
   JVinv                  = (-1.D) * eCharge * n
   JV1                    = SQRT( T_m / ( 2.D * !PI * electron_mass ) )
-  JV2sub                 = (-1.D) * potBar / (mRat - 1.D)
+  JV2sub                 = (-1.D) * potBar / ( mRat - 1.D + helpMeNotBeZero )
   JV2                    = mRat * (1.D - (1.D - 1.D/mRat) * EXP(JV2sub) )
 
 

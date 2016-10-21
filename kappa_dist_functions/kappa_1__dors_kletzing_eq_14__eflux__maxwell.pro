@@ -57,7 +57,8 @@
 
 FUNCTION KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL,T_m,dens_m,pot,R_B, $
    IN_POTBAR=in_potBar, $
-   OUT_POTBAR=potBar
+   OUT_POTBAR=potBar, $
+   POT_IN_JOULES=pot_in_joules
 
   COMPILE_OPT idl2
   
@@ -66,7 +67,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL,T_m,dens_m,pot,R_B, $
   speedOfLight           = DOUBLE(299792458.) ;m / s
   electron_mass          = DOUBLE(5.109989e5) / speedOfLight^2.D ;eV/c^2 (where c is in m/s)
 
-  n                      = DOUBLE(Dens_m * 1000000.D)  ;dens_m in m^-3
+  n                      = DOUBLE(dens_m * 1000000.D)  ;dens_m in m^-3
   IF KEYWORD_SET(pot) THEN BEGIN
      pot                 = DOUBLE(pot)
   ENDIF
@@ -74,27 +75,31 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL,T_m,dens_m,pot,R_B, $
   IF KEYWORD_SET(in_potBar) THEN BEGIN
      potBar              = in_potBar
   ENDIF ELSE BEGIN
-     potBar              = DOUBLE(eCharge * pot/T_m) ;potential normalized by temperature
+     potBar              = DOUBLE(pot/T_m) ;potential normalized by temperature
+     IF KEYWORD_SET(pot_in_joules) THEN BEGIN
+        potBar          *= eCharge
+     ENDIF
   ENDELSE
 
   ;;Have to translate T to the most probable speed, w, which is how Dors and Kletzing cast it
   ;; w_sq  = 
-  
+  toJ                    = 1.6e-19 ;eV to J
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Chunks of the function
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
 
   ;;DONE
-  Finv                   = n*(T_m)^(1.5D)/SQRT(2.D*!PI*electron_mass)*R_B
+  Finv                   = n * toJ * (T_m)^(1.5D) / SQRT(2.D * !PI * electron_mass) * R_B
 
   ;;First chunk
-  FK1                    = (2.D + potBar)
+  FK1                    = 2.D + potBar
 
   ;;Second chunk
-  FK2                    = (potBar + 2.D * (1.D - 1.D/R_B) * EXP((-1.D)*potBar/(R_B-1.D)))
+  FK2                    = ( potBar + 2.D ) * (1.D - 1.D / R_B) * EXP( (-1.D) * potBar / ( R_B - 1.D ) )
 
   ;;Fini
-  F                      = Finv*(FK1-FK2)
+  F                      = Finv * ( FK1 - FK2 )
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;If the procedure is called with four parameters, calculate the
