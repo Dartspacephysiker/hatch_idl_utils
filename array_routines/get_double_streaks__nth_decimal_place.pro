@@ -3,6 +3,7 @@
 ;;   For a FA_FIELDS_BUFS-style treatment of double-type time series, please see GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE.
 ;;
 PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
+                                          MAXIMUS=maximus, $
                                           NPTS=n, $
                                           MIN_T_STREAKLEN=min_streakLen_t, $
                                           GAP_TIME=gap_time, $
@@ -12,7 +13,8 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
                                           T_STREAKLENS=streakLens_t, $
                                           FLOOR=floor, $
                                           CEILING=ceiling, $
-                                          PRINT_START_STOP_TIMES=print_start_stop_times
+                                          PRINT_START_STOP_TIMES=print_start_stop_times, $
+                                          PRINT__INCLUDE_CURRENT=print__include_current
 
   COMPILE_OPT IDL2
 
@@ -39,7 +41,7 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
      RETURN
   ENDIF
 
-  IF ~ARRAY_EQUAL(SORT(nums),INDGEN(N_ELEMENTS(nums))) THEN BEGIN
+  IF ~ARRAY_EQUAL(SORT(nums),LINDGEN(N_ELEMENTS(nums))) THEN BEGIN
      PRINT,"Array is unsorted! Exiting ..."
      RETURN
   ENDIF
@@ -246,19 +248,34 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
 
 
   IF KEYWORD_SET(print_start_stop_times) THEN BEGIN
-     PRINT,FORMAT='(A0,T25,A0,T50,A0,T65,A0,T80,A0)','Start T', $
+     PRINT,FORMAT='(A0,T25,A0,T50,A0,T62,A0,T72,A0)','Start T', $
            'Stop T', $
            'Tot T diff', $
            'N Diff', $
            'Avg T diff'
      FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
-        PRINT,FORMAT='(A0,T25,A0,T50,G-0.5,T65,I-10,T80,G-0.5)', $
-              TIME_TO_STR(nums[start_i[k]],/MSEC), $
-              TIME_TO_STR(nums[stop_i[k]],/MSEC), $
-              nums[stop_i[k]]-nums[start_i[k]], $
-              streakLens[k], $
-              MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
-                   (nums[start_i[k]:stop_i[k]])[0:-2])
+        CASE 1 OF
+           KEYWORD_SET(print__include_current): BEGIN
+              PRINT,FORMAT='(A0,T25,A0,T50,G-0.5,T62,I-10,T72,G-0.5,T82,G-0.5,T92,G-0.5)', $
+                    TIME_TO_STR(nums[start_i[k]],/MSEC), $
+                    TIME_TO_STR(nums[stop_i[k]],/MSEC), $
+                    nums[stop_i[k]]-nums[start_i[k]], $
+                    streakLens[k], $
+                    MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
+                         (nums[start_i[k]:stop_i[k]])[0:-2]), $
+                    MEDIAN(maximus.esa_current[start_i[k]:stop_i[k]]), $
+                    MEDIAN(maximus.mag_current[start_i[k]:stop_i[k]])
+           END
+           ELSE: BEGIN
+              PRINT,FORMAT='(A0,T25,A0,T50,G-0.5,T65,I-10,T80,G-0.5)', $
+                    TIME_TO_STR(nums[start_i[k]],/MSEC), $
+                    TIME_TO_STR(nums[stop_i[k]],/MSEC), $
+                    nums[stop_i[k]]-nums[start_i[k]], $
+                    streakLens[k], $
+                    MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
+                         (nums[start_i[k]:stop_i[k]])[0:-2])
+           END
+        ENDCASE
      ENDFOR
   ENDIF
 END
