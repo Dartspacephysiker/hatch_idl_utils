@@ -43,7 +43,9 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
   ;;    END
   ;; ENDCASE
 
-  helpMeNotBeZero        = 1.e-6
+  ;; helpMeNotBeZero        = 1.e-6
+  toJ                    = 1.6e-19 ;eV to J
+
   eCharge                = DOUBLE(1.6e-19)
 
   speedOfLight           = DOUBLE(299792458.) ;m / s
@@ -60,37 +62,47 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
   ENDELSE
 
   ;;Make sure kappa is fo' real
-  IF kappa LT 1.5D THEN BEGIN
-     PRINT,"Kappa must be GE 1.5D!"
-     PRINT,"Returning..."
-     RETURN,-1
+  kappaS = DOUBLE(kappa)
+  IF kappa LE 1.5 THEN BEGIN
+     kappaS = 1.50001D
+     ;; PRINT,"Kappa must be GE 1.5D!"
+     ;; PRINT,"Returning..."
+     ;; RETURN,-1
   ENDIF
 
-  ;;Have to translate T to the most probable speed, w, which is how Dors and Kletzing cast it
-  w_sq                   = 2.D * T_m / electron_mass * ( (kappa - 1.5D) / kappa )
-  
-  toJ                    = 1.6e-19 ;eV to J
+  ;;Still fo' real
+  IF kappa EQ 2.0 THEN kappaS = 2.0001D 
 
-  PI                     = 1.D + potBar / ( (kappa - 1.5D + helpMeNotBeZero) * ( R_B - 1.D ) )
-  one_over_R_B           = (1.D - 1.D/R_B)
-  A_k                    = GAMMA(kappa + 1.D) / ( kappa^(1.5D) * GAMMA( kappa - 0.5D ) )
+  ;;Have to translate T to the most probable speed, w, which is how Dors and Kletzing cast it
+  w_sq                   = 2.D * T_m / electron_mass * ( (kappaS - 1.5D) / kappaS )
+  
+  ;; PI                     = 1.D + potBar / ( (kappaS - 1.5D + helpMeNotBeZero) * ( R_B - 1.D ) )
+  PI                     = 1.D + potBar / ( (kappaS - 1.5D ) * ( R_B - 1.D ) )
+  one_m_one_over_R_B     = (1.D - 1.D/R_B)
+  A_k                    = GAMMA(kappaS + 1.D) / ( kappaS^(1.5D) * GAMMA( kappaS - 0.5D ) )
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Chunks of the function
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
 
-  Finv                   = n * electron_mass * toJ * (w_sq)^(1.5D) / 4.D / SQRT(!PI) * kappa^(2.D) * A_k * R_B / ( ( kappa - 1.D ) * ( kappa - 2.D + helpMeNotBeZero) )
+  ;; ;;The old way, with helpMeNotBeZero
+  ;; Finv                   = n * electron_mass * toJ * (w_sq)^(1.5D) / 4.D / SQRT(!PI) * kappaS^(2.D) * A_k * R_B / ( ( kappaS - 1.D ) * ( kappaS - 2.D + helpMeNotBeZero) )
+  ;; FK1                    = 2.D + (kappaS - 2.D + helpMeNotBeZero) / (kappaS - 1.5D + helpMeNotBeZero ) * potBar
+  ;; FK2                    = ( ( kappaS - 2.D ) / ( kappaS - 1.D ) + potBar * ( kappaS - 2.D ) / ( kappaS - 1.5D + helpMeNotBeZero ) ) * ( kappaS / ( (kappaS - 1.D) * (R_B - 1.D) ) + 1.D )
+  ;; FK3                    = 1.D + ( 1.D + kappaS / ( R_B - 1.D + helpMeNotBeZero ) ) / ( kappaS - 1.D )
+
+  Finv                   = n * electron_mass * toJ * (w_sq)^(1.5D) / 4.D / SQRT(!PI) * kappaS^(2.D) * A_k * R_B / ( ( kappaS - 1.D ) * ( kappaS - 2.D ) )
 
   ;;First chunk
-  FK1                    = 2.D + (kappa - 2.D + helpMeNotBeZero) / (kappa - 1.5D + helpMeNotBeZero ) * potBar
+  FK1                    = 2.D + (kappaS - 2.D ) / (kappaS - 1.5D ) * potBar
 
   ;;Second chunk
-  FK2                    = ( ( kappa - 2.D ) / ( kappa - 1.D ) + potBar * ( kappa - 2.D ) / ( kappa - 1.5D + helpMeNotBeZero ) ) * ( kappa / ( (kappa - 1.D) * (R_B - 1.D) ) + 1.D )
+  FK2                    = ( ( kappaS - 2.D ) / ( kappaS - 1.D ) + potBar * ( kappaS - 2.D ) / ( kappaS - 1.5D ) ) * ( kappaS / ( (kappaS - 1.D) * (R_B - 1.D) ) + 1.D )
 
   ;;Third chunk, in parts that become useful later for PDs
-  FK3                    = 1.D + ( 1.D + kappa / ( R_B - 1.D + helpMeNotBeZero ) ) / ( kappa - 1.D )
+  FK3                    = 1.D + ( 1.D + kappaS / ( R_B - 1.D ) ) / ( kappaS - 1.D )
 
   ;;Fini
-  F                      = Finv * ( FK1 - PI^((-1.D)*kappa+1.D) * one_over_R_B * FK2 - PI^((-1.D)*kappa+2.D) * one_over_R_B^(2.D) * FK3 )
+  F                      = Finv * ( FK1 - PI^((-1.D)*kappaS+1.D) * one_m_one_over_R_B * FK2 - PI^((-1.D)*kappaS+2.D) * one_m_one_over_R_B^(2.D) * FK3 )
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;If the procedure is called with four parameters, calculate the
