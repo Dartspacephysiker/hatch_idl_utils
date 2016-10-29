@@ -54,10 +54,11 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
 
   ;;Equation segments
   ;; JVinv                  = (-0.5D) * eCharge * n
-  JVinv                  = (0.5D) * eCharge * n
-  JV1                    = SQRT( 2.D * T_m / ( !PI * electron_mass ) * (1.D - DOUBLE(1.5D / kappa ) ) )
-  JV2                    = kappa / ( kappa - 1.D )
-  ;; JV3                    = GAMMA(kappa + 1.D) / ( kappa^(1.5D) * GAMMA(kappa - 0.5D) )
+  JVinv   = (0.5D) * eCharge * n
+  JV1     = SQRT( 2.D * T_m / ( !PI * electron_mass ) * (1.D - DOUBLE(1.5D / kappa ) ) )
+  JV2     = kappa / ( kappa - 1.D )
+
+  ;; JV3  = GAMMA(kappa + 1.D) / ( kappa^(1.5D) * GAMMA(kappa - 0.5D) )
   CASE 1 OF
      (kappa GE 20): BEGIN
         gammaRat = EXP(LNGAMMA( kappa + 1.0D )-LNGAMMA( kappa - 0.5D ))
@@ -66,12 +67,19 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
         gammarat = GAMMA( kappa + 1.D) / GAMMA( kappa - 0.5D )
      END
   ENDCASE
-  JV3                    = gammaRat / kappa^(1.5D)
-  ;; JV4sub                 = 2.D * potBar / ( (2.D * k - 3.D + helpMeNotBeZero ) * (mRat - 1.D) )
-  JV4sub                 = 2.D * potBar / ( (2.D * kappaS - 3.D ) * (mRat - 1.D) )
-  JV4                    = mRat * (1.D - (1.D - 1.D/mRat) * ( 1.D + JV4sub )^( (-1.0D) * kappa + 1) )
+  JV3        = gammaRat / kappa^(1.5D)
 
-  Jpar                   = JVinv * JV1 * JV2 * JV3 * JV4
+  ;; JV4sub  = 2.D * potBar / ( (2.D * k - 3.D + helpMeNotBeZero ) * (mRat - 1.D) )
+  JV4sub     = potBar / ( ( kappaS - 1.5D ) * (mRat - 1.D) )
+  JV4s       = ( 1.D + JV4sub )^( (-1.0D) * kappa + 1)
+
+  ;; Binomial approx
+  IF (WHERE(JV4sub LE 0.01D))[0] NE -1 THEN BEGIN
+     JV4s[WHERE(JV4sub LE 0.01D)] = 1.D + (1.0D - kappa ) * JV4sub[WHERE(JV4sub LE 0.01D)] 
+  ENDIF
+  JV4        = mRat * (1.D - (1.D - 1.D/mRat) * JV4s )
+
+  Jpar       = JVinv * JV1 * JV2 * JV3 * JV4
 
   RETURN,Jpar
 END

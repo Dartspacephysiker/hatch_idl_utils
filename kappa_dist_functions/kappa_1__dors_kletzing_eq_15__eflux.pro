@@ -2,7 +2,9 @@
 FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
    IN_POTBAR=in_potBar, $
    OUT_POTBAR=potBar, $
-   POT_IN_JOULES=pot_in_joules
+   OUT_P_OVER_K_TH=pot_over_K_th, $
+   POT_IN_JOULES=pot_in_joules, $
+   PLOT_TERMS=plot_terms
 
   COMPILE_OPT idl2
   
@@ -24,6 +26,10 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
      ENDIF
   ENDELSE
 
+  IF ARG_PRESENT(pot_over_K_th) THEN BEGIN
+     pot_over_K_th       = potBar ; / ( kappa - 1.5D)
+  ENDIF
+
   ;;Make sure kappa is fo' real
   kappaS = DOUBLE(kappa)
   IF kappa LE 1.5 THEN BEGIN
@@ -43,10 +49,21 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
   ENDIF
 
   ;;Have to translate T to the most probable speed, w, which is how Dors and Kletzing cast it
-  w_sq                   = 2.D * T_m / electron_mass * ( (kappaS - 1.5D) / kappaS )
+  w_sq   = 2.D * T_m / electron_mass * ( (kappaS - 1.5D) / kappaS )
   
-  ;; PI                     = 1.D + potBar / ( (kappaS - 1.5D + helpMeNotBeZero) * ( R_B - 1.D ) )
-  PI                     = 1.D + potBar / ( (kappaS - 1.5D ) * ( R_BS - 1.D ) )
+  ;; PI  = 1.D + potBar / ( (kappaS - 1.5D + helpMeNotBeZero) * ( R_B - 1.D ) )
+  PItmp  = potBar / ( (kappaS - 1.5D ) * ( R_BS - 1.D ) )
+  PI     = 1.D + PItmp
+  PI1    = PI^((-1.D)*kappa+1.D)
+  PI2    = PI^((-1.D)*kappa+2.D)
+  ;;Binomial approx
+  IF (WHERE(PItmp LE 0.01D))[0] NE -1 THEN BEGIN
+     ;; PI[WHERE(PItmp LE 0.01D)] = 1.D + (1.0D - kappa ) * PItmp[WHERE(PItmp LE 0.01D)] 
+     ind = WHERE(PItmp LE 0.01D)
+     PI1[ind] = 1.D + ( 1.D - kappa ) * PItmp[ind]
+     PI2[ind] = 1.D + ( 2.D - kappa ) * PItmp[ind]
+  ENDIF
+
   one_m_one_over_R_B     = (1.D - 1.D/R_B)
   CASE 1 OF
      (kappa GE 20): BEGIN
@@ -68,139 +85,173 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
   ;; FK2                    = ( ( kappaS - 2.D ) / ( kappaS - 1.D ) + potBar * ( kappaS - 2.D ) / ( kappaS - 1.5D + helpMeNotBeZero ) ) * ( kappaS / ( (kappaS - 1.D) * (R_B - 1.D) ) + 1.D )
   ;; FK3                    = 1.D + ( 1.D + kappaS / ( R_B - 1.D + helpMeNotBeZero ) ) / ( kappaS - 1.D )
 
-  Finv  = n * electron_mass * toJ * w_sq^(1.5D) / 4.D / SQRT(!PI) $
-            * kappa^(2.D) * A_k * R_B $
-            / ( ( kappa - 1.D ) * ( kappaS - 2.D ) )
+  IF KEYWORD_SET(old_way) THEN BEGIN
+     ;;The other old way, before shifting kappa - 2.D inside
+     Finv  = n * electron_mass * toJ * w_sq^(1.5D) / 4.D / SQRT(!PI) $
+             * kappa^(2.D) * A_k * R_B $
+             / ( ( kappa - 1.D ) * ( kappaS - 2.D ) )
+     ;;First chunk
+     FK1   = 2.D + ( kappa - 2.D ) / ( kappaS - 1.5D ) * potBar
+     
+     ;;Second chunk
+     FK2   = ( ( kappa - 2.D ) / ( kappa - 1.D ) + potBar * ( kappa - 2.D ) / ( kappaS - 1.5D ) ) * ( kappa / ( (kappa - 1.D) * (R_BS - 1.D) ) + 1.D )
+     
+     ;;Third chunk, in parts that become useful later for PDs
+     FK3   = 1.D + ( 1.D + kappa / ( R_BS - 1.D ) ) / ( kappa - 1.D )
+     
+     ;;Fini
+     F     = Finv * ( FK1 - PI1 * one_m_one_over_R_B * FK2 - PI2 * one_m_one_over_R_B^(2.D) * FK3 )
+     
+  ENDIF ELSE BEGIN
 
-  ;;First chunk
-  FK1   = 2.D + ( kappa - 2.D ) / ( kappaS - 1.5D ) * potBar
+     Finv  = n * electron_mass * toJ * w_sq^(1.5D) / 4.D / SQRT(!PI) $
+             * kappa^(2.D) * A_k * R_B / ( kappa - 1.D )
 
-  ;;Second chunk
-  FK2   = ( ( kappa - 2.D ) / ( kappa - 1.D ) + potBar * ( kappa - 2.D ) / ( kappaS - 1.5D ) ) * ( kappa / ( (kappa - 1.D) * (R_BS - 1.D) ) + 1.D )
+     ;;First chunk
+     FK1   = 2.D / ( kappa - 2.D ) + 1.D / ( kappaS - 1.5D ) * potBar
 
-  ;;Third chunk, in parts that become useful later for PDs
-  FK3   = 1.D + ( 1.D + kappa / ( R_BS - 1.D ) ) / ( kappa - 1.D )
+     ;;Second chunk
+     FK2a  = ( 1.D / ( kappa - 1.D ) + potBar / ( kappaS - 1.5D ) )
+     CASE 1 OF
+        (kappa GE 100): BEGIN
+           FK2b  = ( kappa / ( (kappa - 1.D) * (R_BS - 1.D) ) + 1.D )
+        END
+        ELSE: BEGIN
+           ;; FK2a  = ( 1.D / ( kappa - 1.D ) + potBar / ( kappaS - 1.5D ) )
+           FK2b  = ( 1.D / ( (1.D - 1.D/kappa) * (R_BS - 1.D) ) + 1.D )
+        END
+     ENDCASE
 
-  ;;Fini
-  F     = Finv * ( FK1 - PI^((-1.D)*kappa+1.D) * one_m_one_over_R_B * FK2 - PI^((-1.D)*kappa+2.D) * one_m_one_over_R_B^(2.D) * FK3 )
+     ;; FK2   = ( 1.D / ( kappa - 1.D ) + potBar / ( kappaS - 1.5D ) ) * ( kappa / ( (kappa - 1.D) * (Rnnn_BS - 1.D) ) + 1.D )
+     FK2   = FK2a * FK2b
 
-  ;;Plot terms
-  t1      = Finv * FK1
-  t2      = Finv * ( (-1.D) * PI^((-1.D)*kappa+1.D) * FK2 )
-  t3      = Finv * ( (-1.D) * PI^((-1.D)*kappa+2.D) * one_m_one_over_R_B^(2.D) * FK3 )
-  Tot     = t1+t2+t3
+     ;;Third chunk, in parts that become useful later for PDs
+     FK3   = ( 1.D + ( 1.D + kappa / ( R_BS - 1.D ) ) / ( kappa - 1.D ) ) / ( kappaS - 2.D )
 
-  name1   = 'Term 1' ;; + ( N_ELEMENTS(WHERE(t1 LT 0)) GE (N_ELEMENTS(t1) / 2.) ? $
-                     ;;     ' (most neg!)' : '')
-  name2   = 'Term 2' ;; + ( N_ELEMENTS(WHERE(t2 LT 0)) GE (N_ELEMENTS(t2) / 2.) ? $
-                     ;;     ' (most neg!)' : '')
-  name3   = 'Term 3' ;; + ( N_ELEMENTS(WHERE(t3 LT 0)) GE (N_ELEMENTS(t3) / 2.) ? $
-                     ;;     ' (most neg!)' : '')
-  nameTot = 'Sum   ' ;; + ( N_ELEMENTS(WHERE(t3 LT 0)) GE (N_ELEMENTS(t3) / 2.) ? $
-                     ;;     ' (most neg!)' : '')
+     ;;Fini
+     F     = Finv * ( FK1 - PI1 * one_m_one_over_R_B * FK2 - PI2 * one_m_one_over_R_B^(2.D) * FK3 )
 
-  negt1   = WHERE(t1 LT 0,nNegt1)
-  negt2   = WHERE(t2 LT 0,nNegt2)
-  negt3   = WHERE(t3 LT 0,nNegt3)
-  negTot  = WHERE(tot LT 0,nNegTot)
-  ;; IF (nNegt1 GE (N_ELEMENTS(t1) / 2.)) THEN BEGIN
+  ENDELSE
+
+  IF KEYWORD_SET(plot_terms) THEN BEGIN
+     ;;Plot terms
+     t1      = Finv * FK1
+     t2      = Finv * ( (-1.D) * PI1 * FK2 )
+     t3      = Finv * ( (-1.D) * PI2 * one_m_one_over_R_B^(2.D) * FK3 )
+     Tot     = t1+t2+t3
+
+     name1   = 'Term 1' ;; + ( N_ELEMENTS(WHERE(t1 LT 0)) GE (N_ELEMENTS(t1) / 2.) ? $
+     ;;     ' (most neg!)' : '')
+     name2   = 'Term 2' ;; + ( N_ELEMENTS(WHERE(t2 LT 0)) GE (N_ELEMENTS(t2) / 2.) ? $
+     ;;     ' (most neg!)' : '')
+     name3   = 'Term 3' ;; + ( N_ELEMENTS(WHERE(t3 LT 0)) GE (N_ELEMENTS(t3) / 2.) ? $
+     ;;     ' (most neg!)' : '')
+     nameTot = 'Sum   ' ;; + ( N_ELEMENTS(WHERE(t3 LT 0)) GE (N_ELEMENTS(t3) / 2.) ? $
+     ;;     ' (most neg!)' : '')
+
+     negt1   = WHERE(t1 LT 0,nNegt1)
+     negt2   = WHERE(t2 LT 0,nNegt2)
+     negt3   = WHERE(t3 LT 0,nNegt3)
+     negTot  = WHERE(tot LT 0,nNegTot)
+     ;; IF (nNegt1 GE (N_ELEMENTS(t1) / 2.)) THEN BEGIN
      ;; name1 += ' (most neg!)'
-  IF nNegt1 GT 0 THEN BEGIN
-     name1 += ' (some neg!)'
-     t1     = ABS(t1)
-  ENDIF
+     IF nNegt1 GT 0 THEN BEGIN
+        name1 += ' (some neg!)'
+        t1     = ABS(t1)
+     ENDIF
 
-  ;; IF (nNegt2 GE (N_ELEMENTS(t2) / 2.)) THEN BEGIN
+     ;; IF (nNegt2 GE (N_ELEMENTS(t2) / 2.)) THEN BEGIN
      ;; name2 += ' (most neg!)'
-  IF nNegt2 GT 0 THEN BEGIN
-     name2 += ' (some neg!)'
-     t2     = ABS(t2)
-  ENDIF
+     IF nNegt2 GT 0 THEN BEGIN
+        name2 += ' (some neg!)'
+        t2     = ABS(t2)
+     ENDIF
 
-  ;; IF (nNegt3 GE (N_ELEMENTS(t3) / 2.)) THEN BEGIN
+     ;; IF (nNegt3 GE (N_ELEMENTS(t3) / 2.)) THEN BEGIN
      ;; name3 += ' (most neg!)'
-  IF nNegt3 GT 0 THEN BEGIN
-     name3 += ' (some neg!)'
-     t3     = ABS(t3)
-  ENDIF
+     IF nNegt3 GT 0 THEN BEGIN
+        name3 += ' (some neg!)'
+        t3     = ABS(t3)
+     ENDIF
 
-  IF nNegTot GT 0 THEN BEGIN
-     nameTot += ' (some neg!)'
-     tot     = ABS(tot)
-  ENDIF
+     IF nNegTot GT 0 THEN BEGIN
+        nameTot += ' (some neg!)'
+        tot     = ABS(tot)
+     ENDIF
 
-  t2Col   = 'Green'
-  t3Col   = 'Red'
-  totCol  = 'Blue'
+     t2Col   = 'Green'
+     t3Col   = 'Red'
+     totCol  = 'Blue'
 
-  t1Sym   = '+'
-  t2Sym   = 'x'
-  t3Sym   = '*'
-  totSym  = 'tu'
+     t1Sym   = '+'
+     t2Sym   = 'x'
+     t3Sym   = '*'
+     totSym  = 'tu'
 
-  yRange  = MINMAX([t1,t2,t3,tot])
-  t1Plot  = PLOT(potbar,t1, $
-                 NAME=name1, $
-                 XRANGE=MINMAX(potBar), $
-                 YRANGE=yRange, $
-                 XLOG=1, $
-                 YLOG=1, $
-                 /CURRENT)
-  t2Plot  = PLOT(potbar,t2, $
-                 NAME=name2, $
-                 XRANGE=MINMAX(potBar), $
-                 XLOG=1, $
-                 YLOG=1, $
-                 COLOR=t2Col, $
-                 /OVERPLOT)
-  t3Plot  = PLOT(potbar,t3, $
-                 NAME=name3, $
-                 XRANGE=MINMAX(potBar), $
-                 XLOG=1, $
-                 YLOG=1, $
-                 COLOR=t3Col, $
-                 /OVERPLOT)
-  totPlot = PLOT(potbar,tot, $
-                 NAME=nameTot, $
-                 XRANGE=MINMAX(potBar), $
-                 XLOG=1, $
-                 YLOG=1, $
-                 COLOR=totCol, $
-                 /OVERPLOT)
-  legend  = LEGEND(TARGET=[t1plot,t2plot,t3plot,totPlot], $
-                   POSITION=[0.4,0.8], $
-                   /NORMAL)
+     yRange  = MINMAX([t1,t2,t3,tot])
+     t1Plot  = PLOT(potbar,t1, $
+                    NAME=name1, $
+                    XRANGE=MINMAX(potBar), $
+                    YRANGE=yRange, $
+                    XLOG=1, $
+                    YLOG=1, $
+                    /CURRENT)
+     t2Plot  = PLOT(potbar,t2, $
+                    NAME=name2, $
+                    XRANGE=MINMAX(potBar), $
+                    XLOG=1, $
+                    YLOG=1, $
+                    COLOR=t2Col, $
+                    /OVERPLOT)
+     t3Plot  = PLOT(potbar,t3, $
+                    NAME=name3, $
+                    XRANGE=MINMAX(potBar), $
+                    XLOG=1, $
+                    YLOG=1, $
+                    COLOR=t3Col, $
+                    /OVERPLOT)
+     totPlot = PLOT(potbar,tot, $
+                    NAME=nameTot, $
+                    XRANGE=MINMAX(potBar), $
+                    XLOG=1, $
+                    YLOG=1, $
+                    COLOR=totCol, $
+                    /OVERPLOT)
+     legend  = LEGEND(TARGET=[t1plot,t2plot,t3plot,totPlot], $
+                      POSITION=[0.4,0.8], $
+                      /NORMAL)
 
-  IF nNegt1 GT 0 THEN BEGIN
-     t1bad = PLOT(potbar[negt1],t1[negt1], $
-                  LINESTYLE='', $
-                  SYMBOL=t1Sym, $
-                  ;; COLOR=t1Col, $
-                  /OVERPLOT)
-  ENDIF
+     IF nNegt1 GT 0 THEN BEGIN
+        t1bad = PLOT(potbar[negt1],t1[negt1], $
+                     LINESTYLE='', $
+                     SYMBOL=t1Sym, $
+                     ;; COLOR=t1Col, $
+                     /OVERPLOT)
+     ENDIF
 
-  IF nNegt2 GT 0 THEN BEGIN
-     t2bad = PLOT(potbar[negt2],t2[negt2], $
-                  LINESTYLE='', $
-                  SYMBOL=t2Sym, $
-                  COLOR=t2Col, $
-                  /OVERPLOT)
-  ENDIF
+     IF nNegt2 GT 0 THEN BEGIN
+        t2bad = PLOT(potbar[negt2],t2[negt2], $
+                     LINESTYLE='', $
+                     SYMBOL=t2Sym, $
+                     COLOR=t2Col, $
+                     /OVERPLOT)
+     ENDIF
 
-  IF nNegt3 GT 0 THEN BEGIN
-     t3bad = PLOT(potbar[negt3],t3[negt3], $
-                  LINESTYLE='', $
-                  SYMBOL=t3Sym, $
-                  COLOR=t3Col, $
-                  /OVERPLOT)
-  ENDIF
+     IF nNegt3 GT 0 THEN BEGIN
+        t3bad = PLOT(potbar[negt3],t3[negt3], $
+                     LINESTYLE='', $
+                     SYMBOL=t3Sym, $
+                     COLOR=t3Col, $
+                     /OVERPLOT)
+     ENDIF
 
-  IF nNegTot GT 0 THEN BEGIN
-     totBad = PLOT(potbar[negtot],tot[negTot], $
-                  LINESTYLE='', $
-                  SYMBOL=totSym, $
-                  COLOR=totCol, $
-                  /OVERPLOT)
+     IF nNegTot GT 0 THEN BEGIN
+        totBad = PLOT(potbar[negtot],tot[negTot], $
+                      LINESTYLE='', $
+                      SYMBOL=totSym, $
+                      COLOR=totCol, $
+                      /OVERPLOT)
+     ENDIF
   ENDIF
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
