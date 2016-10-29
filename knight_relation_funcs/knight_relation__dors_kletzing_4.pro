@@ -4,6 +4,11 @@
 ;;Dens_m:  Magnetospheric plasma density            (cm^-3)
 ;;R_B   :  Magnetic field ratio, B_ionos/B_msphere  (dimensionless)
 ;;Pot   ;  Potential drop                           (eV/C)
+
+;;Potbar:  (electron_charge)*Delta_Phi/(k_B*T)      (potential drop normalized by temperature in eV)
+
+;;NOTE  : We treat earthward as positive here
+
 FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
                                           IN_POTBAR=in_potBar, $
                                           OUT_POTBAR=potBar
@@ -34,7 +39,8 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
 
 
   ;;Equation segments
-  JVinv                  = (-1.D) * eCharge * n
+  ;; JVinv                  = (-1.D) * eCharge * n
+  JVinv                  = (1.D) * eCharge * n
   JV1                    = SQRT( T_m / ( 2.D * !PI * electron_mass ) )
   JV2sub                 = (-1.D) * potBar / ( mRat - 1.D + helpMeNotBeZero )
   JV2                    = mRat * (1.D - (1.D - 1.D/mRat) * EXP(JV2sub) )
