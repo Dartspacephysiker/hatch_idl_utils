@@ -42,11 +42,18 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder
   ;; m              = electron_mass
 
   ;;Make sure kappa is fo' real
-  ;; IF kappa LE 1.5D THEN BEGIN
-  ;;    kappa          = 1.5001D
-  ;; ENDIF
+  kappaS = DOUBLE(kappa)
+  IF kappa LE 1.5 THEN BEGIN
+     kappaS = 1.500001D
+     ;; PRINT,"Kappa must be GE 1.5D!"
+     ;; PRINT,"Returning..."
+     ;; RETURN,-1
+  ENDIF
 
-  helpMeNotBeZero = 0.00001D
+  ;;Still fo' real
+  IF kappa EQ 2.0 THEN kappaS = 2.00001D 
+
+  ;; helpMeNotBeZero = 0.00001D
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Chunks of the function
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
@@ -57,14 +64,25 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder
   Finv               = n * ( electron_mass / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
 
   ;;First chunk
-  FK1                = (DOUBLE((!PI * T * (kappa - 1.5D + helpMeNotBeZero ) )))^(-1.5D)
+  ;; FK1                = (DOUBLE((!PI * T * (kappa - 1.5D + helpMeNotBeZero ) )))^(-1.5D)
+  FK1                = (DOUBLE((!PI * T * (kappaS - 1.5D ) )))^(-1.5D)
 
   ;;Second chunk
-  FK2                = GAMMA(kappa + 1.D) / GAMMA(kappa - 0.5D)
+  ;; FK2                = GAMMA(kappa + 1.D) / GAMMA(kappa - 0.5D)
+  CASE 1 OF
+     (kappa GE 20): BEGIN
+        gammaRat  = EXP(LNGAMMA( kappa + 1.0D )-LNGAMMA( kappa - 0.5D ))
+     END
+     ELSE: BEGIN
+        gammarat  = GAMMA( kappa + 1.0D ) / GAMMA( kappa - 0.5D )
+     END
+  ENDCASE
+  FK2             = gammaRat
 
   ;;Third chunk, in parts that become useful later for PDs
   f_e                = (SQRT(energy) - SQRT(E_b)*COS(bulkAngle))^2 + E_b * (SIN(bulkAngle))^2
-  fk3_in             = 1.D + f_e / ( (kappa - 1.5D + helpMeNotBeZero ) * T )
+  ;; fk3_in             = 1.D + f_e / ( (kappa - 1.5D + helpMeNotBeZero ) * T )
+  fk3_in             = 1.D + f_e / ( (kappaS - 1.5D ) * T )
   FK3                = ( fk3_in ) ^ ( -1.D - kappa )
 
   ;;Fini
@@ -79,7 +97,9 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder
      ;; pdwrtE_b     = Finv * SQRT( !PI^(-3) * (T * (kappa - 1.5D)^(-5) ) ) * FK2 * (-1.D - kappa) * $
      ;;                       ( fk3_in )^(-2.D - kappa) * ( 2.D*( SQRT(energy/E_b) - COS(bulkAngle) ) + (SIN(bulkAngle))^2 )
      ;;Pretty sure there are issues with the above
-     pdwrtE_b        = Finv * SQRT( !PI^(-3) * (T * (kappa - 1.5D ) )^(-5) ) * FK2 * (-1.D - kappa) * $
+     ;; pdwrtE_b        = Finv * SQRT( !PI^(-3) * (T * (kappa - 1.5D ) )^(-5) ) * FK2 * (-1.D - kappa) * $
+     ;;                   ( fk3_in )^(-2.D - kappa) * ( 1.D - SQRT(energy/E_b) * COS(bulkAngle) )
+     pdwrtE_b        = Finv * SQRT( !PI^(-3) * (T * (kappaS - 1.5D ) )^(-5) ) * FK2 * (-1.D - kappa) * $
                        ( fk3_in )^(-2.D - kappa) * ( 1.D - SQRT(energy/E_b) * COS(bulkAngle) )
 
      ;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -87,16 +107,20 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder
      ;; pdwrtT       = (-1.5D) * Finv * SQRT( (!PI * (kappa - 1.5D))^(-3) * T^(-5) ) * FK2 * ( -kappa - 1D) * $
      ;;                       ( -1.D - kappa ) * ( fk3_in )^(-2.D - kappa) * ( (-1.D / T ) * (fk3_in - 1.D) )
      ;;Problems with the above
-     pdwrtT          = Finv * ( (-1.5D) * SQRT( (!PI * (kappa - 1.5D))^(-3) * T^(-5) ) * FK2 * FK3 + $
-                                FK1 * FK2 * ( 1.D + kappa ) * ( fk3_in )^(-2.D - kappa) * ( f_e / ( (kappa - 1.5D) * T^2)) )
+     ;; pdwrtT          = Finv * ( (-1.5D) * SQRT( (!PI * (kappa - 1.5D))^(-3) * T^(-5) ) * FK2 * FK3 + $
+     ;;                            FK1 * FK2 * ( 1.D + kappa ) * ( fk3_in )^(-2.D - kappa) * ( f_e / ( (kappa - 1.5D) * T^2)) )
+     pdwrtT          = Finv * ( (-1.5D) * SQRT( (!PI * (kappaS - 1.5D))^(-3) * T^(-5) ) * FK2 * FK3 + $
+                                FK1 * FK2 * ( 1.D + kappa ) * ( fk3_in )^(-2.D - kappa) * ( f_e / ( (kappaS - 1.5D) * T^2)) )
      
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 3: PDs wrt to kappa--The worst of all, and the most important
-     dFK1_dkappa     = (-1.5D) * SQRT( (!PI * T )^(-3) * (kappa - 1.5D + helpMeNotBeZero )^(-5) )
-     dFK2_dkappa     = FK2 * ( REAL_DIGAMMA(kappa + 1) - REAL_DIGAMMA(kappa - 0.5D) )
+     ;; dFK1_dkappa     = (-1.5D) * SQRT( (!PI * T )^(-3) * (kappa - 1.5D + helpMeNotBeZero )^(-5) )
+     dFK1_dkappa     = (-1.5D) * SQRT( (!PI * T )^(-3) * (kappaS - 1.5D )^(-5) )
+     dFK2_dkappa     = FK2 * ( REAL_DIGAMMA(kappa + 1.0D) - REAL_DIGAMMA(kappa - 0.5D) )
 
      ;;The third chunk, which is the worst of the worst
-     dfk3_in_dkappa  = (-1.D) * f_e / ( T * (kappa - 1.5D + helpMeNotBeZero )^2 )
+     ;; dfk3_in_dkappa  = (-1.D) * f_e / ( T * (kappa - 1.5D + helpMeNotBeZero )^2 )
+     dfk3_in_dkappa  = (-1.D) * f_e / ( T * (kappaS - 1.5D )^2 )
      dFK3_dkappa     = (-1.D) * FK3 * ( ALOG(fk3_in) + (kappa + 1) * dfk3_in_dkappa / fk3_in )
 
      pdwrtkappa      = Finv * (   dFK1_dkappa   * FK2         * FK3         $

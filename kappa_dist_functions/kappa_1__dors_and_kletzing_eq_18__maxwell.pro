@@ -3,7 +3,7 @@
 ;;X is the current position
 ;;phi_N is the order of derivative of potential wrt x
 ;;E field is naturally -phi_N[0], then, since E = -dPhi/dx
-PRO KAPPA_1__DORS_AND_KLETZING_EQ_18__MAXWELL,X,phi_N
+PRO KAPPA_1__DORS_KLETZING_EQ_18__MAXWELL,X,phi_N
 
   COMPILE_OPT IDL2
 

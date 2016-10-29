@@ -32,8 +32,8 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_14__D_EFLUX_D_POT__MAXWELL,T_m,dens_m,pot,R_B
   ENDELSE
 
   ;;Constant out front
-  C                      = n * R_B * SQRT( T_m^3 / 2.D / !PI / electron_mass )
-  dC                     = n * R_B * SQRT( T_m   / 2.D / !PI / electron_mass )
+  C                      = n * toJ * R_B * SQRT( T_m^3 / 2.D / !PI / electron_mass )
+  dC                     = n * toJ * R_B * SQRT( T_m   / 2.D / !PI / electron_mass )
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Chunks of the function

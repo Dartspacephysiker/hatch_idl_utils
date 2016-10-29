@@ -39,19 +39,29 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__D_EFLUX_D_POT,kappa,T_m,dens_m,pot,R_B, $
 
   ;;Helpers
   one_m_one_over_R_B   = (1.D - 1.D/R_B)
-  T_k            = T_m * ( kappaS - 1.5D + DOUBLE(1.e-4))
+  T_k            = T_m * ( kappaS - 1.5D )
   w_sq           = 2.D * T_m / electron_mass * ( (kappaS - 1.5D) / kappaS )
 
   ;;Some components of equation
   ;; PI                     = 1.D + potBar / ( (kappaS - 1.5D + helpMeNotBeZero) * ( R_B - 1.D ) )  ;As defined by Dors and Kletzing
   PI                     = 1.D + potBar / ( (kappaS - 1.5D ) * ( R_B - 1.D ) )              ;As defined by Dors and Kletzing
-  A_k                    = GAMMA(kappaS + 1.D) / ( kappaS^(1.5D) * GAMMA( kappaS - 0.5D ) ) ;As defined by Dors and Kletzing
 
-  B_k                    = ( kappaS / ( ( kappaS - 1.D ) * ( R_B - 1.D ) ) + 1.D ) * one_m_one_over_R_B
-  E_k                    = ( 1.D + ( 1.D + ( kappaS / ( R_B - 1.D ) ) ) / ( kappaS - 1.D ) ) * one_m_one_over_R_B^2
+  CASE 1 OF
+     (kappaS GE 20): BEGIN
+        gammaRat = EXP(LNGAMMA( kappaS + 1.0D )-LNGAMMA( kappaS - 0.5D ))
+     END
+     ELSE: BEGIN
+        gammarat = GAMMA( kappaS + 1.D) / GAMMA( kappaS - 0.5D )
+     END
+  ENDCASE
+  A_k     = gammaRat / kappaS^(1.5D)
+  ;; A_k  = GAMMA( ( kappaS < 28 ) + 1.D) / ( kappaS^(1.5D) * GAMMA( ( kappaS < 28 ) - 0.5D ) ) ;As defined by Dors and Kletzing--kappaS > 30 makes GAMMA blow up
+
+  B_k     = ( kappaS / ( ( kappaS - 1.D ) * ( R_B - 1.D ) ) + 1.D ) * one_m_one_over_R_B
+  E_k     = ( 1.D + ( 1.D + ( kappaS / ( R_B - 1.D ) ) ) / ( kappaS - 1.D ) ) * one_m_one_over_R_B^2
 
   ;;Constant at front of equation
-  C = n *  SQRT( T_k^3 / ( 2.D * !PI * electron_mass) ) * ( kappaS^(0.5D) * A_k) * R_B / ( ( kappaS - 1.D ) * ( kappaS - 2.D ) )
+  C       = n * toJ * SQRT( T_k^3 / ( 2.D * !PI * electron_mass) ) * ( kappaS^(0.5D) * A_k) * R_B / ( ( kappaS - 1.D ) * ( kappaS - 2.D ) )
 
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

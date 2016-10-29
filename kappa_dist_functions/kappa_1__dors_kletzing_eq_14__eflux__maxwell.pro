@@ -85,6 +85,12 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL,T_m,dens_m,pot,R_B, $
   ;; w_sq  = 
   toJ                    = 1.6e-19 ;eV to J
 
+  R_BS    = R_B
+  IF R_B LE 1.0 THEN BEGIN
+     PRINT,"R_B must be GT 1.0!"
+     R_BS = 1.0001
+  ENDIF
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Chunks of the function
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
@@ -96,7 +102,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL,T_m,dens_m,pot,R_B, $
   FK1                    = 2.D + potBar
 
   ;;Second chunk
-  FK2                    = ( potBar + 2.D ) * (1.D - 1.D / R_B) * EXP( (-1.D) * potBar / ( R_B - 1.D ) )
+  FK2                    = ( potBar + 2.D ) * (1.D - 1.D / R_B) * EXP( (-1.D) * potBar / ( R_BS - 1.D ) )
 
   ;;Fini
   F                      = Finv * ( FK1 - FK2 )

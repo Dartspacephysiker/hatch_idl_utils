@@ -4,7 +4,7 @@
 ; A[0]: n,      plasma density in m^-3
 ; A[1]: w,      most likely speed in m/s
 ; A[2]: kappa,  kappa (of course!)
-PRO KAPPA_1__DORS_AND_KLETZING_EQ_8,V,A,F,pder
+PRO KAPPA_1__DORS_KLETZING_EQ_8,V,A,F,pder
 
   IF N_ELEMENTS(A) LT 3 THEN BEGIN
      PRINT,"Must have all thre estimates for kappa dist! [n, w, kappa]"
@@ -12,13 +12,35 @@ PRO KAPPA_1__DORS_AND_KLETZING_EQ_8,V,A,F,pder
      RETURN
   ENDIF
 
-  n       = DOUBLE(A[0])
-  w       = DOUBLE(A[1])
-  kappa   = DOUBLE(A[2])
+  n               = DOUBLE(A[0])
+  w               = DOUBLE(A[1])
+  kappa           = DOUBLE(A[2])
 
-  F       = (n/(w*SQRT(!PI))^3) $
-            * (GAMMA(kappa + 1)/(kappa^(1.5) * GAMMA(kappa-0.5))) $
-            * (1 + ((v/w)^2)/kappa)^(-(kappa+1))
+  kappaS = DOUBLE(kappa)
+  IF kappa LE 1.5 THEN BEGIN
+     kappaS = 1.50001D
+     ;; PRINT,"Kappa must be GE 1.5D!"
+     ;; PRINT,"Returning..."
+     ;; RETURN,-1
+  ENDIF
+
+  ;;Still fo' real
+  IF kappa EQ 2.0 THEN kappaS = 2.0001D 
+
+  CASE 1 OF
+     (kappaS GE 20): BEGIN
+        gammaRat  = EXP(LNGAMMA( kappaS + 1.0D )-LNGAMMA( kappaS - 0.5D ))
+     END
+     ELSE: BEGIN
+        gammarat  = GAMMA( kappaS + 1.D) / GAMMA( kappaS - 0.5D )
+     END
+  ENDCASE
+  A_k             = gammaRat / kappaS^(1.5D)
+
+  F               = (n/(w*SQRT(!PI))^3) $
+                    ;; * (GAMMA(kappaS + 1)/(kappaS^(1.5) * GAMMA(kappaS-0.5))) $
+                    * A_k $
+                    * (1 + ((v/w)^2)/kappaS)^(-(kappaS+1))
 
   ;;If the procedure is called with four parameters, calculate the
   ;;partial derivatives.
@@ -28,12 +50,14 @@ PRO KAPPA_1__DORS_AND_KLETZING_EQ_8,V,A,F,pder
   IF N_PARAMS() GE 4 THEN BEGIN
      pdwrtn     = F/n
      pdwrtw     = (  ((-3)*n/((w^4)*(SQRT(!PI)^3))) $ ;first additive term
-                     * (GAMMA(kappa + 1)/(kappa^(1.5) * GAMMA(kappa-0.5))) $
-                     * (1 + ((v/w)^2)/kappa)^(-(kappa+1))  ) $
-                  - (  (kappa+1)*(n/(w*SQRT(!PI))^3) $ ;second '' term
-                       * (GAMMA(kappa + 1)/(kappa^(1.5) * GAMMA(kappa-0.5))) $
-                       * (  (1 + ((v/w)^2)/kappa)^(-(kappa+2)) $
-                            * ((-2)*(V^2)/(w^3)/kappa)   ) )
+                     ;; * (GAMMA(kappaS + 1)/(kappaS^(1.5) * GAMMA(kappaS-0.5))) $
+                     * A_k $
+                     * (1 + ((v/w)^2)/kappaS)^(-(kappaS+1))  ) $
+                  - (  (kappaS+1)*(n/(w*SQRT(!PI))^3) $ ;second '' term
+                       ;; * (GAMMA(kappaS + 1)/(kappaS^(1.5) * GAMMA(kappaS-0.5))) $
+                       * A_k $
+                       * (  (1 + ((v/w)^2)/kappaS)^(-(kappaS+2)) $
+                            * ((-2)*(V^2)/(w^3)/kappaS)   ) )
      pdwrtkappa =  REPLICATE(1.0,N_ELEMENTS(X))
      
      
