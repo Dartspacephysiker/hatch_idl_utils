@@ -3,15 +3,17 @@
 ;;T_m   :  Magnetospheric temperature of electrons  (eV)
 ;;Dens_m:  Magnetospheric plasma density            (cm^-3)
 ;;R_B   :  Magnetic field ratio, B_ionos/B_msphere  (dimensionless)
-;;Pot   ;  Potential drop                           (eV/C)
+;;Pot   :  Potential drop                           (eV/C)
 
 ;;Potbar:  (electron_charge)*Delta_Phi/(k_B*T)      (potential drop normalized by temperature in eV)
 
-;;NOTE  : We treat earthward as positive here
+;;RETURN: Field-aligned current density in A/m^2
 
+;;NOTE  : We treat earthward as positive here
 FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
                                           IN_POTBAR=in_potBar, $
-                                          OUT_POTBAR=potBar
+                                          OUT_POTBAR=potBar, $
+                                          NO_MULT_BY_CHARGE=no_mult_by_charge
 
   COMPILE_OPT IDL2
 
@@ -22,6 +24,9 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
      mRat                = R_B
   ENDELSE
 
+  mRatS = mRat
+  IF mRat EQ 1 THEN mRatS = 1.00001D
+
   ;;a few constants
   speedOfLight           = DOUBLE(299792458)                  ;m/s
   electron_mass          = DOUBLE(5.1099891e5)/speedOfLight^2 ;eV/c^2
@@ -30,11 +35,14 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
 
   ;;Convert input params
   n                      = DOUBLE(Dens_m * 1000000.D) ;dens_m in m^-3
-  helpMeNotBeZero        = 0.000001D
+  ;; helpMeNotBeZero        = 0.000001D
   IF KEYWORD_SET(in_potBar) THEN BEGIN
      potBar              = in_potBar
   ENDIF ELSE BEGIN
-     potBar              = DOUBLE(eCharge * pot/T_m) ;potential normalized by temperature
+     potBar              = DOUBLE(pot/T_m) ;potential normalized by temperature
+     IF ~KEYWORD_SET(no_mult_by_charge) THEN BEGIN
+        potBar          *= eCharge
+     ENDIF
   ENDELSE
 
 
@@ -42,7 +50,8 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
   ;; JVinv                  = (-1.D) * eCharge * n
   JVinv                  = (1.D) * eCharge * n
   JV1                    = SQRT( T_m / ( 2.D * !PI * electron_mass ) )
-  JV2sub                 = (-1.D) * potBar / ( mRat - 1.D + helpMeNotBeZero )
+  ;; JV2sub                 = (-1.D) * potBar / ( mRat - 1.D + helpMeNotBeZero )
+  JV2sub                 = (-1.D) * potBar / ( mRatS - 1.D )
   JV2                    = mRat * (1.D - (1.D - 1.D/mRat) * EXP(JV2sub) )
 
 
