@@ -85,6 +85,29 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
   ;; FK2                    = ( ( kappaS - 2.D ) / ( kappaS - 1.D ) + potBar * ( kappaS - 2.D ) / ( kappaS - 1.5D + helpMeNotBeZero ) ) * ( kappaS / ( (kappaS - 1.D) * (R_B - 1.D) ) + 1.D )
   ;; FK3                    = 1.D + ( 1.D + kappaS / ( R_B - 1.D + helpMeNotBeZero ) ) / ( kappaS - 1.D )
 
+
+  ;;This relationship is not valid for potBar below ~0.5
+  CASE 1 OF
+     kappa LT 2.1: BEGIN
+        potThresh = 10
+     END
+     ELSE: BEGIN
+        potThresh = 1.0
+     END
+  ENDCASE
+  danger                 = WHERE(potBar LT potThresh,nDanger)
+  IF nDanger GT 0 THEN BEGIN
+     ;; PRINT,nDanger, ' dangerous eFluxes'
+     FDanger = KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL(T_m,dens_m,pot,R_B, $
+                                                            IN_POTBAR=in_potBar, $
+                                                            OUT_POTBAR=potBar, $
+                                                            POT_IN_JOULES=pot_in_joules)
+     FDanger *= A_k * ( ( kappa - 1.5D ) / ( kappa - 1.D ) )^(1.5D)
+     IF nDanger EQ N_ELEMENTS(potBar) THEN RETURN,FDanger
+  ENDIF
+     
+
+
   IF KEYWORD_SET(old_way) THEN BEGIN
      ;;The other old way, before shifting kappa - 2.D inside
      Finv  = n * electron_mass * toJ * w_sq^(1.5D) / 4.D / SQRT(!PI) $
@@ -108,7 +131,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
              * kappa^(2.D) * A_k * R_B / ( kappa - 1.D )
 
      ;;First chunk
-     FK1   = 2.D / ( kappa - 2.D ) + 1.D / ( kappaS - 1.5D ) * potBar
+     FK1   = 2.D / ( kappaS - 2.D ) + 1.D / ( kappaS - 1.5D ) * potBar
 
      ;;Second chunk
      FK2a  = ( 1.D / ( kappa - 1.D ) + potBar / ( kappaS - 1.5D ) )
@@ -122,7 +145,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
         END
      ENDCASE
 
-     ;; FK2   = ( 1.D / ( kappa - 1.D ) + potBar / ( kappaS - 1.5D ) ) * ( kappa / ( (kappa - 1.D) * (Rnnn_BS - 1.D) ) + 1.D )
+     ;; FK2   = ( 1.D / ( kappa - 1.D ) + potBar / ( kappaS - 1.5D ) ) * ( kappa / ( (kappa - 1.D) * (R_BS - 1.D) ) + 1.D )
      FK2   = FK2a * FK2b
 
      ;;Third chunk, in parts that become useful later for PDs
@@ -274,6 +297,9 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;All partial derivatives
   ENDIF
+
+  ;;Replace with low-pot vals if dangerous
+  IF nDanger GT 0 THEN F[danger] = FDanger[danger]
 
   RETURN,F
 

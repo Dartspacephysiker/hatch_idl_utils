@@ -1,4 +1,5 @@
-FUNCTION UTC_TO_JULDAY,UTC_Arr
+FUNCTION UTC_TO_JULDAY,UTC_Arr, $
+                       VERBOSE=verbose
 
   COMPILE_OPT idl2
 
@@ -8,11 +9,11 @@ FUNCTION UTC_TO_JULDAY,UTC_Arr
         RETURN,-1
      END
      5: BEGIN
-        PRINT,"Converting UTC times to Julian dates..."
+        IF KEYWORD_SET(verbose) THEN PRINT,"Converting UTC times to Julian dates..."
         tempTimes        = UTC_Arr
      END
      7: BEGIN
-        PRINT,"Converting UTC strings to Julian dates..."
+        IF KEYWORD_SET(verbose) THEN PRINT,"Converting UTC strings to Julian dates..."
         tempTimes        = STR_TO_TIME(UTC_Arr)
         IF tempTimes[0]  EQ -1 THEN BEGIN
            PRINT,"Failed to convert UTC strings to doubles! Quitting..."

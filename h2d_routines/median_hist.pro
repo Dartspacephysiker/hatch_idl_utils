@@ -25,6 +25,8 @@ FUNCTION MEDIAN_HIST,MLT,ILAT,data, $
 
   ON_ERROR, 0                   ; on error, return control to caller
 
+  @common__ea_binning.pro
+
 ;   Check dimensions
   s1   = size(MLT)
   s2   = size(ILAT)
@@ -70,8 +72,7 @@ FUNCTION MEDIAN_HIST,MLT,ILAT,data, $
 
   CASE 1 OF
      KEYWORD_SET(EA_binning): BEGIN
-        LOAD_EQUAL_AREA_BINNING_STRUCT,EA
-        nBins        = N_ELEMENTS(EA.minI)
+        nBins        = N_ELEMENTS(EA__s.minI)
 
         ptrHist      = PTRARR(nBins,/ALLOCATE_HEAP)
         nonzeroHist  = BYTARR(nBins)
@@ -95,11 +96,11 @@ FUNCTION MEDIAN_HIST,MLT,ILAT,data, $
                  STOP
               ENDIF
 
-              IF *ptrHist[bInd] EQ !NULL THEN BEGIN
-                 *ptrHist[bInd]    = wgtc[i] 
+              IF *(ptrHist[bInd])[0] EQ !NULL THEN BEGIN
+                 *(ptrHist[bInd])[0]   = wgtc[i] 
                  nonzeroHist[bInd] = 1
               ENDIF ELSE BEGIN
-                 *ptrHist[bInd]    = [*ptrHist[bInd],wgtc[i]]
+                 *(ptrHist[bInd])[0]    = [*(ptrHist[bInd])[0],wgtc[i]]
               ENDELSE
            ENDIF
         ENDFOR

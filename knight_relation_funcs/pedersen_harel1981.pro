@@ -23,7 +23,7 @@ FUNCTION PEDERSEN_HAREL1981,JEe,pot, $
 
   CASE 1 OF
      KEYWORD_SET(kappa): BEGIN
-        JEe = KAPPA_1__DORS_KLETZING_EQ_15__EFLUX(DK18__k,DK18__T_m__k,DK18__dens_m__k, $
+        JEe = KAPPA_1__DORS_KLETZING_EQ_15__EFLUX(DK18__kappa,DK18__T_m__k,DK18__dens_m__k, $
                                                   pot,DK18__R_B__k, $
                                                   IN_POTBAR=in_potBar, $
                                                   OUT_POTBAR=potBar, $

@@ -11,7 +11,8 @@
 
 FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
    IN_POTBAR=in_potBar, $
-   OUT_POTBAR=potBar
+   OUT_POTBAR=potBar, $
+   NO_MULT_BY_CHARGE=no_mult_by_charge
 
   COMPILE_OPT IDL2
 
@@ -37,7 +38,10 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
   IF KEYWORD_SET(in_potBar) THEN BEGIN
      potBar              = in_potBar
   ENDIF ELSE BEGIN
-     potBar              = DOUBLE(eCharge * pot/T_m) ;potential normalized by temperature
+     potBar              = DOUBLE(pot/T_m) ;potential normalized by temperature
+     IF ~KEYWORD_SET(no_mult_by_charge) THEN BEGIN
+        potBar          *= eCharge
+     ENDIF
   ENDELSE
 
   ;;Make sure kappa is fo' real
