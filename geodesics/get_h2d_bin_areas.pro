@@ -57,6 +57,8 @@ PRO GET_H2D_BIN_AREAS,areas, $
 
          ON_ERROR, 2          ; on error, return control to caller
 
+  @common__ea_binning.pro
+
 ;These are both set to -1 because we use the lower and lefthand edges as well as the respective binsizes to calculate area
          Binedge1                             = -1
          Binedge2                             = -1
@@ -74,11 +76,12 @@ PRO GET_H2D_BIN_AREAS,areas, $
   CASE 1 OF
      KEYWORD_SET(EA_binning): BEGIN
 
-        LOAD_EQUAL_AREA_STRUCT,EA
-        nBins = N_ELEMENTS(EA.minI)
+  IF N_ELEMENTS(EA__s) EQ 0 THEN LOAD_EQUAL_AREA_BINNING_STRUCT
 
-        EA.minM *= 15.
-        EA.maxM *= 15.
+        nBins = N_ELEMENTS(EA__s.minI)
+
+        tMinM = EA__s.minM * 15.
+        tMaxM = EA__s.maxM * 15.
 
 ;   Take care of OUTPUT KEYWORDS
         Omax1 = Max1 & Omax2 = Max2
@@ -88,8 +91,8 @@ PRO GET_H2D_BIN_AREAS,areas, $
         if (N_ELEMENTS( Binedge2 ) eq 0) then Binedge2 = 0
         offset1   = (Binedge1+1)*0.5
         offset2   = (Binedge2+1)*0.5
-        Obin1     = EA.minM + offset1*binsize1+shift1
-        Obin2     = EA.minI + offset2*binsize2+shift2
+        Obin1     = tMinM + offset1*binsize1+shift1
+        Obin2     = EA__s.minI + offset2*binsize2+shift2
 
         centers1  = TEMPORARY(Obin1)
         centers2  = TEMPORARY(Obin2)
@@ -101,7 +104,8 @@ PRO GET_H2D_BIN_AREAS,areas, $
         areas     = MAKE_ARRAY(nBins,/DOUBLE)
         ;;first index is MLT, second index is ILAT
         FOR i=0,nBins1-1 DO BEGIN
-           areas[i] = LATLONG_PAIR_AREA(EA.minM[i],EA.minI[i],EA.maxM[i],EA.maxI[i], $
+           areas[i] = LATLONG_PAIR_AREA(tMinM[i],EA__s.minI[i], $
+                                        tMaxM[i],EA__s.maxI[i], $
                                         RADIUS_METERS=6.470949e+6) ;use radius at 100 km
         ENDFOR
 
@@ -145,4 +149,5 @@ PRO GET_H2D_BIN_AREAS,areas, $
         ENDFOR
 
      END
+  ENDCASE
 END
