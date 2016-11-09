@@ -20,47 +20,54 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX__POT_EQ_0,kappa,T_m,dens_m,pot,R_B,
   n                      = DOUBLE(Dens_m * 1000000.D)  ;dens_m in m^-3
   potBar                 = 0
 
+  ;;Fitter, happier
+  KAPPA_RB_SAFECHECK,kappa,R_B, $
+                     KAPPAMIN=kappaMin, $
+                     R_BMIN=R_BMin, $
+                     KAPPA_SAFE=kappaS, $
+                     R_B_SAFE=R_BS
+
   ;;Make sure kappa is fo' real
-  kappaS = DOUBLE(kappa)
-  CASE N_ELEMENTS(kappa) OF
-     1: BEGIN
-        IF kappa LE 1.5 THEN BEGIN
-           kappaS = 1.500001D
-           ;; PRINT,"Kappa must be GE 1.5D!"
-           ;; PRINT,"Returning..."
-           ;; RETURN,-1
-        ENDIF
-        ;;Still fo' real
-        IF kappa EQ 2.0 THEN kappaS = 2.00001D 
+  ;; kappaS = DOUBLE(kappa)
+  ;; CASE N_ELEMENTS(kappa) OF
+  ;;    1: BEGIN
+  ;;       IF kappa LE 1.5 THEN BEGIN
+  ;;          kappaS = 1.500001D
+  ;;          ;; PRINT,"Kappa must be GE 1.5D!"
+  ;;          ;; PRINT,"Returning..."
+  ;;          ;; RETURN,-1
+  ;;       ENDIF
+  ;;       ;;Still fo' real
+  ;;       IF kappa EQ 2.0 THEN kappaS = 2.00001D 
 
-     END
-     ELSE: BEGIN
-        IF (WHERE(kappa EQ 1.5))[0] NE -1 THEN BEGIN
-           kappaS[WHERE(kappa EQ 1.5)] = 1.500001D
-        ENDIF
-        IF (WHERE(kappa EQ 2.0))[0] NE -1 THEN BEGIN
-           kappaS[WHERE(kappa EQ 2.0)] = 2.000001D
-        ENDIF
-     END
-  ENDCASE
+  ;;    END
+  ;;    ELSE: BEGIN
+  ;;       IF (WHERE(kappa EQ 1.5))[0] NE -1 THEN BEGIN
+  ;;          kappaS[WHERE(kappa EQ 1.5)] = 1.500001D
+  ;;       ENDIF
+  ;;       IF (WHERE(kappa EQ 2.0))[0] NE -1 THEN BEGIN
+  ;;          kappaS[WHERE(kappa EQ 2.0)] = 2.000001D
+  ;;       ENDIF
+  ;;    END
+  ;; ENDCASE
 
 
-  R_BS    = DOUBLE(R_B)
-  CASE N_ELEMENTS(R_B) OF
-     1: BEGIN
-        IF R_B LE 1.0 THEN BEGIN
-           R_BS = 1.000001D
-           ;; PRINT,"R_B must be GE 1.5D!"
-           ;; PRINT,"Returning..."
-           ;; RETURN,-1
-        ENDIF
-     END
-     ELSE: BEGIN
-        IF (WHERE(R_B EQ 1.0))[0] NE -1 THEN BEGIN
-           R_BS[WHERE(R_B EQ 1.0)] = 1.000001D
-        ENDIF
-     END
-  ENDCASE
+  ;; R_BS    = DOUBLE(R_B)
+  ;; CASE N_ELEMENTS(R_B) OF
+  ;;    1: BEGIN
+  ;;       IF R_B LE 1.0 THEN BEGIN
+  ;;          R_BS = 1.000001D
+  ;;          ;; PRINT,"R_B must be GE 1.5D!"
+  ;;          ;; PRINT,"Returning..."
+  ;;          ;; RETURN,-1
+  ;;       ENDIF
+  ;;    END
+  ;;    ELSE: BEGIN
+  ;;       IF (WHERE(R_B EQ 1.0))[0] NE -1 THEN BEGIN
+  ;;          R_BS[WHERE(R_B EQ 1.0)] = 1.000001D
+  ;;       ENDIF
+  ;;    END
+  ;; ENDCASE
 
   ;;Have to translate T to the most probable speed, w, which is how Dors and Kletzing cast it
   w_sq   = 2.D * T_m / electron_mass * ( (kappa - 1.5D) / kappa )

@@ -44,17 +44,46 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
      ENDIF
   ENDELSE
 
-  ;;Make sure kappa is fo' real
-  kappaS = DOUBLE(kappa)
-  IF kappa LE 1.5 THEN BEGIN
-     kappaS = 1.50001D
-     ;; PRINT,"Kappa must be GE 1.5D!"
-     ;; PRINT,"Returning..."
-     ;; RETURN,-1
-  ENDIF
+  ;;Fitter, happier
+  KAPPA_RB_SAFECHECK,kappa,R_B, $
+                     KAPPAMIN=kappaMin, $
+                     R_BMIN=R_BMin, $
+                     KAPPA_SAFE=kappaS, $
+                     R_B_SAFE=R_BS
 
-  ;;Still fo' real
-  IF kappa EQ 2.0 THEN kappaS = 2.0001D 
+  ;;Make sure kappa is fo' real
+  ;; kappaS = DOUBLE(kappa)
+  ;; CASE N_ELEMENTS(kappa) OF
+  ;;    1: BEGIN
+  ;;       IF kappa LE 1.5 THEN BEGIN
+  ;;          kappaS = 1.500001D
+  ;;          ;; PRINT,"Kappa must be GE 1.5D!"
+  ;;          ;; PRINT,"Returning..."
+  ;;          ;; RETURN,-1
+  ;;       ENDIF
+  ;;       ;;Still fo' real
+  ;;       IF kappa EQ 2.0 THEN kappaS = 2.00001D 
+
+  ;;    END
+  ;;    ELSE: BEGIN
+  ;;       IF (WHERE(kappa EQ 1.5))[0] NE -1 THEN BEGIN
+  ;;          kappaS[WHERE(kappa EQ 1.5)] = 1.500001D
+  ;;       ENDIF
+  ;;       IF (WHERE(kappa EQ 2.0))[0] NE -1 THEN BEGIN
+  ;;          kappaS[WHERE(kappa EQ 2.0)] = 2.000001D
+  ;;       ENDIF
+  ;;    END
+  ;; ENDCASE
+  ;; ;; kappaS = DOUBLE(kappa)
+  ;; ;; IF kappa LE 1.5 THEN BEGIN
+  ;; ;;    kappaS = 1.50001D
+  ;; ;;    ;; PRINT,"Kappa must be GE 1.5D!"
+  ;; ;;    ;; PRINT,"Returning..."
+  ;; ;;    ;; RETURN,-1
+  ;; ;; ENDIF
+
+  ;; ;;Still fo' real
+  ;; IF kappa EQ 2.0 THEN kappaS = 2.0001D 
 
   ;;Equation segments
   ;; JVinv                  = (-0.5D) * eCharge * n
@@ -63,14 +92,16 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
   JV2     = kappa / ( kappa - 1.D )
 
   ;; JV3  = GAMMA(kappa + 1.D) / ( kappa^(1.5D) * GAMMA(kappa - 0.5D) )
-  CASE 1 OF
-     (kappa GE 20): BEGIN
-        gammaRat = EXP(LNGAMMA( kappa + 1.0D )-LNGAMMA( kappa - 0.5D ))
-     END
-     ELSE: BEGIN
-        gammarat = GAMMA( kappa + 1.D) / GAMMA( kappa - 0.5D )
-     END
-  ENDCASE
+  gammaRat = KAPPA_GAMMARAT(kappa)
+  ;; CASE 1 OF
+  ;;    (kappa GE 20): BEGIN
+  ;;       gammaRat = EXP(LNGAMMA( kappa + 1.0D )-LNGAMMA( kappa - 0.5D ))
+  ;;    END
+  ;;    ELSE: BEGIN
+  ;;       gammarat = GAMMA( kappa + 1.D) / GAMMA( kappa - 0.5D )
+  ;;    END
+  ;; ENDCASE
+
   JV3        = gammaRat / kappa^(1.5D)
 
   ;; JV4sub  = 2.D * potBar / ( (2.D * k - 3.D + helpMeNotBeZero ) * (mRat - 1.D) )
