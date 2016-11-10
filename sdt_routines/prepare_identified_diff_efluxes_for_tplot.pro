@@ -14,7 +14,9 @@ PRO PREPARE_IDENTIFIED_DIFF_EFLUXES_FOR_TPLOT,evts,TPLOT_NAME=tPlot_name, $
         FAVOR_BROADSTRICT_OVER_MONO=favor_broadStrict_over_mono, $
         HUGE_STRUCTURE=huge_structure, $
         /VERBOSE
-  ENDIF
+  ENDIF ELSE BEGIN
+     events = evts
+  ENDELSE
 
   limits = {no_strict_types:KEYWORD_SET(no_strict_types)}
 
@@ -23,7 +25,6 @@ PRO PREPARE_IDENTIFIED_DIFF_EFLUXES_FOR_TPLOT,evts,TPLOT_NAME=tPlot_name, $
     STORE_DATA,tPlot_name,DATA=events,LIMITS=limits
     OPTIONS,tPlot_name,'tplot_routine','plot_spectral_type__newell_et_al_2009__tplot'
     OPTIONS,tPlot_name,'ytitle',' '
-
 
     PRINT,'TPLOT NAME FOR IDENTIFIED EFLUXES: ' + tPlot_name
 END
