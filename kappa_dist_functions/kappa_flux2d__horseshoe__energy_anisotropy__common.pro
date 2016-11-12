@@ -34,6 +34,9 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
   nEnergies        = N_ELEMENTS(X[*,0])
   nAngles          = N_ELEMENTS(Y[0,*])
 
+  ;;I know--you wanna know what on earth I'm doing below here.
+  ;;Let me tell you: 
+
   ;; IF nAngles NE N_ELEMENTS(K_EA__angles) THEN BEGIN
   ;;    PRINT,'Trouble!'
   ;; ENDIF
@@ -43,7 +46,8 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
   ;; unsortKEA = VALUE_CLOSEST2(k_ea__angles[sortKEA],k_ea__angles)
   ;; unsortA   = VALUE_CLOSEST2((Y[0,*])[sortKEA],Y[0,*])
 
-  k_ea_ii   = sortKEA[VALUE_CLOSEST2(K_EA__angles[sortKEA],REFORM(Y[0,*]))]
+  smallAngle = MIN(ABS(MEAN(Y,DIMENSION=1)),fa_i)
+  k_ea_ii   = sortKEA[VALUE_CLOSEST2(K_EA__angles[sortKEA],REFORM(Y[fa_i,*]))]
 
   ;; k_ea_ii      = INDGEN(N_ELEMENTS(k_ea__angles))
 
