@@ -47,7 +47,7 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
   ;; unsortA   = VALUE_CLOSEST2((Y[0,*])[sortKEA],Y[0,*])
 
   smallAngle = MIN(ABS(MEAN(Y,DIMENSION=1)),fa_i)
-  k_ea_ii   = sortKEA[VALUE_CLOSEST2(K_EA__angles[sortKEA],REFORM(Y[fa_i,*]))]
+  k_ea_ii   = sortKEA[VALUE_CLOSEST2(K_EA__angles[sortKEA],REFORM(Y[0,*]))]
 
   ;; k_ea_ii      = INDGEN(N_ELEMENTS(k_ea__angles))
 
@@ -92,6 +92,8 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
 
   CASE 1 OF
      KEYWORD_SET(is_maxwellian_fit): BEGIN
+
+        IF nAngles NE N_ELEMENTS(k_ea_ii) THEN STOP
 
         FOR i=0,nAngles-1 DO BEGIN
 
