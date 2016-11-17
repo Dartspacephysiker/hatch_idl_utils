@@ -23,7 +23,7 @@ PRO CONVERT_GEO_TO_AACGM, $
 
   TIC
   clock = TIC('warnMe')
-  FOR i=0,N_ELEMENTS(coordFiles)-1 DO BEGIN
+  FOR i=0,N_ELEMENTS(coordFiles)-3 DO BEGIN
 
      ;;Convert these var names to standard names
      GEOSphName        =   in_names.GEOSph     
@@ -72,6 +72,7 @@ PRO CONVERT_GEO_TO_AACGM, $
      MAKE_GEO_AND_AACGM_SPHCOORD_ARRAYS,timeTmp,nTot,GEOSph,AACGMSph,doEm_ii, $
                                         GEOSTRUCT=geoStruct, $
                                         /DESTROY_GEOSTRUCT
+                                        ;; DESTROY_GEOSTRUCT=destroy_geoStruct
 
 
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -102,6 +103,10 @@ PRO CONVERT_GEO_TO_AACGM, $
         PRINT,"lastCheck     : " + STRCOMPRESS(lastCheck,/REMOVE_ALL)
         PRINT,"checkInterval : " + STRCOMPRESS(checkInterval,/REMOVE_ALL)
         
+        IF N_ELEMENTS(eEphem_AACGMSph_arr) GT 0 THEN BEGIN
+           AACGMSph = TEMPORARY(eEphem_AACGMSph_arr)
+        ENDIF
+
         IF KEYWORD_SET(force_newCheckItvl) THEN BEGIN
            PRINT,"Forcing new check interval: " + STRCOMPRESS(force_newCheckItvl,/REMOVE_ALL)
            checkInterval = force_newCheckItvl
@@ -232,7 +237,12 @@ FUNCTION CHECK_EXISTS_AND_COMPLETENESS,outDir,outFiles,timeTmp,i, $
 
      RESTORE,outDir+outFiles[i]
 
-     IF ~EXECUTE('AACGMStruct = ' + AACGMStructName) THEN STOP
+     bro = EXECUTE('do_exec = SIZE(' + AACGMStructName + ',/TYPE)')
+     IF bro AND (DO_exec NE 0) THEN BEGIN
+        IF ~EXECUTE('AACGMStruct = ' + AACGMStructName) THEN STOP
+     ENDIF;;  ELSE BEGIN
+     ;;    IF N_ELEMENTS(AACGMStruct) EQ 0 THEN STOP
+     ;; ENDELSE
 
      IF N_ELEMENTS(AACGMStruct) GT 0 THEN BEGIN
         IF N_ELEMENTS(AACGMStruct.alt) EQ N_ELEMENTS(timeTmp) THEN BEGIN
@@ -330,9 +340,9 @@ FUNCTION RECALC_TSTAMPS,timeTmp,nTot,timeFile, $
                         ALLOW_FL_TRACE=allow_fl_trace
 
   ;;Convert
-  divFactor           = 10000
+  divFactor           = 10000L
   timeTmpStr    = MAKE_ARRAY(nTot,/STRING)
-  FOR kk=0,(nTot/divFactor) DO BEGIN
+  FOR kk=0L,(nTot/divFactor) DO BEGIN
      ind1       = kk*divFactor
      ind2       = ( ((kk+1)*divFactor) < (nTot - 1) )
      PRINT,'Inds: ' + STRCOMPRESS(ind1,/REMOVE_ALL) + ', ' + STRCOMPRESS(ind2,/REMOVE_ALL)

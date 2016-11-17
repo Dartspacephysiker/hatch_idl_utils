@@ -2,19 +2,23 @@
 ;;This routine will give you streaks of indices for a given resolution. 
 ;;   For a FA_FIELDS_BUFS-style treatment of double-type time series, please see GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE.
 ;;
-PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
-                                          MAXIMUS=maximus, $
-                                          NPTS=n, $
-                                          MIN_T_STREAKLEN=min_streakLen_t, $
-                                          GAP_TIME=gap_time, $
-                                          START_I=start_i, $
-                                          STOP_I=stop_i, $
-                                          STREAKLENS=streakLens, $
-                                          T_STREAKLENS=streakLens_t, $
-                                          FLOOR=floor, $
-                                          CEILING=ceiling, $
-                                          PRINT_START_STOP_TIMES=print_start_stop_times, $
-                                          PRINT__INCLUDE_CURRENT=print__include_current
+PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
+   nums,decimal_place, $
+   MAXIMUS=maximus, $
+   CURRENT_FOR_PRINTING=pCurrent, $
+   NPTS=n, $
+   MIN_T_STREAKLEN=min_streakLen_t, $
+   GAP_TIME=gap_time, $
+   START_I=start_i, $
+   STOP_I=stop_i, $
+   STREAKLENS=streakLens, $
+   T_STREAKLENS=streakLens_t, $
+   FLOOR=floor, $
+   CEILING=ceiling, $
+   PRINT_START_STOP_TIMES=print_start_stop_times, $
+   PRINT__INCLUDE_CURRENT=print__include_current, $
+   PRINT_MAXIMUS__INCLUDE_CURRENT=print_maximus__include_current, $
+   OUTLUN=outLun
 
   COMPILE_OPT IDL2
 
@@ -55,117 +59,17 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
 
   diffTot     = rounded - SHIFT(rounded,1)
 
-  ;; uniq_i     = UNIQ(diffTot,SORT(diffTot))
-  
-  ;; ;;Get rid of negative diffs
-  ;; uniq_ii    = WHERE(diffTot[uniq_i] GT 0)
-  ;; uniq_i     = uniq_i[uniq_ii]
-
   ;;Anything less than gap_time gets subsumed
   IF KEYWORD_SET(gap_time) THEN BEGIN
      gapMod   = FIX(ROUND(gap_time*(10.D)^(-1.D*decimal_place)),TYPE=14)
 
-     ;; uniq_iii = WHERE(diffTot[uniq_i] GE gapMod,nUniqiii)
-
-     ;; IF nUniqiii EQ 0 THEN BEGIN
-     ;;    PRINT,"Gap is too big! I'm just going to return the whole time series to you, you know."
-     ;;    RETURN
-     ;; ENDIF
-
-     ;; uniq_i = uniq_i[uniq_ii]
-
-     ;; ;;Delta also need not be 
-     ;; delta    = gap_time/2.
   ENDIF ELSE BEGIN
      gapMod   = 1
   ENDELSE
 
-  ;; IF N_ELEMENTS(delta) GT 0 THEN BEGIN
-  ;;    deltMod   = FIX(ROUND(delta*(10.D)^(-1.D*decimal_place)),TYPE=14)
-
-  ;;    ;;Check for double-sided winners
-  ;;    IF N_ELEMENTS(uniq_i) GT 3 THEN BEGIN
-
-  ;;       rm_iii = !NULL
-  ;;       solid      = !NULL
-  ;;       nRemove    = 0
-  ;;       FOR k=N_ELEMENTS(uniq_i)-2,1,-1 DO BEGIN ;;work backwards
-
-
-  ;;          checkMe = ((diffTot[uniq_i[k]] - diffTot[uniq_i[k-1]]) LE deltMod) AND $
-  ;;                    ((diffTot[uniq_i[k+1]] - diffTot[uniq_i[k]]) LE deltMod)
-
-  ;;          IF N_ELEMENTS(rm_iii) GT 0 THEN BEGIN
-  ;;             checkMe = checkMe AND ( (WHERE(rm_iii EQ k))[0] EQ -1)
-  ;;          ENDIF
-
-  ;;          IF checkMe THEN BEGIN
-
-  ;;             solid = [solid,k]
-
-  ;;             IF nRemove GT 0 THEN BEGIN
-  ;;                IF (WHERE(solid EQ (k-1)))[0] EQ -1 THEN BEGIN
-  ;;                   rm_iii = [rm_iii,k-1]
-  ;;                   nRemove++
-  ;;                ENDIF
-  
-  ;;                IF (WHERE(solid EQ (k+1)))[0] EQ -1 THEN BEGIN
-  ;;                   rm_iii = [rm_iii,k+1]
-  ;;                   nRemove++
-  ;;                ENDIF
-
-  ;;             ENDIF ELSE BEGIN
-  ;;                rm_iii = [rm_iii,k-1,k+1]
-  ;;                nRemove    = 2
-  ;;             ENDELSE
-
-  ;;          ENDIF
-
-  ;;       ENDFOR
-
-  ;;       IF N_ELEMENTS(rm_iii) NE 0 THEN BEGIN
-  ;;          rm_iii = rm_iii[UNIQ(rm_iii,SORT(rm_iii))]
-  ;;          REMOVE,rm_iii,uniq_i
-  ;;       ENDIF
-
-  ;;    ENDIF
-
-  ;;    uniqMod_iii = !NULL
-  ;;    FOR k=N_ELEMENTS(uniq_i)-1,0,-1 DO BEGIN
-  ;;       check = WHERE(ABS(diffTot[uniq_i[k]]-diffTot[uniq_i]) LE deltMod,nCheck)
-
-  ;;       IF nCheck GT 0 THEN BEGIN
-  ;;          uniqMod_iii = [uniqMod_iii,check[-1]] ;just keep largest unique elem
-  ;;       ENDIF
-  ;;    ENDFOR
-
-  ;;    uniq_i = uniq_i[uniqmod_iii[UNIQ(uniqmod_iii,SORT(uniqmod_iii))]]
-  ;; ENDIF
-
-  ;; nUniq       = N_ELEMENTS(uniq_i)
-
-  ;; start_i    = !NULL
-  ;; stop_i     = !NULL
-  ;; streakLens  = !NULL
-  ;; nTotStreaks = 0
-  ;; FOR k=0,nUniq-1 DO BEGIN
-  
   streaksHere = 0
 
-  ;; CASE 1 OF
-  ;;    KEYWORD_SET(gap_time): BEGIN
-  ;;       tmp_ii = WHERE(ABS(diffTot-diffTot[uniq_i[k]]) LE deltMod,nTmp)
-  ;;    END
-  ;;    ELSE: BEGIN
-  ;;       tmp_ii = WHERE(diffTot EQ diffTot[uniq_i[k]],nTmp)
-  ;;    END
-  ;; ENDCASE
-
-  ;; IF nTmp LT n THEN CONTINUE
-
-  ;; diff     = tmp_ii - SHIFT(tmp_ii,1)
-  
-  start_i  = WHERE(diffTot GT gapMod,nStart) ;;  start_i  = WHERE(diffTot LE gapMod AND (diffTot GE 0),nStart)
+  start_i  = WHERE(diffTot GT gapMod,nStart)
 
   IF diffTot[0] LT 0 THEN BEGIN
      start_i = [0,start_i]
@@ -248,32 +152,47 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE,nums,decimal_place, $
 
 
   IF KEYWORD_SET(print_start_stop_times) THEN BEGIN
-     PRINT,FORMAT='(A0,T25,A0,T50,A0,T62,A0,T72,A0)','Start T', $
-           'Stop T', $
-           'Tot T diff', $
-           'N Diff', $
-           'Avg T diff'
+     printLun = (N_ELEMENTS(outLun) GT 0 ? outLun : -1)
+     PRINTF,outLun,FORMAT='(A0,T25,A0,T50,A0,T62,A0,T72,A0)','Start T', $
+            'Stop T', $
+            'Tot T diff', $
+            'N Diff', $
+            'Avg T diff'
      FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
         CASE 1 OF
+           KEYWORD_SET(print_maximus__include_current): BEGIN
+              PRINTF,outLun, $
+                     FORMAT='(A0,T25,A0,T50,G-0.5,T62,I-10,T72,G-0.5,T82,G-0.5,T92,G-0.5)', $
+                     TIME_TO_STR(nums[start_i[k]],/MSEC), $
+                     TIME_TO_STR(nums[stop_i[k]],/MSEC), $
+                     nums[stop_i[k]]-nums[start_i[k]], $
+                     streakLens[k], $
+                     MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
+                          (nums[start_i[k]:stop_i[k]])[0:-2]), $
+                     MEDIAN(maximus.esa_current[start_i[k]:stop_i[k]]), $
+                     MEDIAN(maximus.mag_current[start_i[k]:stop_i[k]])
+           END
            KEYWORD_SET(print__include_current): BEGIN
-              PRINT,FORMAT='(A0,T25,A0,T50,G-0.5,T62,I-10,T72,G-0.5,T82,G-0.5,T92,G-0.5)', $
-                    TIME_TO_STR(nums[start_i[k]],/MSEC), $
-                    TIME_TO_STR(nums[stop_i[k]],/MSEC), $
-                    nums[stop_i[k]]-nums[start_i[k]], $
-                    streakLens[k], $
-                    MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
-                         (nums[start_i[k]:stop_i[k]])[0:-2]), $
-                    MEDIAN(maximus.esa_current[start_i[k]:stop_i[k]]), $
-                    MEDIAN(maximus.mag_current[start_i[k]:stop_i[k]])
+              PRINTF,outLun, $
+                     FORMAT='(A0,T25,A0,T50,G-0.5,T62,I-10,T72,G-0.5,T82,G-0.5)', $
+                     TIME_TO_STR(nums[start_i[k]],/MSEC), $
+                     TIME_TO_STR(nums[stop_i[k]],/MSEC), $
+                     nums[stop_i[k]]-nums[start_i[k]], $
+                     streakLens[k], $
+                     MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
+                          (nums[start_i[k]:stop_i[k]])[0:-2]), $
+                     MEDIAN(pCurrent[start_i[k]:stop_i[k]])
+
            END
            ELSE: BEGIN
-              PRINT,FORMAT='(A0,T25,A0,T50,G-0.5,T65,I-10,T80,G-0.5)', $
-                    TIME_TO_STR(nums[start_i[k]],/MSEC), $
-                    TIME_TO_STR(nums[stop_i[k]],/MSEC), $
-                    nums[stop_i[k]]-nums[start_i[k]], $
-                    streakLens[k], $
-                    MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
-                         (nums[start_i[k]:stop_i[k]])[0:-2])
+              PRINTF,outLun, $
+                     FORMAT='(A0,T25,A0,T50,G-0.5,T65,I-10,T80,G-0.5)', $
+                     TIME_TO_STR(nums[start_i[k]],/MSEC), $
+                     TIME_TO_STR(nums[stop_i[k]],/MSEC), $
+                     nums[stop_i[k]]-nums[start_i[k]], $
+                     streakLens[k], $
+                     MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
+                          (nums[start_i[k]:stop_i[k]])[0:-2])
            END
         ENDCASE
      ENDFOR

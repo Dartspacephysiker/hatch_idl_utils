@@ -178,7 +178,7 @@ PRO PRINT_HIST, data, BINSIZE =  binsize, INPUT = input,  MAX = max, $
 
   PRINT,FORMAT='("Bin",T10,"N")'
   fmtString                                            = '(G10.2,T10,I0)'
-  for i=0,n_elements(bins)-1 do print,bins[i],hist[i]
+  for i=0,n_elements(bins)-1 do print,bins[i],dist[i]
 
 
   return
