@@ -56,7 +56,9 @@ PRO PRINT_HIST, data, BINSIZE =  binsize, INPUT = input,  MAX = max, $
                 REVERSE_INDICES = reverse_indices, XBINS = bins, $
                 _EXTRA = extra, HISTOGRAM = dist, $
                 SIGMA = sigma, NO_ERROR = no_error, FORCE_BINSIZE = force, $
-                NORMALIZE = normalize, QUIET = quiet
+                NORMALIZE = normalize, QUIET = quiet, $
+                PRINT_EMPTY_BINS=print_empty_bins, $
+                UNIQS=uniqs
 
   quiet                                                = keyword_set(quiet)
 
@@ -178,10 +180,30 @@ PRO PRINT_HIST, data, BINSIZE =  binsize, INPUT = input,  MAX = max, $
 
   PRINT,FORMAT='("Bin",T10,"N")'
   fmtString                                            = '(G10.2,T10,I0)'
-  for i=0,n_elements(bins)-1 do print,bins[i],dist[i]
 
+  ;;PRINT ALL DAT!!!
+  CASE 1 OF
+     KEYWORD_SET(print_empty_bins): BEGIN
+        FOR i=0,N_ELEMENTS(bins)-1 DO PRINT,bins[i],dist[i]
+     END
+     KEYWORD_SET(uniqs): BEGIN
+        uniq_i = UNIQ(data,SORT(data))
+        nUniq = N_ELEMENTS(uniq_i)
+        IF nUniq GT 5000 THEN STOP
+        FOR k=0,nUniq-1 DO $
+           PRINT, $
+           data[uniq_i[k]], $
+           N_ELEMENTS(WHERE(ABS(data - data[uniq_i[k]]) LT 1e-4,/NULL))
+        
+     END
+     ELSE: BEGIN
+        FOR i=0,N_ELEMENTS(bins)-1 DO BEGIN
+           IF dist[i] NE 0 THEN PRINT,bins[i],dist[i]
+        ENDFOR
+     END
+  ENDCASE
 
-  return
-end
+  RETURN
+END
 
 

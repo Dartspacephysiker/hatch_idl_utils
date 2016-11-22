@@ -1,6 +1,7 @@
 ;;10/10/16
 PRO CONVERT_GEO_TO_AACGM, $
    COORDFILES=coordFiles, $
+   GEICOORDFILES=GEICoordFiles, $
    COORDDIR=coordDir, $
    TMPFILES=tmpFiles, $
    TIMEFILES=timeFiles, $
@@ -16,6 +17,7 @@ PRO CONVERT_GEO_TO_AACGM, $
    NOTALTITUDE_SUFF=notAltitude_suff, $
    CONVERT_VARNAMES_AND_RESAVE_OUTFILES=convert_varNames_and_resave_outFiles, $
    FORCE_NEWCHECKITVL=force_newCheckItvl, $
+   USER__RESTRICT_II=user__restrict_ii, $
    IN_NAMES=in_names, $
    DEFNAMES=defNames
 
@@ -23,7 +25,7 @@ PRO CONVERT_GEO_TO_AACGM, $
 
   TIC
   clock = TIC('warnMe')
-  FOR i=0,N_ELEMENTS(coordFiles)-3 DO BEGIN
+  FOR i=0,N_ELEMENTS(coordFiles)-1 DO BEGIN
 
      ;;Convert these var names to standard names
      GEOSphName        =   in_names.GEOSph     
@@ -39,6 +41,7 @@ PRO CONVERT_GEO_TO_AACGM, $
                                                              R_E=R_E, $
                                                              ALLOW_FL_TRACE=allow_fl_trace, $
                                                              COORDFILES=coordFiles, $
+                                                             GEICOORDFILES=GEICoordFiles, $
                                                              COORDDIR=coordDir, $
                                                              CREATE_NOTALTITUDE_FILE=create_notAltitude_file, $
                                                              NOTALTITUDE_SUFF=notAltitude_suff, $
@@ -47,6 +50,7 @@ PRO CONVERT_GEO_TO_AACGM, $
                                                              TIMEFILES=timeFiles, $
                                                              RESTRICT_II=restrict_ii, $
                                                              NOTRESTRICT_II=notRestrict_ii, $
+                                                             USER__RESTRICT_II=user__restrict_ii, $
                                                              DOEM_II=doEm_ii, $
                                                              NAME__GEOSTRUCT=GEOStructName, $
                                                              NAME__COORDSTRUCT=coordStructName, $
@@ -77,7 +81,7 @@ PRO CONVERT_GEO_TO_AACGM, $
 
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Times in CDF epoch time
-     IF CHECK_NEED_TO_RECALC_TSTAMPS(timeFiles[i],timeTmp,altitude_max, $
+     IF CHECK_NEED_TO_RECALC_TSTAMPS(timeFiles[i],timeTmp,nTot, $
                                      ALTITUDE_MAX=altitude_max, $
                                      R_E=R_E, $
                                      ALLOW_FL_TRACE=allow_fl_trace, $
@@ -175,6 +179,7 @@ FUNCTION GET_TIMES_AND_DECIDE_ALTITUDE_OR_NOT_ALTITUDE,ephemFileIndArr,DBInds,i,
    R_E=R_E, $
    ALLOW_FL_TRACE=allow_fl_trace, $
    COORDFILES=coordFiles, $
+   GEICOORDFILES=GEICoordFiles, $
    COORDDIR=coordDir, $
    CREATE_NOTALTITUDE_FILE=create_notAltitude_file, $
    NOTALTITUDE_SUFF=notAltitude_suff, $
@@ -183,6 +188,7 @@ FUNCTION GET_TIMES_AND_DECIDE_ALTITUDE_OR_NOT_ALTITUDE,ephemFileIndArr,DBInds,i,
    TIMEFILES=timeFiles, $
    RESTRICT_II=restrict_ii, $
    NOTRESTRICT_II=notRestrict_ii, $
+   USER__RESTRICT_II=user__restrict_ii, $
    DOEM_II=doEm_ii, $
    NAME__GEOSTRUCT=GEOStructName, $
    NAME__COORDSTRUCT=coordStructName, $
@@ -192,36 +198,57 @@ FUNCTION GET_TIMES_AND_DECIDE_ALTITUDE_OR_NOT_ALTITUDE,ephemFileIndArr,DBInds,i,
   PRINT,"Restoring " + coordFiles[i] + ' ...'
   RESTORE,coordDir+coordFiles[i]
 
+  IF N_ELEMENTS(GEICoordFiles) GT 0 THEN BEGIN
+     PRINT,'Restoring ' + GEICoordFiles[i] + ' ...'
+     RESTORE,coordDir+GEICoordFiles[i]
+  ENDIF
+
   ;;Convert varname, if necessary
   geoString   = 'GEOstruct   = TEMPORARY(' + GEOStructName   + ')'
   coordString = 'coordStruct = TEMPORARY(' + coordStructName + ')'
   IF ~(EXECUTE(geoString) AND EXECUTE(coordString)) THEN STOP
 
-  restrict_ii  = WHERE(GEOstruct.alt LE altitude_max,nAltitude, $
-                       COMPLEMENT=notRestrict_ii,NCOMPLEMENT=nNotAltitude)
+  IF N_ELEMENTS(user__restrict_ii) GT 0 THEN BEGIN
+     PRINT,'User has provided restrict_ii, so that does it!'
 
-  IF KEYWORD_SET(create_notAltitude_file) THEN BEGIN
-     PRINT,"Doing 'notAltitude' files ..."
-     doEm_ii    = notRestrict_ii
-     outFiles  += notAltitude_suff
-     tmpFiles  += notAltitude_suff
-     timeFiles += notAltitude_suff
-     nCheck     = nNotAltitude
+     restrict_ii = user__restrict_ii
+
+     doEm_ii     = restrict_ii
+     nCheck      = N_ELEMENTS(restrict_ii)
+
+
   ENDIF ELSE BEGIN
-     doEm_ii    = restrict_ii
-     nCheck     = nAltitude
-  ENDELSE
+     restrict_ii  = WHERE(GEOstruct.alt LE altitude_max,nAltitude, $
+                          COMPLEMENT=notRestrict_ii,NCOMPLEMENT=nNotAltitude)
 
+     IF KEYWORD_SET(create_notAltitude_file) THEN BEGIN
+        PRINT,"Doing 'notAltitude' files ..."
+        doEm_ii    = notRestrict_ii
+        outFiles  += notAltitude_suff
+        tmpFiles  += notAltitude_suff
+        timeFiles += notAltitude_suff
+        nCheck     = nNotAltitude
+     ENDIF ELSE BEGIN
+        doEm_ii    = restrict_ii
+        nCheck     = nAltitude
+     ENDELSE
+  ENDELSE
   ;;Get indices into eSpec
   inds         = ephemFileIndArr[i,*]
-  DBInds       = [inds[0]:inds[1]]
+
+  STR_ELEMENT,coordStruct,'TIME',SUCCESS=coordSHasTime
+  IF coordSHasTime THEN BEGIN     
+     DBInds       = [inds[0]:(inds[1] EQ -1 ? N_ELEMENTS(coordStruct.time)-1 : inds[i])]
+  ENDIF ELSE BEGIN
+     DBInds       = [inds[0]:(inds[1] EQ -1 ? N_ELEMENTS(coords.time)-1 : inds[i])]
+  ENDELSE
 
   IF nCheck EQ 0 THEN BEGIN
      PRINT,'What?? No indices meeting these qualifications????'
      STOP
   ENDIF
 
-  RETURN,coordStruct.time[doEm_ii]
+  RETURN,(coordSHasTime ? coordStruct.time : coords.time)[doEm_ii]
 
 END
 
