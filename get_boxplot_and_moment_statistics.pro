@@ -28,10 +28,10 @@ FUNCTION GET_BOXPLOT_AND_MOMENT_STATISTICS, $
                                 SUSPECTED_OUTLIER_VALUES=BPDSusOutliers)
   ENDIF ELSE BEGIN
      tmpBPD         = MAKE_ARRAY(1,5,VALUE=0)
-     tmpBPD[0,2]    = N_ELEMENTS(inds) GT 0 ? MEDIAN(data[inds]) : 0
-     ci_minVals     = MAKE_ARRAY(2,VALUE=0)
-     BPDMinMean     = 0
-     BPDMinOutliers = 0
+     tmpBPD[0,2]    = N_ELEMENTS(inds) GT 1 ? MEDIAN(data[inds]) : ( N_ELEMENTS(inds) GT 0 ? data[inds] : 0 )
+     ci_Vals        = MAKE_ARRAY(2,VALUE=0)
+     BPDMean        = 0
+     BPDOutliers    = 0
   ENDELSE
 
   ;;Now load 'er up
@@ -41,7 +41,7 @@ FUNCTION GET_BOXPLOT_AND_MOMENT_STATISTICS, $
      mom    = MAKE_ARRAY(4,VALUE=0)
   ENDELSE
 
-  tmpExtra =  {ci_values   : ci_Vals, $
+  tmpExtra =  {ci_values   : N_ELEMENTS(ci_Vals) GT 0 ? ci_Vals : 0, $
                mean_values : BPDMean}
 
   CASE 1 OF
@@ -61,7 +61,7 @@ FUNCTION GET_BOXPLOT_AND_MOMENT_STATISTICS, $
         tmpExtra   = CREATE_STRUCT(tmpExtra, $
                                    "SUSPECTED_OUTLIER_VALUES",BPDSusOutliers)
      END
-     ELSE: 
+     ELSE: tmpExtra = 0
   ENDCASE
 
   tmpBPD          = {data    : tmpBPD, $

@@ -49,7 +49,7 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
 
      ;; orb1    = LONG(ROUND_TO_NTH_DECIMAL_PLACE(orbit_num,3,/FLOOR) > 500)
      orb1    = LONG(ROUND_TO_NTH_DECIMAL_PLACE(orbit_num,3,/FLOOR))
-     orb2    = LONG((ROUND_TO_NTH_DECIMAL_PLACE(orbit_num+1,3,/CEIL) - 1) < 16361)
+     orb2    = LONG((ROUND_TO_NTH_DECIMAL_PLACE(orbit_num+1,3,/CEIL) - 1) < 16362)
 
   ENDIF ELSE BEGIN
 
