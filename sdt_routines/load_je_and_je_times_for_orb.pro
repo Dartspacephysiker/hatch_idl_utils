@@ -7,6 +7,7 @@
 ;;      3. had all duplicates within 1/10 of a millisecond removed,
 ;;      4. had the ESA burp at turn-on removed, and 
 ;;      5. had all periods separated by more than ten seconds separated into different start/stop times.
+;;      (and the dupeless files originate from /SPENCEdata/software/sdt/batch_jobs/Alfven_study/20160520--get_Newell_identification_for_Alfven_events--NOT_despun/journal__20160705__slap_together_the_je_time_ind_files.pro
 FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
                                       RETURN_STRUCT=return_struct, $
                                       USE_DUPELESS_FILES=use_dupeless, $
@@ -20,6 +21,16 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
                                       QUIET=quiet
 
   COMPILE_OPT IDL2
+
+  COMMON JELOAD,JEL__curFile, $
+     JEL__je_hash, $
+     JEL__je_keys, $
+     JEL__je_tRange_hash, $
+     JEL__je_tRange_inds_hash, $
+     JEL__orb1, $
+     JEL__orb2, $
+     JEL__orbSuff, $
+     JEL__use_dupeless
 
   dbDir      = '/home/spencerh/software/sdt/batch_jobs/saves_output_etc/Alfven_study/20160520--get_Newell_identification_for_Alfven_events--NOT_despun/'
 
@@ -36,7 +47,8 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
         RETURN,-1
      ENDIF
 
-     orb1    = LONG(ROUND_TO_NTH_DECIMAL_PLACE(orbit_num,3,/FLOOR) > 500)
+     ;; orb1    = LONG(ROUND_TO_NTH_DECIMAL_PLACE(orbit_num,3,/FLOOR) > 500)
+     orb1    = LONG(ROUND_TO_NTH_DECIMAL_PLACE(orbit_num,3,/FLOOR))
      orb2    = LONG((ROUND_TO_NTH_DECIMAL_PLACE(orbit_num+1,3,/CEIL) - 1) < 16361)
 
   ENDIF ELSE BEGIN
@@ -212,58 +224,118 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
      ENDCASE
   ENDELSE
 
+  ;;If we've already got them ...
+  IF N_ELEMENTS(JEL__use_dupeless) GT 0 THEN BEGIN
+     IF KEYWORD_SET(JEL__use_dupeless) NE KEYWORD_SET(use_dupeless) THEN BEGIN
+        PRINT,"Swapping " + (KEYWORD_SET(use_dupeless) ? "for" : "out" ) + " dupeless Je stuff ..."
+        reset_JEL = 1
+        JEL__use_dupeless = KEYWORD_SET(use_dupeless)
+     ENDIF
+  ENDIF ELSE BEGIN
+     JEL__use_dupeless = KEYWORD_SET(use_dupeless)
+  ENDELSE
+
+  IF N_ELEMENTS(JEL__orb1) GT 0 AND N_ELEMENTS(JEL__orb2) GT 0 AND $
+     ~KEYWORD_SET(reset_JEL) $
+  THEN BEGIN
+     IF (orb1 EQ JEL__orb1) AND (orb2 EQ JEL__orb2) THEN BEGIN
+        number_of_intervals  = N_ELEMENTS((JEL__je_trange_inds_hash[orbit_num])[*,0])
+
+        je                 = JEL__je_hash[orbit_num]
+
+        time_ranges        = JEL__je_trange_hash[orbit_num] 
+        time_range_indices = JEL__je_trange_inds_hash[orbit_num]  ;; PRINT,'Restoring i
+        
+        IF ARG_PRESENT(jeFileName) THEN jeFileName = JEL__curFile ;dbPref+orbSuff
+
+        IF KEYWORD_SET(return_struct) THEN BEGIN
+           struct = {je                  : TEMPORARY(je                 ), $
+                     time_ranges         : TEMPORARY(time_ranges        ), $
+                     time_range_indices  : TEMPORARY(time_range_indices ), $
+                     number_of_intervals : TEMPORARY(number_of_intervals)}
+           
+           RETURN,struct
+        ENDIF
+     ENDIF ELSE BEGIN
+        reset_JEL = 1
+     ENDELSE
+  ENDIF ELSE BEGIN
+     reset_JEL    = 1
+  ENDELSE
+
   orbSuff              = STRCOMPRESS(orb1,/REMOVE_ALL) + '-' + STRCOMPRESS(orb2,/REMOVE_ALL) 
   IF ~KEYWORD_SET(quiet) THEN PRINT,"Restoring Je, Je time stuff for orbs " + orbSuff + ' ...'
 
   IF FILE_TEST(dbDir+dbPref+orbSuff) THEN BEGIN
-     RESTORE,dbDir+dbPref+orbSuff
+     ;;Update orbs in COMMON block
+     JEL__orb1 = orb1
+     JEL__orb2 = orb2
+
+     IF KEYWORD_SET(reset_JEL) THEN BEGIN
+        RESTORE,dbDir+dbPref+orbSuff
+
+        ;;Update common vars
+        JEL__curFile              = dbPref+orbSuff
+        JEL__je_hash              = TEMPORARY(je_hash)
+        JEL__je_tRange_hash       = TEMPORARY(je_tRange_hash)
+        JEL__je_tRange_inds_hash  = TEMPORARY(je_tRange_inds_hash)
+        IF N_ELEMENTS(je_keys) EQ 0 THEN BEGIN
+           gen_je_keys = 1
+        ENDIF ELSE BEGIN
+           JEL__je_keys           = TEMPORARY(je_keys)
+        ENDELSE
+     ENDIF
   ENDIF ELSE BEGIN
      PRINT,"LOAD_JE_AND_JE_TIMES_FOR_ORB: Can't find " + dbPref+orbSuff + '!'
      RETURN,-1
   ENDELSE
 
   ;;Generate keys if we don't have them
-  IF N_ELEMENTS(je_keys) EQ 0 THEN BEGIN
+  IF KEYWORD_SET(gen_je_keys) THEN BEGIN
      PRINT,"Generating je_keys ..."
-     je_keys = je_hash.Keys()
+     JEL__je_keys = JEL__je_hash.Keys()
      PRINT,'Saving keys to file ...'
+     je_hash              = JEL__je_hash
+     je_keys              = JEL__je_keys
+     je_tRange_hash       = JEL__je_tRange_hash
+     je_tRange_inds_hash  = JEL__je_tRange_inds_hash
      SAVE,je_hash,je_keys,je_tRange_hash,je_tRange_inds_hash,FILENAME=dbDir+dbPref+orbSuff
   ENDIF
      
   ;;Get us out (of the U.N.!) in case there is nothing to talk about
-  IF (WHERE(je_keys EQ orbit_num))[0] EQ -1 THEN BEGIN
+  IF (WHERE(JEL__je_keys EQ orbit_num))[0] EQ -1 THEN BEGIN
      IF ~KEYWORD_SET(quiet) THEN PRINT,'No data for orb ' + STRCOMPRESS(orbit_num,/REMOVE_ALL)
      RETURN,-1
   ENDIF
 
+  number_of_intervals  = N_ELEMENTS((JEL__je_trange_inds_hash[orbit_num])[*,0])
 
-  number_of_intervals  = N_ELEMENTS((je_trange_inds_hash[orbit_num])[*,0])
+  je                   = JEL__je_hash[orbit_num]
 
-  je                   = je_hash[orbit_num]
+  time_ranges          = JEL__je_trange_hash[orbit_num] 
+  time_range_indices   = JEL__je_trange_inds_hash[orbit_num]  ;; PRINT,'Restoring i
 
-  time_ranges          = je_trange_hash[orbit_num] 
-  time_range_indices   = je_trange_inds_hash[orbit_num]  ;; PRINT,'Restoring i
-
-  IF ARG_PRESENT(jeFileName) THEN jeFileName = dbPref+orbSuff
+  IF ARG_PRESENT(jeFileName) THEN jeFileName = JEL__curFile ;dbPref+orbSuff
 
   IF KEYWORD_SET(clean_dupes) THEN BEGIN
 
      cleanFile = dbPref+orbSuff+'--dupesRemoved'
-     CASE FILE_TEST(dbDir+cleanFile) OF
+     JEL__curFile = cleanFile
+     CASE FILE_TEST(dbDir+JEL__curFile) OF
         0: BEGIN
            IF ~KEYWORD_SET(quiet) THEN PRINT,'Making new clean list ...'
-           cleanHash = HASH(je_keys,MAKE_ARRAY(N_ELEMENTS(je_keys),VALUE=0,/BYTE))
+           cleanHash = HASH(JEL__je_keys,MAKE_ARRAY(N_ELEMENTS(JEL__je_keys),VALUE=0,/BYTE))
         END
         1: BEGIN
-           RESTORE,dbDir+cleanFile
+           RESTORE,dbDir+JEL__curFile
            IF (cleanHash[orbit_num]) THEN BEGIN
 
-              number_of_intervals  = N_ELEMENTS((je_trange_inds_hash[orbit_num])[*,0])
+              number_of_intervals  = N_ELEMENTS((JEL__je_trange_inds_hash[orbit_num])[*,0])
 
-              je                 = je_hash[orbit_num]
+              je                 = JEL__je_hash[orbit_num]
 
-              time_ranges        = je_trange_hash[orbit_num] 
-              time_range_indices = je_trange_inds_hash[orbit_num]  ;; PRINT,'Restoring i
+              time_ranges        = JEL__je_trange_hash[orbit_num] 
+              time_range_indices = JEL__je_trange_inds_hash[orbit_num]  ;; PRINT,'Restoring i
 
 
 
@@ -334,29 +406,33 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
            ENDFOR
 
            ;;Update hashes
-           je_hash[orbit_num]             = je
-           je_trange_hash[orbit_num]      = time_ranges
-           je_trange_inds_hash[orbit_num] = time_range_indices
+           JEL__je_hash[orbit_num]             = je
+           JEL__je_trange_hash[orbit_num]      = time_ranges
+           JEL__je_trange_inds_hash[orbit_num] = time_range_indices
 
            cleanHash[orbit_num] = 1B
 
            ;;Save
-           IF ~KEYWORD_SET(quiet) THEN PRINT, "Saving cleaned file: " + cleanFile
+           IF ~KEYWORD_SET(quiet) THEN PRINT, "Saving cleaned file: " + JEL__curFile
+           je_hash              = JEL__je_hash
+           je_keys              = JEL__je_keys
+           je_tRange_hash       = JEL__je_tRange_hash
+           je_tRange_inds_hash  = JEL__je_tRange_inds_hash
            SAVE,je_hash,je_keys,je_tRange_hash,je_tRange_inds_hash,cleanHash, $
-                FILENAME=dbDir+cleanFile
+                FILENAME=dbDir+JEL__curFile
 
         ENDIF
      ENDIF
 
-     IF ARG_PRESENT(jeFileName) THEN jeFileName = cleanFile
+     IF ARG_PRESENT(jeFileName) THEN jeFileName = JEL__curFile
 
   ENDIF
 
   IF KEYWORD_SET(return_struct) THEN BEGIN
-     struct = {je                  : je, $
-               time_ranges         : time_ranges, $
-               time_range_indices  : time_range_indices, $
-               number_of_intervals : number_of_intervals}
+     struct = {je                  : TEMPORARY(je                 ), $
+               time_ranges         : TEMPORARY(time_ranges        ), $
+               time_range_indices  : TEMPORARY(time_range_indices ), $
+               number_of_intervals : TEMPORARY(number_of_intervals)}
      
      RETURN,struct
   ENDIF
