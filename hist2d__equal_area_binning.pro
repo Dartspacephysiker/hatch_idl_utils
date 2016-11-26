@@ -185,10 +185,12 @@ FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
 
          ;; PRINT,'EEEQQQUUAAALLLLL'
          dat = WHERE(sum EQ -2,nDat)
-         FOR k=0,nDat-1 DO BEGIN
-            STOP
-            PRINT,"Bro: ",dat[k],MLTsc[dat[k]],ILATsc[dat[k]]
-         ENDFOR
+         IF nDat GT 3 THEN BEGIN 
+            FOR k=0,nDat-1 DO BEGIN
+               STOP
+               PRINT,"Bro: ",dat[k],MLTsc[dat[k]],ILATsc[dat[k]]
+            ENDFOR
+         ENDIF
 
          h = HIST1D(sum, Wgtc, MIN=0,MAX=latSwitch_i[-1],DENSITY=Density )
 
