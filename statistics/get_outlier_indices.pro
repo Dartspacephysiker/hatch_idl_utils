@@ -1,5 +1,6 @@
 ;;11/26/16
 FUNCTION GET_OUTLIER_INDICES,data, $
+                             USER_INDS=user_inds, $
                              ONLY_UPPER=only_upper, $
                              ONLY_LOWER=only_lower, $
                              SUSPECTED_OUTLIER_I=susOut_i, $
@@ -58,7 +59,7 @@ FUNCTION GET_OUTLIER_INDICES,data, $
 
         IF negInds[0] NE -1 THEN BEGIN
            transformedNeg = 1B
-           data[negInds] = (-1)*data
+           data[negInds] = (-1)*data[negInds]
         ENDIF
      ENDIF
 
@@ -66,8 +67,10 @@ FUNCTION GET_OUTLIER_INDICES,data, $
      data = KEYWORD_SET(double) ? DOUBLE(ALOG10(data)) : ALOG10(data)
 
   ENDIF ELSE BEGIN
-     stat_i = LINDGEN(N_ELEMENTS(data))
+     stat_i = KEYWORD_SET(user_inds) ? user_inds : LINDGEN(N_ELEMENTS(data))
   ENDELSE
+
+
 
   stats = GET_BOXPLOT_AND_MOMENT_STATISTICS( $
           data, $
@@ -156,13 +159,24 @@ FUNCTION GET_OUTLIER_INDICES,data, $
 
   IF N_ELEMENTS(upSusOutBound) GT 0 THEN BEGIN
      IF N_ELEMENTS(susOut_ii) GT 0 THEN BEGIN
-        susOut_ii = CGSETUNION(susOut_ii,WHERE(data[stat_i] LT upSusOutBound,/NULL))
+        susOut_ii = CGSETUNION(susOut_ii,WHERE(data[stat_i] GE upSusOutBound,/NULL))
      ENDIF ELSE BEGIN
-        susOut_ii = WHERE(data[stat_i] LT upSusOutBound,/NULL)
+        susOut_ii = WHERE(data[stat_i] GE upSusOutBound,/NULL)
      ENDELSE
   ENDIF ;; ELSE BEGIN
   ;;    susOut_ii = !NULL
   ;; ENDELSE
+  IF ( N_ELEMENTS(outlier_ii) GT 0 ) AND $
+     ( N_ELEMENTS(susOut_ii) GT 0 ) $
+  THEN BEGIN 
+
+     susOut_ii = CGSETDIFFERENCE(susOut_ii,outlier_ii,NORESULT=-1)
+
+     IF (susOut_ii[0] EQ -1) THEN BEGIN
+        susOut_ii = !NULL
+     ENDIF
+
+  ENDIF
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Make output arrays
@@ -194,7 +208,7 @@ FUNCTION GET_OUTLIER_INDICES,data, $
   ENDIF     
 
   IF KEYWORD_SET(transformedNeg) THEN BEGIN
-     data[negInds] = (-1)*data
+     data[negInds] = (-1)*data[negInds]
   ENDIF     
 
   IF KEYWORD_SET(return_stats) THEN BEGIN
