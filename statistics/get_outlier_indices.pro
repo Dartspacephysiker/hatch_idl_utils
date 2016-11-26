@@ -125,7 +125,7 @@ FUNCTION GET_OUTLIER_INDICES,data, $
      ENDIF
 
      IF N_ELEMENTS(BPDSusOutliers) GT 0 THEN BEGIN
-        loSusBad_ii = WHERE(BPDSusOutliers[1,*] GT stats.mom[4],nLoSusBad)
+        loSusBad_ii = WHERE(BPDSusOutliers[1,*] LT stats.mom[4],nLoSusBad)
         IF nLoSusBad GT 0 THEN BEGIN
            loSusOutBound = MAX((BPDSusOutliers[1,*])[loSusBad_ii])
         ENDIF ELSE BEGIN
