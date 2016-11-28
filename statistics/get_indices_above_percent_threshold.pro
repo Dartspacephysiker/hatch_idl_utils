@@ -6,27 +6,61 @@ FUNCTION GET_INDICES_ABOVE_PERCENT_THRESHOLD, $
    ;; N_ATTEMPTS=n_attempts, $
    BELOW_NOT_ABOVE=below, $
    OUT_FINAL_VAL=val, $
+   NAN=nan, $
+   COMPLEMENT_I=complement_i, $
    VERBOSE=verbose
 
   COMPILE_OPT IDL2
 
   ;; this = LINDGEN(N_ELEMENTS(data))/DOUBLE(N_ELEMENTS(data))
-  nTot = DOUBLE(N_ELEMENTS(data))
-  adjThresh = threshold/100.*nTot
-  srtInds = SORT(data)
-  ;; data = data[srtInds]
-  
-  srtAbove_i = VALUE_CLOSEST2(LINDGEN(nTot),adjThresh)
-  val = data[srtInds[srtAbove_i]]
   CASE 1 OF
-     KEYWORD_SET(below): BEGIN
-        above_i = WHERE(data LE val,nAbove)
+     KEYWORD_SET(NaN): BEGIN
+        this = WHERE(FINITE(data),nTot)
+        IF nTot EQ 0 THEN BEGIN
+           PRINT,'All datas are NaNheads. Out.'
+           RETURN,-1
+        ENDIF
+
+        nTot = DOUBLE(nTot)
+        adjThresh = threshold/100.*nTot
+        srtInds = SORT(data[this])
+        ;; data = data[srtInds]
+        
+        srtAbove_i = VALUE_CLOSEST2(LINDGEN(nTot),adjThresh)
+        val = data[this[srtInds[srtAbove_i]]]
+        CASE 1 OF
+           KEYWORD_SET(below): BEGIN
+              above_ii = WHERE(data[this] LE val,nAbove,COMPLEMENT=complement_ii)
+           END
+           ELSE: BEGIN
+              above_ii = WHERE(data[this] GE val,nAbove,COMPLEMENT=complement_ii)
+           END
+        ENDCASE
+        above_i       = this[TEMPORARY(above_ii)]
+        complement_i  = TEMPORARY(this[TEMPORARY(complement_ii)])
+        finalProsjent = nAbove/nTot*100.
+
      END
      ELSE: BEGIN
-        above_i = WHERE(data GE val,nAbove)
+        nTot = DOUBLE(N_ELEMENTS(data))
+        adjThresh = threshold/100.*nTot
+        srtInds = SORT(data)
+        ;; data = data[srtInds]
+        
+        srtAbove_i = VALUE_CLOSEST2(LINDGEN(nTot),adjThresh)
+        val = data[srtInds[srtAbove_i]]
+        CASE 1 OF
+           KEYWORD_SET(below): BEGIN
+              above_i = WHERE(data LE val,nAbove,COMPLEMENT=complement_i)
+           END
+           ELSE: BEGIN
+              above_i = WHERE(data GE val,nAbove,COMPLEMENT=complement_i)
+           END
+        ENDCASE
+        finalProsjent = nAbove/nTot*100.
+
      END
   ENDCASE
-  finalProsjent = nAbove/nTot*100.
 
   PRINT,'Final prosjent: ' + STRCOMPRESS(finalProsjent,/REMOVE_ALL) + '%'
 
