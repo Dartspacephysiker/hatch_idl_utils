@@ -37,7 +37,7 @@ FUNCTION GET_BOXPLOT_AND_MOMENT_STATISTICS, $
   ;;Now load 'er up
   IF include_mom THEN BEGIN
      mom    = MOMENT(data[inds])
-     mom    = [mom,MEDIAN(data[inds])]
+     mom    = [mom,( ( N_ELEMENTS(data) GT 1 AND N_ELEMENTS(inds) GT 1 ) ? MEDIAN(data[inds]) : data[0])]
   ENDIF ELSE BEGIN
      mom    = MAKE_ARRAY(5,VALUE=0)
   ENDELSE
