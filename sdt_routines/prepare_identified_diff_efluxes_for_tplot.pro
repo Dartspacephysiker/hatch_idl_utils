@@ -13,6 +13,7 @@ PRO PREPARE_IDENTIFIED_DIFF_EFLUXES_FOR_TPLOT,evts,TPLOT_NAME=tPlot_name, $
         NM_CONVTOBS=nM_ConvToBS, $
         FAVOR_BROADSTRICT_OVER_MONO=favor_broadStrict_over_mono, $
         HUGE_STRUCTURE=huge_structure, $
+        /HAS_NO_INFO_STRUCT, $
         /VERBOSE
   ENDIF ELSE BEGIN
      events = evts
