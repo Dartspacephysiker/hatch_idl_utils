@@ -239,6 +239,12 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
      ~KEYWORD_SET(reset_JEL) $
   THEN BEGIN
      IF (orb1 EQ JEL__orb1) AND (orb2 EQ JEL__orb2) THEN BEGIN
+
+        IF (JEL__je_keys.WHERE(orbit_num)) EQ !NULL THEN BEGIN
+           IF ~KEYWORD_SET(quiet) THEN PRINT,"Couldn't get orbit " + STRCOMPRESS(orbit_num,/REMOVE_ALL) + "!"
+           RETURN,-1
+        ENDIF
+
         number_of_intervals  = N_ELEMENTS((JEL__je_trange_inds_hash[orbit_num])[*,0])
 
         je                 = JEL__je_hash[orbit_num]
@@ -264,7 +270,6 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
   ENDELSE
 
   orbSuff              = STRCOMPRESS(orb1,/REMOVE_ALL) + '-' + STRCOMPRESS(orb2,/REMOVE_ALL) 
-  IF ~KEYWORD_SET(quiet) THEN PRINT,"Restoring Je, Je time stuff for orbs " + orbSuff + ' ...'
 
   IF FILE_TEST(dbDir+dbPref+orbSuff) THEN BEGIN
      ;;Update orbs in COMMON block
@@ -272,6 +277,7 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
      JEL__orb2 = orb2
 
      IF KEYWORD_SET(reset_JEL) THEN BEGIN
+        IF ~KEYWORD_SET(quiet) THEN PRINT,"Restoring Je, Je time stuff for orbs " + orbSuff + ' ...'
         RESTORE,dbDir+dbPref+orbSuff
 
         ;;Update common vars
