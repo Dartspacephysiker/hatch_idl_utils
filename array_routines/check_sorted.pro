@@ -5,6 +5,7 @@ PRO CHECK_SORTED,ARRAY,is_sorted, $
 
   IF N_ELEMENTS(ARRAY) EQ 0 THEN BEGIN
      IF ~KEYWORD_SET(quiet) THEN PRINT,"CHECK_SORTED: Provided array is empty! Returning..."
+     is_sorted = -9
      RETURN
   ENDIF
 
