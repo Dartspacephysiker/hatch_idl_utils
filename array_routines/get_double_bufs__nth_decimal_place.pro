@@ -11,6 +11,7 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
                                           START_I=start_i, $
                                           STOP_I=stop_i, $
                                           STREAKLENS=streakLens, $
+                                       OUT_RATES=rates, $
                                           FLOOR=floor, $
                                           CEILING=ceiling;; , $
                                           ;; NAN=nan
@@ -68,6 +69,15 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
   
   uniq_iii    = WHERE(diffTot[uniq_ii] GT 0)
   uniq_ii     = uniq_ii[uniq_iii]
+
+  ;;For later
+  IF ARG_PRESENT(rates) THEN BEGIN
+     rateTot     = ROUND_TO_NTH_DECIMAL_PLACE(nums[good],decimal_place, $
+                                              FLOOR=floor, $
+                                              CEILING=ceiling, $
+                                              /DOUBLE)
+     rateTot     = rateTot - SHIFT(rateTot,1)
+  ENDIF
 
   IF N_ELEMENTS(delta) GT 0 THEN BEGIN
      deltMod   = FIX(ROUND(delta*(10.D)^(-1.D*decimal_place)),TYPE=14)
@@ -148,6 +158,7 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
   stop_ii     = !NULL
   streakLens  = !NULL
   nTotStreaks = 0
+  rates       = !NULL
   FOR k=0,nUniq-1 DO BEGIN
      
      streaksHere = 0
@@ -199,8 +210,12 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
      nTotStreaks++
 
      streakLens  = [streakLens,tmpStrk[goodStreak_iv]]
-     start_ii = [start_ii,tmp_ii[start_iii[goodStreak_iv]]]
-     stop_ii  = [stop_ii,tmp_ii[stop_iii[goodStreak_iv]]]
+     start_ii    = [start_ii,tmp_ii[start_iii[goodStreak_iv]]]
+     stop_ii     = [stop_ii,tmp_ii[stop_iii[goodStreak_iv]]]
+
+     IF ARG_PRESENT(rates) THEN BEGIN
+        rates    = [rates,rateTot[tmp_ii[start_iii[goodStreak_iv]]]]
+     ENDIF
 
   ENDFOR
 
