@@ -61,7 +61,6 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
   GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2,lc_angleRange, $
                                           i_angle,i_angle_up, $
                                           north_south, $
-                                          ;; ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                                           CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
                                           OUT_E_ANGLE=e_angle, $
                                           ANGLESTR=angleStr, $

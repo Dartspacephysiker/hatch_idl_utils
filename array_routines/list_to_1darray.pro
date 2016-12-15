@@ -2,6 +2,7 @@
 FUNCTION LIST_TO_1DARRAY,list, $
                          SKIP_NEG1_ELEMENTS=skip_neg1, $
                          SKIP_NANS=skip_nans, $
+                         SORT=sort, $
                          WARN=warn, $
                          LUN=lun
 
@@ -83,6 +84,10 @@ FUNCTION LIST_TO_1DARRAY,list, $
         ENDELSE
      ENDIF
   ENDFOR
+
+  IF KEYWORD_SET(sort) THEN BEGIN
+     array = array[SORT(array)]
+  ENDIF
 
   RETURN,array
 
