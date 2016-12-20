@@ -315,6 +315,8 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL,times, $
            oBridge[i]->Execute,'.compile ' + proDir + routineArr[ll]
         ENDFOR
 
+        oBridge[i]->Execute,'@"/home/spencerh/idl/lib/aacgm/compile_aacgm.pro"'
+
         oBridge[i]->Execute,execStr,/NOWAIT
         
         PRINT,'Started that homey'
