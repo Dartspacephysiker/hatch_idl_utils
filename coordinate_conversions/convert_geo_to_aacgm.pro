@@ -89,7 +89,7 @@ PRO CONVERT_GEO_TO_AACGM, $
                                      TIMESTRNAME=timeStrName, $
                                      CONVERT_VARNAMES_AND_RESAVE_OUTFILES=convert_varnames_and_resave_outFiles) $
      THEN BEGIN
-        timeTmpStr = RECALC_TSTAMPS(timeTmp,nTot,timeFiles[i], $
+        timeTmpStr = CREATE_FASTDB_TSTAMPS(timeTmp,nTot,timeFiles[i], $
                                     ALTITUDE_MAX=altitude_max, $
                                     R_E=R_E, $
                                     ALLOW_FL_TRACE=allow_fl_trace)
@@ -234,7 +234,12 @@ FUNCTION GET_TIMES_AND_DECIDE_ALTITUDE_OR_NOT_ALTITUDE,ephemFileIndArr,DBInds,i,
      ENDELSE
   ENDELSE
   ;;Get indices into eSpec
-  inds         = ephemFileIndArr[i,*]
+  IF KEYWORD_SET(ephemFileIndArr) THEN BEGIN
+     inds         = ephemFileIndArr[i,*]
+  ENDIF ELSE BEGIN
+     inds         = [0,N_ELEMENTS(GEOstruct.alt)-1]
+     STOP
+  ENDELSE
 
   STR_ELEMENT,coordStruct,'TIME',SUCCESS=coordSHasTime
   IF coordSHasTime THEN BEGIN     
@@ -359,31 +364,6 @@ FUNCTION CHECK_NEED_TO_RECALC_TSTAMPS,timeFile,timeTmp,nTot, $
   ENDELSE
 
   RETURN,recalcTime
-END
-
-FUNCTION RECALC_TSTAMPS,timeTmp,nTot,timeFile, $                
-                        ALTITUDE_MAX=altitude_max, $
-                        R_E=R_E, $
-                        ALLOW_FL_TRACE=allow_fl_trace
-
-  ;;Convert
-  divFactor           = 10000L
-  timeTmpStr    = MAKE_ARRAY(nTot,/STRING)
-  FOR kk=0L,(nTot/divFactor) DO BEGIN
-     ind1       = kk*divFactor
-     ind2       = ( ((kk+1)*divFactor) < (nTot - 1) )
-     PRINT,'Inds: ' + STRCOMPRESS(ind1,/REMOVE_ALL) + ', ' + STRCOMPRESS(ind2,/REMOVE_ALL)
-     tempI      = [ind1:ind2]
-     timeTmpStr[tempI] = TIME_TO_STR(timeTmp[tempI],/MSEC)
-  ENDFOR
-  PRINT,'Saving time strings to ' + timeFile + ' ...'
-  savedAltitude_max   = altitude_max
-  savedR_E            = R_E
-  savedAllow_fl_trace = allow_fl_trace
-  SAVE,timeTmpstr,savedAltitude_max,savedR_E,savedAllow_fl_trace,FILENAME=timeFile
-
-  RETURN,timeTmpStr
-
 END
 
 PRO CHOP_UTC_STRINGS_INTO_YMD_HMS,timeTmpStr,year,month,day,hour,min,sec

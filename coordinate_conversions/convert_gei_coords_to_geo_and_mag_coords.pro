@@ -43,7 +43,7 @@ PRO CONVERT_GEI_COORDS_TO_GEO_AND_MAG_COORDS,timeStr,times, $
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Times in CDF epoch time
-  time_epoch         = UTC_TO_CDF_EPOCH(times)
+  time_epoch    = UTC_TO_CDF_EPOCH(times)
 
   YearArr       = FIX(STRMID(timeStr,0,4))
   MonthArr      = FIX(STRMID(timeStr,5,2))
