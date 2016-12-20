@@ -1,4 +1,5 @@
 ;;11/22/16
+;;For example usage of this feller, see JOURNAL__20161122__CONVERT_THE_REMAINING_FASTLOC_INDS_TO_AACGM
 PRO GET_FAST_GEI_COORDS,times, $
                         SAVE_GEI_COORDS=save_GEI_coords, $
                         GEI_COORD_DIR=GEI_coord_dir, $

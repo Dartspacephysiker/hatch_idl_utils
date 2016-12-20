@@ -1,4 +1,5 @@
 ;;11/22/16
+;;For example usage of this program, visit JOURNAL__20160827__CONVERT_ESPECDB_ILATS_TO_AACGM__ALL_OF_EM in the eSpec_identification repository
 PRO CONVERT_GEI_COORDS_TO_GEO_AND_MAG_COORDS,timeStr,times, $
    GEI_FILE=GEI_file, $
    GEI_DIR=GEI_dir, $
