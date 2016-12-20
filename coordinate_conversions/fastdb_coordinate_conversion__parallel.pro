@@ -6,7 +6,7 @@
 ;; GET_DATA,'ORBIT',DATA=orbit
 ;; times = (TEMPORARY(orbit)).x
 ;; COORDINATE_CONVERSION__PARALLEL,times,/CREATE_TIMESTAMPS,ORIG_ROUTINENAME='Example',COORDDIR='~/Desktop/',OUTFILE_PREF='Example_1996'
-PRO COORDINATE_CONVERSION__PARALLEL,times, $
+PRO FASTDB_COORDINATE_CONVERSION__PARALLEL,times, $
                                     CREATE_TIMESTAMPS=create_timeStamps, $
                                     GET_GEI_COORDS=get_GEI_coords, $
                                     DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
@@ -36,6 +36,14 @@ PRO COORDINATE_CONVERSION__PARALLEL,times, $
 
   @defaults__fastdb_coordinate_conversion.pro
 
+  routineArr = ['fastdb_coordinate_conversion__single.pro', $
+                'create_fastdb_tstamps.pro', $
+                'get_fast_gei_coords.pro', $
+                'convert_gei_coords_to_geo_and_mag_coords.pro', $
+                'convert_geo_to_aacgm.pro']
+
+  proDir       = '~/idl/lib/hatch_idl_utils/coordinate_conversions/'        
+
   nExec    = KEYWORD_SET(create_timeStamps) + KEYWORD_SET(get_GEI_coords) + KEYWORD_SET(do_GEO_MAG_conversions) + KEYWORD_SET(do_AACGM_conversions)
 
   CASE nExec OF
@@ -55,16 +63,16 @@ PRO COORDINATE_CONVERSION__PARALLEL,times, $
      1: BEGIN
         CASE 1 OF
            KEYWORD_SET(create_timeStamps): BEGIN
-              execType = '\CREATE_TIMESTAMPS'
+              execType = '/CREATE_TIMESTAMPS'
            END
            KEYWORD_SET(get_GEI_coords): BEGIN
-              execType = '\GET_GEI_COORDS'
+              execType = '/GET_GEI_COORDS'
            END
            KEYWORD_SET(do_GEO_MAG_conversions): BEGIN
-              execType = '\DO_GEO_MAG_CONVERSIONS'
+              execType = '/DO_GEO_MAG_CONVERSIONS'
            END
            KEYWORD_SET(do_AACGM_conversions): BEGIN
-              execType = '\DO_AACGM_CONVERSIONS'
+              execType = '/DO_AACGM_CONVERSIONS'
            END
         ENDCASE
 
@@ -85,14 +93,16 @@ PRO COORDINATE_CONVERSION__PARALLEL,times, $
      END
   ENDCASE
 
-  nCPUs    = !CPU.HW_NCPU
+  nCPUs    = !CPU.HW_NCPU-1
   
   IF nCPUs LT 3 AND ~KEYWORD_SET(OK__low_CPU_number) THEN BEGIN
      PRINT,"So you may not derive much benefit from this. Sure you want to continue?"
      STOP
   ENDIF
 
-  oBridge  = OBJARR(nCPUs)
+  oBridge        = OBJARR(nCPUs)
+  IDLChildPref   = '/home/spencerh/Desktop/IDL_child_'
+  IDLChildOutput = IDLChildPref + STRCOMPRESS(INDGEN(nCPUs),/REMOVE_ALL) + '.txt'
 
   IF N_ELEMENTS(outFile_pref) EQ 0 THEN BEGIN
      PRINT,"You must provide a name for the output. Cut with the nonsense."
@@ -138,7 +148,7 @@ PRO COORDINATE_CONVERSION__PARALLEL,times, $
   GEO_MAGFiles = !NULL
   indArr       = !NULL
   nTot         = N_ELEMENTS(times)
-  divFactor    = nTot/nCPUs
+  divFactor    = nTot/nCPUs+1
 
   PRINT,"FASTDB_COORDINATE_CONVERSION__PARALLEL: " + STRCOMPRESS(nTot,/REMOVE_ALL) + " inds total"
   FOR i=0,nCPUs-1 DO BEGIN
@@ -196,100 +206,180 @@ PRO COORDINATE_CONVERSION__PARALLEL,times, $
   ENDWHILE
 
 
+  ;; pathString = '"' + !PATH + '"'
   FOR i=0,nCPUs-1 DO BEGIN
 
      ind1 = indArr[0,i]
      ind2 = indArr[1,i]
 
-     CASE 1 OF
-        KEYWORD_SET(dry_run): BEGIN
-           PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "] = OBJ_NEW('IDL_IDLBridge') "
-           PRINT,"                                                         "
-           PRINT,'Inds: ' + STRCOMPRESS(ind1,/REMOVE_ALL) + ', ' + STRCOMPRESS(ind2,/REMOVE_ALL)
-           PRINT,";;Set all the vars for this environment                  "
-           PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'coordDir'        ," + $
-                 "coordDir          "
-           PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'orig_routineName'," + $
-                 "orig_routineName  "
-           PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'times'           ," + $
-                 "times             "
-           PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'tmpFile'         ," + $
-                 "tmpFiles[" + STRCOMPRESS(i,/REMOVE_ALL) + "]       "
-           PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'outFile'         ," + $
-                 "outFiles[" + STRCOMPRESS(i,/REMOVE_ALL) + "]       "
-           PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'timeFile'        ," + $
-                 "timeFiles[" + STRCOMPRESS(i,/REMOVE_ALL) + "]       "
+     tmpInds = [ind1:ind2]
+
+     IF ~KEYWORD_SET(quiet) THEN BEGIN
+        PRINT,""
+        PRINT,'Do dat:'
+        PRINT,'coordDir          ',coordDir
+        PRINT,'orig_routineName  ',orig_routineName
+        PRINT,'check_if_exists   ',KEYWORD_SET(check_if_exists)
+        PRINT,'times[[0,-1]      ',times[tmpInds[[0,-1]]]
+        PRINT,'timesStr[[0,-1]   ',TIME_TO_STR(times[tmpInds[[0,-1]]],/MSEC)
+        PRINT,'tmpFile           ',tmpFiles[i]
+        PRINT,'outFile           ',outFiles[i]
+        PRINT,'timeFile          ',timeFiles[i]
+        PRINT,'GEI_coord_filename',GEI_files[i]
+        PRINT,'GEO_MAG_fileName  ',GEO_MAGFiles[i]
+     ENDIF
+
+     ;; CASE 1 OF
+        ;; KEYWORD_SET(dry_run): BEGIN
+        ;;    PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "] = OBJ_NEW('IDL_IDLBridge') "
+        ;;    PRINT,"                                                         "
+        ;;    PRINT,'Inds: ' + STRCOMPRESS(ind1,/REMOVE_ALL) + ', ' + STRCOMPRESS(ind2,/REMOVE_ALL)
+        ;;    PRINT,";;Set all the vars for this environment                  "
+        ;;    PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'coordDir'        ," + $
+        ;;          "coordDir          "
+        ;;    PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'orig_routineName'," + $
+        ;;          "orig_routineName  "
+        ;;    PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'times'           ," + $
+        ;;          "times             "
+        ;;    PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'tmpFile'         ," + $
+        ;;          "tmpFiles[" + STRCOMPRESS(i,/REMOVE_ALL) + "]       "
+        ;;    PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'outFile'         ," + $
+        ;;          "outFiles[" + STRCOMPRESS(i,/REMOVE_ALL) + "]       "
+        ;;    PRINT,"oBridge[" + STRCOMPRESS(i,/REMOVE_ALL) + "]->SetVar, 'timeFile'        ," + $
+        ;;          "timeFiles[" + STRCOMPRESS(i,/REMOVE_ALL) + "]       "
 
 
-        END
-        ELSE: BEGIN
+     ;; END
+     ;; ELSE: BEGIN
+     IF ~KEYWORD_SET(dry_run) THEN BEGIN
+        ;;Temporary inds
+        tmpInds = [ind1:ind2]
 
-           ;;Temporary inds
-           tmpInds = [ind1:ind2]
+        oBridge[i] = OBJ_NEW('IDL_IDLBridge',OUTPUT=IDLChildOutput[i])
 
-           IF i EQ nCPUs-1 THEN BEGIN
+        ;;Set all the vars for this environment
+        oBridge[i]->SetVar, '!PATH'             ,!PATH
+        oBridge[i]->SetVar, 'coordDir'          ,coordDir
+        oBridge[i]->SetVar, 'orig_routineName'  ,orig_routineName
+        oBridge[i]->SetVar, 'check_if_exists'   ,KEYWORD_SET(check_if_exists)
+        oBridge[i]->SetVar, 'times'             ,times[tmpInds]
+        oBridge[i]->SetVar, 'tmpFile'           ,tmpFiles[i]
+        oBridge[i]->SetVar, 'outFile'           ,outFiles[i]
+        oBridge[i]->SetVar, 'timeFile'          ,timeFiles[i]
+        oBridge[i]->SetVar, 'GEI_coord_filename',GEI_files[i]
+        oBridge[i]->SetVar, 'GEO_MAG_fileName'  ,GEO_MAGFiles[i]
+        oBridge[i]->SetVar, 'R_E'               ,R_E
+        oBridge[i]->SetVar, 'altitude_max'      ,altitude_max
+        oBridge[i]->SetVar, 'allow_fl_trace'    ,allow_fl_trace
 
-           ENDIF ELSE BEGIN
-              
-           ENDELSE
+        diag = 0
+        IF KEYWORD_SET(diag) THEN BEGIN
+           tmpcoordDir          = oBridge[i]->GetVar('coordDir'          )
+           tmporig_routineName  = oBridge[i]->GetVar('orig_routineName'  )
+           tmpCheck_if_exists   = oBridge[i]->GetVar('check_if_exists'   )
+           tmptimes             = oBridge[i]->GetVar('times'             )
+           tmptmpFiles          = oBridge[i]->GetVar('tmpFile'           )
+           tmpoutFiles          = oBridge[i]->GetVar('outFile'           )
+           tmptimeFiles         = oBridge[i]->GetVar('timeFile'          )
+           tmpGEI_files         = oBridge[i]->GetVar('GEI_coord_filename')
+           tmpGEO_MAGFiles      = oBridge[i]->GetVar('GEO_MAG_fileName'  )
 
-           oBridge[i] = OBJ_NEW('IDL_IDLBridge')
+           STOP
 
-           IF ~KEYWORD_SET(quiet) THEN BEGIN
-              PRINT,'coordDir'          ,coordDir
-              PRINT,'orig_routineName'  ,orig_routineName
-              PRINT,'check_if_exists'   ,KEYWORD_SET(check_if_exists)
-              PRINT,'times'             ,times[tmpInds]
-              PRINT,'tmpFile'           ,tmpFiles[i]
-              PRINT,'outFile'           ,outFiles[i]
-              PRINT,'timeFile'          ,timeFiles[i]
-              PRINT,'GEI_coord_filename',GEI_files[i]
-              PRINT,'GEO_MAG_fileName'  ,GEO_MAGFiles[i]
-           ENDIF
+           FASTDB_COORDINATE_CONVERSION__SINGLE, $
+              tmpTimes, $
+              CREATE_TIMESTAMPS=create_timeStamps, $
+              GET_GEI_COORDS=get_GEI_coords, $
+              DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
+              DO_AACGM_CONVERSIONS=do_AACGM_conversions, $
+              R_E=R_E, $
+              ALTITUDE_MAX=altitude_max, $
+              ALLOW_FL_TRACE=allow_fl_trace, $
+              TIMEFILE=tmptimeFiles, $
+              OUTFILE=tmpOutFiles, $
+              COORDFILE=tmpGEO_MAGfiles, $
+              COORDDIR=tmpCoordDir, $
+              GEI_COORD_FILENAME=tmpGEI_files, $
+              ORIG_ROUTINENAME=tmporig_routineName, $
+              CHECK_IF_EXISTS=tmpCheck_if_exists
 
-           ;;Set all the vars for this environment
-           oBridge[i]->SetVar, 'coordDir'          ,coordDir
-           oBridge[i]->SetVar, 'orig_routineName'  ,orig_routineName
-           oBridge[i]->SetVar, 'check_if_exists'   ,KEYWORD_SET(check_if_exists)
-           oBridge[i]->SetVar, 'times'             ,times[tmpInds]
-           oBridge[i]->SetVar, 'tmpFile'           ,tmpFiles[i]
-           oBridge[i]->SetVar, 'outFile'           ,outFiles[i]
-           oBridge[i]->SetVar, 'timeFile'          ,timeFiles[i]
-           oBridge[i]->SetVar, 'GEI_coord_filename',GEI_files[i]
-           oBridge[i]->SetVar, 'GEO_MAG_fileName'  ,GEO_MAGFiles[i]
+        ENDIF
 
-           execStr = 'FASTDB_COORDINATE_CONVERSION__SINGLE,times,' + execType + ',' + $
-                     'R_E=R_E,ALTITUDE_MAX=altitude_max,ALLOW_FL_TRACE=allow_fl_trace,' + $
-                     'TIMEFILE=timeFile,OUTFILE=outFile,COORDDIR=coordDir,COORDFILE=GEO_MAG_fileName,' + $
-                     'GEI_COORD_FILENAME=GEI_coord_filename,CHECK_IF_EXISTS=check_if_exists,' + $
-                     'ORIG_ROUTINENAME=orig_routineName'
-           
-           oBridge[i]->Execute,execStr,/NOWAIT
-           
-        END
-     ENDCASE
+        execStr = 'FASTDB_COORDINATE_CONVERSION__SINGLE,times,' + execType + ',' + $
+                  'R_E=R_E,ALTITUDE_MAX=altitude_max,ALLOW_FL_TRACE=allow_fl_trace,' + $
+                  'TIMEFILE=timeFile,OUTFILE=outFile,COORDDIR=coordDir,COORDFILE=GEO_MAG_fileName,' + $
+                  'GEI_COORD_FILENAME=GEI_coord_filename,CHECK_IF_EXISTS=check_if_exists,' + $
+                  'ORIG_ROUTINENAME=orig_routineName'
+
+        FOR ll=0,N_ELEMENTS(routineArr)-1 DO BEGIN
+           oBridge[i]->Execute,'.compile ' + proDir + routineArr[ll]
+        ENDFOR
+
+        oBridge[i]->Execute,execStr,/NOWAIT
+        
+        PRINT,'Started that homey'
+     ENDIF
+     ;; ENDCASE
 
   ENDFOR
 
 
   IF ~KEYWORD_SET(dry_run) THEN BEGIN
 
-     notdone = 1
-     count   = 0LL
-     WHILE notdone GT 0 DO BEGIN
-        done = 0
-        FOR i=0,N_ELEMENTS(oBridge)-1 DO $
-        done = done+oBridge[i]->Status()
-        IF done EQ 0 THEN notdone = done
+     notdone    = 1
+     count      = 0LL
+     waiting    = MAKE_ARRAY(N_ELEMENTS(oBridge),VALUE=1B,/BYTE)
+     retVal     = MAKE_ARRAY(N_ELEMENTS(oBridge),VALUE=0B,/BYTE)
+     retString  = MAKE_ARRAY(N_ELEMENTS(oBridge),/STRING)
+     WHILE N_ELEMENTS(WHERE(waiting,/NULL)) GT 0 DO BEGIN
+        ;; done = 0
+
+        FOR i=0,N_ELEMENTS(oBridge)-1 DO BEGIN
+           IF waiting[i] THEN BEGIN
+              tmpStatus = oBridge[i]->Status(ERROR=retTmp)
+
+              CASE tmpStatus OF
+                 0: BEGIN
+                    PRINT,"Processor " + STRCOMPRESS(i,/REMOVE_ALL) + " has finished"
+                    waiting[i] = 0B
+                 END
+                 1: BEGIN
+                    PRINT,"Processor " + STRCOMPRESS(i,/REMOVE_ALL) + " is executing:"
+                    SPAWN,"tail -n 5 " + IDLChildOutput[i],tmpStat
+                    PRINT,tmpStat
+                 END
+                 2: BEGIN
+                    PRINT,"Processor " + STRCOMPRESS(i,/REMOVE_ALL) + " finished!"
+                    retString[i] = 'Finished!'
+                    waiting[i]   = 0B
+                 END
+                 3: BEGIN
+                    PRINT,"Processor " + STRCOMPRESS(i,/REMOVE_ALL) + ": ERROR!"
+                    retString[i] = retTmp
+                    waiting[i]   = 0B
+                 END
+              ENDCASE
+
+           ENDIF
+
+           ;; done = done+tmpStatus
+           
+        ENDFOR
+
+        WAIT,2.0
 
         count++
-        count = count MOD 10000
-        IF (count MOD 10000) EQ 0 THEN PRINT,"Waiting .."
+        IF (count MOD 120) EQ 0 THEN BEGIN
+           PRINT,"Waiting .."
+           PRINT,"nFinished = " + STRCOMPRESS(N_ELEMENTS(WHERE(~waiting,/NULL)),/REMOVE_ALL)
+        ENDIF
      ENDWHILE
 
      FOR i=0,N_ELEMENTS(oBridge)-1 DO BEGIN
         OBJ_DESTROY,oBridge[N_ELEMENTS(oBridge)-1-i]
      ENDFOR
+
+     PRINT,"DONE WITH " + execType
 
   ENDIF
 
