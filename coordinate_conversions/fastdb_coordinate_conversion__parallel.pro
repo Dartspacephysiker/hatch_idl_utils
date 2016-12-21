@@ -6,31 +6,35 @@
 ;; GET_DATA,'ORBIT',DATA=orbit
 ;; times = (TEMPORARY(orbit)).x
 ;; COORDINATE_CONVERSION__PARALLEL,times,/CREATE_TIMESTAMPS,ORIG_ROUTINENAME='Example',COORDDIR='~/Desktop/',OUTFILE_PREF='Example_1996'
-PRO FASTDB_COORDINATE_CONVERSION__PARALLEL,times, $
-                                    CREATE_TIMESTAMPS=create_timeStamps, $
-                                    GET_GEI_COORDS=get_GEI_coords, $
-                                    DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
-                                    DO_AACGM_CONVERSIONS=do_AACGM_conversions, $
-                                    ORIG_ROUTINENAME=orig_routineName, $
-                                    COORDFILE_PREF=GEO_MAG_file_pref, $
-                                    GEI_COORD_FILENAME_PREF=GEI_coord_filename_pref, $
-                                    COORDDIR=coordDir, $
-                                    TIMEFILE_PREF=timeFile_pref, $
-                                    EPHEMFILEINDARR=ephemFileIndArr, $
-                                    OUTFILE_PREF=outFile_pref, $
-                                    R_E=R_E, $
-                                    ALTITUDE_MAX=altitude_max, $
-                                    ALLOW_FL_TRACE=allow_FL_trace, $
-                                    CHECK_IF_EXISTS=check_if_exists, $
-                                    CREATE_NOTALTITUDE_FILE=create_notAltitude_file, $
-                                    NOTALTITUDE_SUFF=notAltitude_suff, $
-                                    CONVERT_VARNAMES_AND_RESAVE_OUTFILES=convert_varNames_and_resave_outFiles, $
-                                    FORCE_NEWCHECKITVL=force_newCheckItvl, $
-                                    USER__RESTRICT_II=user__restrict_i, $
-                                    IN_NAMES=in_names, $
-                                    DEFNAMES=defNames, $
-                                    DRY_RUN=dry_run, $
-                                    OK__CONTINUE_WITH_ONLY_FEW_CPUS=OK__low_CPU_number
+PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
+   times, $
+   NCPUSTORUN=nCPUsToRun, $
+   STARTCPU=startCPU, $
+   CREATE_TIMESTAMPS=create_timeStamps, $
+   GET_GEI_COORDS=get_GEI_coords, $
+   DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
+   DO_AACGM_CONVERSIONS=do_AACGM_conversions, $
+   ORIG_ROUTINENAME=orig_routineName, $
+   COORDFILE_PREF=GEO_MAG_file_pref, $
+   GEI_COORD_FILENAME_PREF=GEI_coord_filename_pref, $
+   COORDDIR=coordDir, $
+   TIMEFILE_PREF=timeFile_pref, $
+   EPHEMFILEINDARR=ephemFileIndArr, $
+   OUTFILE_PREF=outFile_pref, $
+   R_E=R_E, $
+   ALTITUDE_MAX=altitude_max, $
+   ALLOW_FL_TRACE=allow_FL_trace, $
+   CHECK_IF_EXISTS=check_if_exists, $
+   CREATE_NOTALTITUDE_FILE=create_notAltitude_file, $
+   NOTALTITUDE_SUFF=notAltitude_suff, $
+   CONVERT_VARNAMES_AND_RESAVE_OUTFILES=convert_varNames_and_resave_outFiles, $
+   FORCE_NEWCHECKITVL=force_newCheckItvl, $
+   USER__RESTRICT_II=user__restrict_i, $
+   IN_NAMES=in_names, $
+   DEFNAMES=defNames, $
+   DRY_RUN=dry_run, $
+   DIAGNOSTIC=diag, $
+   OK__CONTINUE_WITH_ONLY_FEW_CPUS=OK__low_CPU_number
 
   COMPILE_OPT IDL2
 
@@ -150,8 +154,12 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL,times, $
   nTot         = N_ELEMENTS(times)
   divFactor    = nTot/nCPUs+1
 
+  IF ~KEYWORD_SET(nCPUsToRun) THEN nCPUsToRun = nCPUs
+  IF ~KEYWORD_SET(startCPU  ) THEN startCPU   = 0
+  stopCPU = (startCPU + nCPUsToRun - 1) < (nCPUs - 1)
+
   PRINT,"FASTDB_COORDINATE_CONVERSION__PARALLEL: " + STRCOMPRESS(nTot,/REMOVE_ALL) + " inds total"
-  FOR i=0,nCPUs-1 DO BEGIN
+  FOR i=0,nCPUs DO BEGIN
 
      ind1         = i*divFactor
      ind2         = ( ((i+1)*divFactor) < (nTot - 1) )
@@ -174,7 +182,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL,times, $
 
   ;;Show user before beginning
   PRINT,"Here's what I'm going to do: "
-  FOR i=0,nCPUs-1 DO BEGIN
+  FOR i=startCPU,stopCPU DO BEGIN
      PRINT,"i           : ",i              
      PRINT,"tmpFile     : ",tmpFiles    [i]
      PRINT,"outFile     : ",outFiles    [i]
@@ -199,15 +207,20 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL,times, $
            PRINT,"OK, leaving ..."
            RETURN
         END
+        STRMATCH(STRUPCASE(response),'STOP*'): BEGIN
+           cont = 1
+           PRINT,"OK, stopping ..."
+           STOP
+        END
         ELSE: BEGIN
-           PRINT,"No, you need to answer 'yes' or 'no'"
+           PRINT,"No, you need to answer 'yes' or 'no' (or 'stop')"
         END
      ENDCASE
   ENDWHILE
 
 
   ;; pathString = '"' + !PATH + '"'
-  FOR i=0,nCPUs-1 DO BEGIN
+  FOR i=startCPU,stopCPU DO BEGIN
 
      ind1 = indArr[0,i]
      ind2 = indArr[1,i]
@@ -265,14 +278,13 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL,times, $
         oBridge[i]->SetVar, 'times'             ,times[tmpInds]
         oBridge[i]->SetVar, 'tmpFile'           ,tmpFiles[i]
         oBridge[i]->SetVar, 'outFile'           ,outFiles[i]
-        oBridge[i]->SetVar, 'timeFile'          ,timeFiles[i]
+        oBridge[i]->SetVar, 'timeFile'          ,coordDir+timeFiles[i]
         oBridge[i]->SetVar, 'GEI_coord_filename',GEI_files[i]
         oBridge[i]->SetVar, 'GEO_MAG_fileName'  ,GEO_MAGFiles[i]
         oBridge[i]->SetVar, 'R_E'               ,R_E
         oBridge[i]->SetVar, 'altitude_max'      ,altitude_max
         oBridge[i]->SetVar, 'allow_fl_trace'    ,allow_fl_trace
 
-        diag = 0
         IF KEYWORD_SET(diag) THEN BEGIN
            tmpcoordDir          = oBridge[i]->GetVar('coordDir'          )
            tmporig_routineName  = oBridge[i]->GetVar('orig_routineName'  )
@@ -296,26 +308,34 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL,times, $
               ALTITUDE_MAX=altitude_max, $
               ALLOW_FL_TRACE=allow_fl_trace, $
               TIMEFILE=tmptimeFiles, $
+              TMPFILE=tmptmpFiles, $
               OUTFILE=tmpOutFiles, $
-              COORDFILE=tmpGEO_MAGfiles, $
               COORDDIR=tmpCoordDir, $
+              COORDFILE=tmpGEO_MAGfiles, $
               GEI_COORD_FILENAME=tmpGEI_files, $
-              ORIG_ROUTINENAME=tmporig_routineName, $
-              CHECK_IF_EXISTS=tmpCheck_if_exists
+              CHECK_IF_EXISTS=tmpCheck_if_exists, $
+              ORIG_ROUTINENAME=tmporig_routineName
 
         ENDIF
 
         execStr = 'FASTDB_COORDINATE_CONVERSION__SINGLE,times,' + execType + ',' + $
-                  'R_E=R_E,ALTITUDE_MAX=altitude_max,ALLOW_FL_TRACE=allow_fl_trace,' + $
-                  'TIMEFILE=timeFile,OUTFILE=outFile,COORDDIR=coordDir,COORDFILE=GEO_MAG_fileName,' + $
-                  'GEI_COORD_FILENAME=GEI_coord_filename,CHECK_IF_EXISTS=check_if_exists,' + $
+                  'R_E=R_E,' + $
+                  'ALTITUDE_MAX=altitude_max,' + $
+                  'ALLOW_FL_TRACE=allow_fl_trace,' + $
+                  'TIMEFILE=timeFile,' + $
+                  'TMPFILE=tmpFile,' + $
+                  'OUTFILE=outFile,' + $
+                  'COORDDIR=coordDir,' + $
+                  'COORDFILE=GEO_MAG_fileName,' + $
+                  'GEI_COORD_FILENAME=GEI_coord_filename,' + $
+                  'CHECK_IF_EXISTS=check_if_exists,' + $
                   'ORIG_ROUTINENAME=orig_routineName'
 
         FOR ll=0,N_ELEMENTS(routineArr)-1 DO BEGIN
            oBridge[i]->Execute,'.compile ' + proDir + routineArr[ll]
         ENDFOR
 
-        oBridge[i]->Execute,'@"/home/spencerh/idl/lib/aacgm/compile_aacgm.pro"'
+        oBridge[i]->Execute,'@/home/spencerh/idl/lib/aacgm/compile_aacgm.pro'
 
         oBridge[i]->Execute,execStr,/NOWAIT
         
@@ -330,13 +350,15 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL,times, $
 
      notdone    = 1
      count      = 0LL
-     waiting    = MAKE_ARRAY(N_ELEMENTS(oBridge),VALUE=1B,/BYTE)
+     waiting    = MAKE_ARRAY(N_ELEMENTS(oBridge),VALUE=0B,/BYTE)
      retVal     = MAKE_ARRAY(N_ELEMENTS(oBridge),VALUE=0B,/BYTE)
      retString  = MAKE_ARRAY(N_ELEMENTS(oBridge),/STRING)
+
+     waiting[startCPU:stopCPU] = 1B
      WHILE N_ELEMENTS(WHERE(waiting,/NULL)) GT 0 DO BEGIN
         ;; done = 0
 
-        FOR i=0,N_ELEMENTS(oBridge)-1 DO BEGIN
+        FOR i=startCPU,stopCPU DO BEGIN
            IF waiting[i] THEN BEGIN
               tmpStatus = oBridge[i]->Status(ERROR=retTmp)
 
@@ -368,7 +390,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL,times, $
            
         ENDFOR
 
-        WAIT,2.0
+        WAIT,5.0
 
         count++
         IF (count MOD 120) EQ 0 THEN BEGIN

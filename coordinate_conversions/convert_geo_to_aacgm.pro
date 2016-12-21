@@ -206,7 +206,10 @@ FUNCTION GET_TIMES_AND_DECIDE_ALTITUDE_OR_NOT_ALTITUDE,ephemFileIndArr,DBInds,i,
   ;;Convert varname, if necessary
   geoString   = 'GEOstruct   = TEMPORARY(' + GEOStructName   + ')'
   coordString = 'coordStruct = TEMPORARY(' + coordStructName + ')'
-  IF ~(EXECUTE(geoString) AND EXECUTE(coordString)) THEN STOP
+  IF ~(EXECUTE(geoString) AND EXECUTE(coordString)) THEN BEGIN
+     PRINT,"Trouble picking up GEOstruct and coordStruct!"
+     STOP
+  ENDIF
 
   IF N_ELEMENTS(user__restrict_ii) GT 0 THEN BEGIN
      PRINT,'User has provided restrict_ii, so that does it!'
@@ -238,14 +241,13 @@ FUNCTION GET_TIMES_AND_DECIDE_ALTITUDE_OR_NOT_ALTITUDE,ephemFileIndArr,DBInds,i,
      inds         = ephemFileIndArr[i,*]
   ENDIF ELSE BEGIN
      inds         = [0,N_ELEMENTS(GEOstruct.alt)-1]
-     STOP
   ENDELSE
 
   STR_ELEMENT,coordStruct,'TIME',SUCCESS=coordSHasTime
   IF coordSHasTime THEN BEGIN     
-     DBInds       = [inds[0]:(inds[1] EQ -1 ? N_ELEMENTS(coordStruct.time)-1 : inds[i])]
+     DBInds       = [inds[0]:(inds[1] EQ -1 ? N_ELEMENTS(coordStruct.time)-1 : inds[1])]
   ENDIF ELSE BEGIN
-     DBInds       = [inds[0]:(inds[1] EQ -1 ? N_ELEMENTS(coords.time)-1 : inds[i])]
+     DBInds       = [inds[0]:(inds[1] EQ -1 ? N_ELEMENTS(coords.time)-1 : inds[1])]
   ENDELSE
 
   IF nCheck EQ 0 THEN BEGIN

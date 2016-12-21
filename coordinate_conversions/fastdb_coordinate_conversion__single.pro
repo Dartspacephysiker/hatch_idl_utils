@@ -45,9 +45,31 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
      ENDELSE
      
      RETURN
-  ENDIF
+  ENDIF ELSE BEGIN
+
+     IF KEYWORD_SET(do_GEO_MAG_conversions) OR $
+        KEYWORD_SET(do_AACGM_conversions  )    $
+     THEN BEGIN
+        RESTORE,timeFile
+        timeStr = TEMPORARY(timeTmpstr)
+
+        IF N_ELEMENTS(timeStr) NE N_ELEMENTS(times) THEN BEGIN
+           PRINT,"Times (" + STRCOMPRESS(N_ELEMENTS(times),/REMOVE_ALL) + $
+                 " elem) and timeStrings (" + STRCOMPRESS(N_ELEMENTS(timeStr),/REMOVE_ALL) + $
+                 " elem) are mismatched!"
+           PRINT,'Returning ...'
+
+           RETURN
+        ENDIF
+     ENDIF
+
+  ENDELSE
 
   IF KEYWORD_SET(get_GEI_coords) THEN BEGIN
+     PRINT,"Getting GEI coords for " + $
+           STRCOMPRESS(N_ELEMENTS(times),/REMOVE_ALL) + $
+           ' timeStamps ...'
+
      GET_FAST_GEI_COORDS,times, $
                          /SAVE_GEI_COORDS, $
                          GEI_COORD_DIR=coordDir, $
@@ -63,9 +85,13 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
   ENDIF
 
   IF KEYWORD_SET(do_GEO_MAG_conversions) THEN BEGIN
+     PRINT,"Converting GEI to GEO/MAG for " + $
+           STRCOMPRESS(N_ELEMENTS(times),/REMOVE_ALL) + $
+           ' timeStamps ...'
+
      CONVERT_GEI_COORDS_TO_GEO_AND_MAG_COORDS, $
-        times, $
         timeStr, $
+        times, $
         GEI_FILE=GEI_coord_filename, $
         GEI_DIR=coordDir, $
         GEI_STRUCT_NAME=defGEIStructName, $
@@ -81,6 +107,9 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
 
 
   IF KEYWORD_SET(do_AACGM_conversions) THEN BEGIN
+     PRINT,"Converting GEO to AACGM for " + $
+           STRCOMPRESS(N_ELEMENTS(times),/REMOVE_ALL) + $
+           ' timeStamps ...'
 
      CONVERT_GEO_TO_AACGM, $
         COORDFILES=GEO_MAG_filename, $

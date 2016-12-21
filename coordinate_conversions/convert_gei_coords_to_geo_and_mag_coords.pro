@@ -138,6 +138,5 @@ PRO CONVERT_GEI_COORDS_TO_GEO_AND_MAG_COORDS,timeStr,times, $
   SAVE,coords,GEO,MAG,FILENAME=outDir+outFile
 
   PRINT,"Did it!"
-  STOP
 
 END
