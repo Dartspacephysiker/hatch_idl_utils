@@ -44,6 +44,7 @@
 ;
 ;-
 PRO GET_H2D_BIN_CENTERS_OR_EDGES,centers, $
+                                 EQUAL_AREA_BINNING=EA_binning, $
                                  CENTERS1=centers1,CENTERS2=centers2, $
                                  BINSIZE1=Binsize1, BINSIZE2=Binsize2, $
                                  MIN1=Min1, MIN2=Min2,$
@@ -55,7 +56,47 @@ PRO GET_H2D_BIN_CENTERS_OR_EDGES,centers, $
                                  NBINS1=nBins1, NBINS2=nBins2, $
                                  BINEDGE1=Binedge1, BINEDGE2=Binedge2
 
-         ON_ERROR, 2          ; on error, return control to caller
+  ON_ERROR, 2                   ; on error, return control to caller
+  
+  IF KEYWORD_SET(EA_binning) THEN BEGIN
+     
+     @common__ea_binning.pro
+     
+     IF N_ELEMENTS(EA__s) EQ 0 THEN BEGIN
+        LOAD_EQUAL_AREA_BINNING_STRUCT
+     ENDIF
+
+     IF (N_ELEMENTS( Binedge1 ) EQ 0) THEN Binedge1 = 0
+     IF (N_ELEMENTS( Binedge2 ) EQ 0) THEN Binedge2 = 0
+
+     centers      = MAKE_ARRAY(2,N_ELEMENTS(EA__s.minM))
+     CASE binEdge1 OF
+        -1: BEGIN
+           centers[0,*] = EA__s.minM
+        END
+        0: BEGIN
+           centers[0,*] = MEAN([[EA__s.minM],[EA__s.maxM]],DIMENSION=2)
+        END
+        1: BEGIN
+           centers[0,*] = EA__s.maxM
+        END
+     ENDCASE
+
+     CASE binEdge2 OF
+        -1: BEGIN
+           centers[1,*] = EA__s.minI
+        END
+        0: BEGIN
+           centers[1,*] = MEAN([[EA__s.minI],[EA__s.maxI]],DIMENSION=2)
+           ;; centers[1,*] = MEAN(EA__s.minI+EA__s.maxI)
+        END
+        1: BEGIN
+           centers[1,*] = EA__s.maxI
+        END
+     ENDCASE
+
+     RETURN
+  ENDIF
 
 ;   Take care of INPUT KEYWORDS
          if n_elements( MAX1 ) eq 0 then Max1 = m1

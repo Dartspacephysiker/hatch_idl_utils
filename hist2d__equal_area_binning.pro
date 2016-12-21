@@ -164,7 +164,7 @@ FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
 
          ;;Setup
          sum          = MAKE_ARRAY(N_ELEMENTS(MLTsc),VALUE=-2L,/LONG)
-         latSwitch_i  = [0,WHERE((EA__s.mini[1:-1]-EA__s.mini[0:-2]) NE 0),N_ELEMENTS(EA__s.mini)-1]
+         latSwitch_i  = [0,WHERE((EA__s.mini[1:-1]-EA__s.mini[0:-2]) NE 0),N_ELEMENTS(EA__s.mini)-1] ;Because rows of latitudes are of unequal lengths
 
          FOR k=0,N_ELEMENTS(latSwitch_i)-2 DO BEGIN
             tmpInds        = [latSwitch_i[k]:(latSwitch_i[k+1]-1)]
