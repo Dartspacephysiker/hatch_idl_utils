@@ -123,7 +123,7 @@ PRO CONVERT_GEO_TO_AACGM, $
      ENDIF ELSE BEGIN
         nGotEm        = 0
         lastCheck     = 0
-        checkInterval = 100000
+        checkInterval = 10000
         startK        = 0
      ENDELSE
 

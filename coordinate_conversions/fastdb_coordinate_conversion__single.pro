@@ -5,6 +5,7 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
                                          GET_GEI_COORDS=get_GEI_coords, $
                                          DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
                                          DO_AACGM_CONVERSIONS=do_AACGM_conversions, $
+                                         ;; STITCH_FILES=stitch_files, $
                                          ORIG_ROUTINENAME=orig_routineName, $
                                          COORDFILE=GEO_MAG_filename, $
                                          GEI_COORD_FILENAME=GEI_coord_filename, $
@@ -138,5 +139,13 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
      RETURN
 
   ENDIF
+
+  ;; IF KEYWORD_SET(stitch_files) THEN BEGIN
+  ;;    PRINT,'Converting available GEO/MAG/AACGM files ...'
+
+
+  ;;    RETURN
+  ;; ENDIF
+
 
 END

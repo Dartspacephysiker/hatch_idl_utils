@@ -14,6 +14,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
    GET_GEI_COORDS=get_GEI_coords, $
    DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
    DO_AACGM_CONVERSIONS=do_AACGM_conversions, $
+   STITCH_FILES=stitch_files, $
    ORIG_ROUTINENAME=orig_routineName, $
    COORDFILE_PREF=GEO_MAG_file_pref, $
    GEI_COORD_FILENAME_PREF=GEI_coord_filename_pref, $
@@ -77,6 +78,10 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
            END
            KEYWORD_SET(do_AACGM_conversions): BEGIN
               execType = '/DO_AACGM_CONVERSIONS'
+           END
+           KEYWORD_SET(do_AACGM_conversions): BEGIN
+              execType = '/STITCH_FILES'
+              dryRun   = 1 ;'cause we don't need to do anything in parallel
            END
         ENDCASE
 
@@ -304,6 +309,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
               GET_GEI_COORDS=get_GEI_coords, $
               DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
               DO_AACGM_CONVERSIONS=do_AACGM_conversions, $
+              STITCH_FILES=stitch_files, $
               R_E=R_E, $
               ALTITUDE_MAX=altitude_max, $
               ALLOW_FL_TRACE=allow_fl_trace, $
@@ -404,6 +410,14 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
      ENDFOR
 
      PRINT,"DONE WITH " + execType
+
+  ENDIF
+
+  IF KEYWORD_SET(stitch files) THEN BEGIN
+
+     fileType = ''
+
+     PRINT,"Checking "
 
   ENDIF
 
