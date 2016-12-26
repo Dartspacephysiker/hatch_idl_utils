@@ -113,12 +113,12 @@ PRO CONVERT_GEI_COORDS_TO_GEO_AND_MAG_COORDS,timeStr,times, $
                          ]
 
   GEO     = {ALT:GEOSph_arr[*,2], $
-                 LON:GEOSph_arr[*,1], $
-                 LAT:GEOSph_arr[*,0]}
+             LON:GEOSph_arr[*,1], $
+             LAT:GEOSph_arr[*,0]}
 
   MAG     = {ALT:MAGSph_arr[*,2], $
-                 LON:MAGSph_arr[*,1], $
-                 LAT:MAGSph_arr[*,0]}
+             LON:MAGSph_arr[*,1], $
+             LAT:MAGSph_arr[*,0]}
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;make struct

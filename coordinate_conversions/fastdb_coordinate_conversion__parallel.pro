@@ -413,11 +413,269 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
   ENDIF
 
-  IF KEYWORD_SET(stitch files) THEN BEGIN
+  IF KEYWORD_SET(stitch_files) THEN BEGIN
+
 
      fileType = ''
 
-     PRINT,"Checking "
+     have_AACGM_files = 1B
+     have_GEO_files   = 1B
+     have_GEI_files   = 1B
+     N_AACGM          = 0LL
+     N_GEO            = 0LL
+     N_MAG            = 0LL
+     N_GEI            = 0LL
+     PRINT,"Checking to make sure files exist + total number of inds"
+     nFiles = N_ELEMENTS(outFiles)
+     FOR k=0,nFiles-1 DO BEGIN
+        tmpHAACGM        = BYTE(FILE_TEST(coordDir+outFiles[k]    ))
+        tmpHGEO          = BYTE(FILE_TEST(coordDir+GEO_MAGFiles[k]))
+        tmpHGEI          = BYTE(FILE_TEST(coordDir+GEI_files[k]   ))
+
+        have_AACGM_files = have_AACGM_files AND tmpHAACGM
+        have_GEO_files   = have_GEO_files   AND tmpHGEO
+        have_GEI_files   = have_GEI_files   AND tmpHGEI
+
+        IF tmpHAACGM THEN BEGIN
+           RESTORE,coordDir+outFiles[k]
+           N_AACGM    += N_ELEMENTS(AACGMStruct.alt)
+           AACGMStruct = !NULL
+        ENDIF
+
+        IF tmpHGEO THEN BEGIN
+           RESTORE,coordDir+GEO_MAGFiles[k]
+           N_GEO   += N_ELEMENTS(GEO.alt)
+           N_MAG   += N_ELEMENTS(MAG.alt)
+           GEO      = !NULL
+           MAG      = !NULL
+        ENDIF
+
+        IF tmpHGEI THEN BEGIN
+           RESTORE,coordDir+GEI_files[k]
+           N_GEI    += N_ELEMENTS(GEIcoords.alt)
+           GEICoords = !NULL
+        ENDIF
+
+     ENDFOR
+
+     ;;Find out who we can slap together
+     stitchable = !NULL
+
+     IF have_AACGM_files AND (N_AACGM EQ nTot) THEN BEGIN
+        stitchable       = [stitchable,'AACGM']
+        final_AACGMFile  = outFile_pref + '-AAGM.sav'
+     ENDIF
+     
+     IF have_GEO_files THEN BEGIN
+        IF (N_GEO EQ nTot) THEN BEGIN
+           stitchable    = [stitchable,'GEO']
+           final_GEOFile = outFile_pref + '-GEO.sav'
+        ENDIF
+
+        IF (N_MAG EQ nTot) THEN BEGIN
+           stitchable    = [stitchable,'MAG']
+           final_MAGFile = MAG_coord_filename_pref + '-MAG.sav'
+        ENDIF
+
+     ENDIF
+     
+     IF have_GEI_files THEN BEGIN
+        IF (N_GEI EQ nTot) THEN BEGIN
+           stitchable    = [stitchable,'GEI']
+           final_GEIFile = GEI_coord_filename_pref + '-GEI.sav'
+        ENDIF
+     ENDIF
+
+     IF N_ELEMENTS(stitchable) EQ 0 THEN BEGIN
+        PRINT,"No stitchable groups of files! Returning ..."
+        RETURN
+     ENDIF
+
+     PRINT,FORMAT='("Coordinate systems that are stitchable: ",5(A0,:,", "))',stitchable
+     PRINT,'Hvilken? (Type all applicable, separated by space--or type QUIT or STOP)'
+
+     cont = 0
+     WHILE ~cont DO BEGIN
+        reponse = ''            ;celà
+        READ,reponse
+        this    = STRSPLIT(STRUPCASE(reponse)," ,",/EXTRACT)
+
+        FOR k=0,N_ELEMENTS(this)-1 DO BEGIN
+           CASE this[k] OF
+              'AACGM': BEGIN
+                 IF (WHERE(STRUPCASE(stitchable) EQ 'AACGM'))[0] NE -1 THEN BEGIN
+                    stitch_AACGM = 1B
+                 ENDIF ELSE BEGIN
+                    PRINT,"Can't stitch AACGM!"
+                 ENDELSE
+              END
+              'GEO': BEGIN
+                 IF (WHERE(STRUPCASE(stitchable) EQ 'GEO'))[0] NE -1 THEN BEGIN
+                    stitch_GEO = 1B
+                 ENDIF ELSE BEGIN
+                    PRINT,"Can't stitch GEO!"
+                 ENDELSE
+              END
+              'MAG': BEGIN
+                 IF (WHERE(STRUPCASE(stitchable) EQ 'MAG'))[0] NE -1 THEN BEGIN
+                    stitch_MAG = 1B
+                 ENDIF ELSE BEGIN
+                    PRINT,"Can't stitch MAG!"
+                 ENDELSE
+              END
+              'GEI': BEGIN
+                 IF (WHERE(STRUPCASE(stitchable) EQ 'GEI'))[0] NE -1 THEN BEGIN
+                    stitch_GEI = 1B
+                 ENDIF ELSE BEGIN
+                    PRINT,"Can't stitch GI!"
+                 ENDELSE
+              END
+              "QUIT": BEGIN
+                 PRINT,"OK, quitting ..."
+                 RETURN
+              END
+              "STOP": BEGIN
+                 STOP
+              END
+              ELSE: BEGIN
+                 PRINT,"Unknown option: ",this[k]
+                 PRINT,'Try again ...'
+                 k = N_ELEMENTS(this)-1
+              END
+           ENDCASE
+
+        ENDFOR
+
+           nStitch = stitch_AACGM + stitch_GEO + stitch_MAG + stitch_GEI
+           IF nStitch EQ 0 THEN BEGIN
+              PRINT,"You provided no valid options. Try again."
+           ENDIF ELSE BEGIN
+              cont = 1B
+           ENDELSE
+
+     ENDWHILE
+
+
+     IF stitch_AACGM THEN BEGIN
+
+        AACGM = {ALT : MAKE_ARRAY(nTot,/FLOAT), $
+                 MLT : MAKE_ARRAY(nTot,/FLOAT), $
+                 LAT : MAKE_ARRAY(nTot,/FLOAT)}
+        
+        curInd = 0LL
+
+        FOR k=0,nFiles-1 DO BEGIN
+           RESTORE,coordDir+outFiles[k]
+           
+           nHere   = N_ELEMENTS(AACGMStruct.alt)
+           tmpInds = [curInd:(curInd+nHere-1)]
+
+           AACGM.alt[tmpInds] = AACGMStruct.alt
+           AACGM.MLT[tmpInds] = AACGMStruct.MLT
+           AACGM.lat[tmpInds] = AACGMStruct.lat
+
+           curInd += nHere
+
+           AACGMStruct = !NULL
+
+        ENDFOR
+
+
+        PRINT,"Saving stitched AACGM file to " + final_AACGMFile
+        SAVE,AACGM,FILENAME=coordDir+final_AACGMFile
+        
+     ENDIF
+
+     IF stitch_GEO THEN BEGIN
+
+        GEOF = {ALT : MAKE_ARRAY(nTot,/FLOAT), $
+                LON : MAKE_ARRAY(nTot,/FLOAT), $
+                LAT : MAKE_ARRAY(nTot,/FLOAT)}
+        
+        curInd = 0LL
+
+        FOR k=0,nFiles-1 DO BEGIN
+           RESTORE,coordDir+outFiles[k]
+           
+           nHere   = N_ELEMENTS(GEOStruct.alt)
+           tmpInds = [curInd:(curInd+nHere-1)]
+
+           GEOF.alt[tmpInds] = GEO.alt
+           GEOF.lon[tmpInds] = GEO.lon
+           GEOF.lat[tmpInds] = GEO.lat
+
+           curInd += nHere
+
+           GEO = !NULL
+
+        ENDFOR
+
+        GEO = TEMPORARY(GEOF)
+
+        PRINT,"Saving stitched GEO file to " + final_GEOFile
+        SAVE,GEO,FILENAME=coordDir+final_GEOFile
+        
+     ENDIF
+
+     IF stitch_MAG THEN BEGIN
+
+        MAGF = {ALT : MAKE_ARRAY(nTot,/FLOAT), $
+                LON : MAKE_ARRAY(nTot,/FLOAT), $
+                LAT : MAKE_ARRAY(nTot,/FLOAT)}
+        
+        curInd = 0LL
+
+        FOR k=0,nFiles-1 DO BEGIN
+           RESTORE,coordDir+outFiles[k]
+           
+           nHere   = N_ELEMENTS(MAGStruct.alt)
+           tmpInds = [curInd:(curInd+nHere-1)]
+
+           MAGF.alt[tmpInds] = MAG.alt
+           MAGF.lon[tmpInds] = MAG.lon
+           MAGF.lat[tmpInds] = MAG.lat
+
+           curInd += nHere
+
+           MAG = !NULL
+
+        ENDFOR
+
+        MAG = TEMPORARY(MAGF)
+
+        PRINT,"Saving stitched MAG file to " + final_MAGFile
+        SAVE,MAG,FILENAME=coordDir+final_MAGFile
+        
+     ENDIF
+
+     IF stitch_GEI THEN BEGIN
+
+        GEI = {ALT : MAKE_ARRAY(nTot,/FLOAT), $
+               LNG : MAKE_ARRAY(nTot,/FLOAT), $
+               LAT : MAKE_ARRAY(nTot,/FLOAT)}
+        
+        curInd = 0LL
+
+        FOR k=0,nFiles-1 DO BEGIN
+           RESTORE,coordDir+outFiles[k]
+           
+           nHere   = N_ELEMENTS(GEIStruct.alt)
+           tmpInds = [curInd:(curInd+nHere-1)]
+
+           GEI.alt[tmpInds] = GEIcoords.alt
+           GEI.lng[tmpInds] = GEIcoords.lng
+           GEI.lat[tmpInds] = GEIcoords.lat
+
+           curInd   += nHere
+
+           GEIcoords = !NULL
+
+        ENDFOR
+
+        PRINT,"Saving stitched GEI file to " + final_GEIFile
+        SAVE,GEI,FILENAME=coordDir+final_GEIFile
+        
+     ENDIF
 
   ENDIF
 
