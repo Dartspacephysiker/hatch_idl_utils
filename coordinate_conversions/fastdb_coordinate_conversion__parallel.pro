@@ -49,7 +49,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
   proDir       = '~/idl/lib/hatch_idl_utils/coordinate_conversions/'        
 
-  nExec    = KEYWORD_SET(create_timeStamps) + KEYWORD_SET(get_GEI_coords) + KEYWORD_SET(do_GEO_MAG_conversions) + KEYWORD_SET(do_AACGM_conversions)
+  nExec    = KEYWORD_SET(create_timeStamps) + KEYWORD_SET(get_GEI_coords) + KEYWORD_SET(do_GEO_MAG_conversions) + KEYWORD_SET(do_AACGM_conversions) + KEYWORD_SET(stitch_files)
 
   CASE nExec OF
      0: BEGIN
@@ -61,6 +61,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         PRINT,"GET_GEI_COORDS"        
         PRINT,"DO_GEO_MAG_CONVERSIONS"        
         PRINT,"DO_AACGM_CONVERSIONS"        
+        PRINT,"STITCH_FILES"        
         PRINT,""
 
         RETURN
@@ -79,9 +80,9 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
            KEYWORD_SET(do_AACGM_conversions): BEGIN
               execType = '/DO_AACGM_CONVERSIONS'
            END
-           KEYWORD_SET(do_AACGM_conversions): BEGIN
+           KEYWORD_SET(stitch_files): BEGIN
               execType = '/STITCH_FILES'
-              dryRun   = 1 ;'cause we don't need to do anything in parallel
+              dry_run  = 1 ;'cause we don't need to do anything in parallel
            END
         ENDCASE
 
@@ -97,6 +98,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         PRINT,"GET_GEI_COORDS"        
         PRINT,"DO_GEO_MAG_CONVERSIONS"        
         PRINT,"DO_AACGM_CONVERSIONS"        
+        PRINT,"STITCH_FILES"        
         PRINT,""
 
      END
@@ -309,7 +311,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
               GET_GEI_COORDS=get_GEI_coords, $
               DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
               DO_AACGM_CONVERSIONS=do_AACGM_conversions, $
-              STITCH_FILES=stitch_files, $
+              ;; STITCH_FILES=stitch_files, $
               R_E=R_E, $
               ALTITUDE_MAX=altitude_max, $
               ALLOW_FL_TRACE=allow_fl_trace, $
@@ -418,52 +420,98 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
      fileType = ''
 
+     have_time_files  = 1B
      have_AACGM_files = 1B
      have_GEO_files   = 1B
      have_GEI_files   = 1B
+     N_TIME           = 0LL
      N_AACGM          = 0LL
      N_GEO            = 0LL
      N_MAG            = 0LL
      N_GEI            = 0LL
+     ;; nTrims           = 0
      PRINT,"Checking to make sure files exist + total number of inds"
-     nFiles = N_ELEMENTS(outFiles)
+     nFiles = N_ELEMENTS(outFiles)-1 ;one at end is meaningless
      FOR k=0,nFiles-1 DO BEGIN
+        tmpHTIME         = BYTE(FILE_TEST(coordDir+timeFiles[k]   ))
         tmpHAACGM        = BYTE(FILE_TEST(coordDir+outFiles[k]    ))
         tmpHGEO          = BYTE(FILE_TEST(coordDir+GEO_MAGFiles[k]))
         tmpHGEI          = BYTE(FILE_TEST(coordDir+GEI_files[k]   ))
 
+        have_time_files  = have_TIME_files  AND tmpHTIME
         have_AACGM_files = have_AACGM_files AND tmpHAACGM
         have_GEO_files   = have_GEO_files   AND tmpHGEO
         have_GEI_files   = have_GEI_files   AND tmpHGEI
 
+        IF tmpHTIME THEN BEGIN
+           RESTORE,coordDir+timeFiles[k]
+           N_TIME     += N_ELEMENTS(timeTmpStr) - ( (k LT (nFiles - 1)) ? 1 : 0)
+           AACGMStruct = !NULL
+        ENDIF ELSE BEGIN
+           PRINT,"Missing TIME file: " + timeFiles[k]
+        ENDELSE
+
         IF tmpHAACGM THEN BEGIN
            RESTORE,coordDir+outFiles[k]
+
+           IF (k LT (nFiles-1)) THEN BEGIN
+              TRIM_OFF_LAST_IND,AACGMStruct,'alt'
+              ;; nTrims++
+           ENDIF
+
+           ;; PRINT,'N_AACGM: ',N_AACGM
+
            N_AACGM    += N_ELEMENTS(AACGMStruct.alt)
            AACGMStruct = !NULL
-        ENDIF
+           
+           ;; PRINT,'N_AACGM: ',N_AACGM
+        ENDIF ELSE BEGIN
+           PRINT,"Missing AACGM file: " + outFiles[k]
+        ENDELSE
 
         IF tmpHGEO THEN BEGIN
            RESTORE,coordDir+GEO_MAGFiles[k]
+
+           IF (k LT (nFiles-1)) THEN BEGIN
+              TRIM_OFF_LAST_IND,GEO,'alt'
+              TRIM_OFF_LAST_IND,MAG,'alt'
+           ENDIF
+
            N_GEO   += N_ELEMENTS(GEO.alt)
            N_MAG   += N_ELEMENTS(MAG.alt)
            GEO      = !NULL
            MAG      = !NULL
-        ENDIF
+        ENDIF ELSE BEGIN
+           PRINT,"Missing GEO_MAG file: " + GEO_MAGFiles[k]
+        ENDELSE
 
         IF tmpHGEI THEN BEGIN
            RESTORE,coordDir+GEI_files[k]
+
+           IF (k LT (nFiles-1)) THEN BEGIN
+              TRIM_OFF_LAST_IND,GEIcoords,'alt'
+           ENDIF
+
            N_GEI    += N_ELEMENTS(GEIcoords.alt)
            GEICoords = !NULL
-        ENDIF
+        ENDIF ELSE BEGIN
+           PRINT,"Missing GEI file: " + GEI_files[k]
+        ENDELSE
 
      ENDFOR
+     ;; PRINT,'nTrims: ',nTrims
 
      ;;Find out who we can slap together
      stitchable = !NULL
 
+     IF have_TIME_files AND (N_TIME EQ nTot) THEN BEGIN
+        stitchable       = [stitchable,'TIME']
+        final_TIMEFile  = outFile_pref + '-TIME.sav'
+     ENDIF
+     
      IF have_AACGM_files AND (N_AACGM EQ nTot) THEN BEGIN
         stitchable       = [stitchable,'AACGM']
-        final_AACGMFile  = outFile_pref + '-AAGM.sav'
+        final_AACGMFile  = outFile_pref + '-AACGM.sav'
      ENDIF
      
      IF have_GEO_files THEN BEGIN
@@ -474,7 +522,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
         IF (N_MAG EQ nTot) THEN BEGIN
            stitchable    = [stitchable,'MAG']
-           final_MAGFile = MAG_coord_filename_pref + '-MAG.sav'
+           final_MAGFile = outFile_pref + '-MAG.sav'
         ENDIF
 
      ENDIF
@@ -482,7 +530,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
      IF have_GEI_files THEN BEGIN
         IF (N_GEI EQ nTot) THEN BEGIN
            stitchable    = [stitchable,'GEI']
-           final_GEIFile = GEI_coord_filename_pref + '-GEI.sav'
+           final_GEIFile = GEI_coord_filename_pref + '.sav'
         ENDIF
      ENDIF
 
@@ -494,6 +542,12 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
      PRINT,FORMAT='("Coordinate systems that are stitchable: ",5(A0,:,", "))',stitchable
      PRINT,'Hvilken? (Type all applicable, separated by space--or type QUIT or STOP)'
 
+     stitch_TIME  = 0B
+     stitch_AACGM = 0B
+     stitch_GEO   = 0B
+     stitch_MAG   = 0B
+     stitch_GEI   = 0B
+
      cont = 0
      WHILE ~cont DO BEGIN
         reponse = ''            ;celà
@@ -502,6 +556,13 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
         FOR k=0,N_ELEMENTS(this)-1 DO BEGIN
            CASE this[k] OF
+              'TIME': BEGIN
+                 IF (WHERE(STRUPCASE(stitchable) EQ 'TIME'))[0] NE -1 THEN BEGIN
+                    stitch_TIME = 1B
+                 ENDIF ELSE BEGIN
+                    PRINT,"Can't stitch TIME!"
+                 ENDELSE
+              END
               'AACGM': BEGIN
                  IF (WHERE(STRUPCASE(stitchable) EQ 'AACGM'))[0] NE -1 THEN BEGIN
                     stitch_AACGM = 1B
@@ -546,7 +607,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
         ENDFOR
 
-           nStitch = stitch_AACGM + stitch_GEO + stitch_MAG + stitch_GEI
+           nStitch = stitch_TIME + stitch_AACGM + stitch_GEO + stitch_MAG + stitch_GEI
            IF nStitch EQ 0 THEN BEGIN
               PRINT,"You provided no valid options. Try again."
            ENDIF ELSE BEGIN
@@ -555,6 +616,39 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
      ENDWHILE
 
+     IF stitch_time THEN BEGIN
+        timeStr = MAKE_ARRAY(nTot,/STRING)
+
+        curInd = 0LL
+
+        FOR k=0,nFiles-1 DO BEGIN
+           RESTORE,coordDir+timeFiles[k]
+           
+           nHere   = N_ELEMENTS(timeTmpStr)
+
+           CASE k OF
+              nFiles-1: BEGIN
+                 tmpInds            = [curInd:(curInd+nHere-1)]
+                 timeStr[tmpInds]   = timeTmpStr
+                 curInd            += nHere
+              END
+              ELSE: BEGIN
+                 tmpInds            = [curInd:(curInd+nHere-2)]
+                 timeStr[tmpInds]   = timeTmpStr[0:-2]
+                 curInd            += nHere-1
+              END
+           ENDCASE
+           
+
+
+           timeTmpStr = !NULL
+
+        ENDFOR
+
+        PRINT,"Saving stitched TIME file to " + final_TIMEFile
+        SAVE,timeStr,FILENAME=coordDir+final_TIMEFile
+
+     ENDIF
 
      IF stitch_AACGM THEN BEGIN
 
@@ -567,6 +661,10 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         FOR k=0,nFiles-1 DO BEGIN
            RESTORE,coordDir+outFiles[k]
            
+           IF (k LT (nFiles-1)) THEN BEGIN
+              TRIM_OFF_LAST_IND,AACGMStruct,['alt','mlt','lat']
+           ENDIF
+
            nHere   = N_ELEMENTS(AACGMStruct.alt)
            tmpInds = [curInd:(curInd+nHere-1)]
 
@@ -595,9 +693,13 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         curInd = 0LL
 
         FOR k=0,nFiles-1 DO BEGIN
-           RESTORE,coordDir+outFiles[k]
+           RESTORE,coordDir+GEO_MAGFiles[k]
            
-           nHere   = N_ELEMENTS(GEOStruct.alt)
+           IF (k LT (nFiles-1)) THEN BEGIN
+              TRIM_OFF_LAST_IND,GEO,['alt','lon','lat']
+           ENDIF
+
+           nHere   = N_ELEMENTS(GEO.alt)
            tmpInds = [curInd:(curInd+nHere-1)]
 
            GEOF.alt[tmpInds] = GEO.alt
@@ -626,9 +728,13 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         curInd = 0LL
 
         FOR k=0,nFiles-1 DO BEGIN
-           RESTORE,coordDir+outFiles[k]
+           RESTORE,coordDir+GEO_MAGFiles[k]
            
-           nHere   = N_ELEMENTS(MAGStruct.alt)
+           IF (k LT (nFiles-1)) THEN BEGIN
+              TRIM_OFF_LAST_IND,MAG,['alt','lon','lat']
+           ENDIF
+
+           nHere   = N_ELEMENTS(MAG.alt)
            tmpInds = [curInd:(curInd+nHere-1)]
 
            MAGF.alt[tmpInds] = MAG.alt
@@ -657,9 +763,13 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         curInd = 0LL
 
         FOR k=0,nFiles-1 DO BEGIN
-           RESTORE,coordDir+outFiles[k]
+           RESTORE,coordDir+GEI_files[k]
            
-           nHere   = N_ELEMENTS(GEIStruct.alt)
+           IF (k LT (nFiles-1)) THEN BEGIN
+              TRIM_OFF_LAST_IND,GEIcoords,['alt','lng','lat']
+           ENDIF
+
+           nHere   = N_ELEMENTS(GEIcoords.alt)
            tmpInds = [curInd:(curInd+nHere-1)]
 
            GEI.alt[tmpInds] = GEIcoords.alt
@@ -678,5 +788,25 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
      ENDIF
 
   ENDIF
+
+END
+
+PRO TRIM_OFF_LAST_IND,struct,tagNames
+
+  ;; IF SIZE(struct,/TYPE) NE 8
+
+
+  FOR k=0,N_ELEMENTS(tagNames)-1 DO BEGIN
+
+     tagInd = WHERE(STRUPCASE(TAG_NAMES(struct)) EQ STRUPCASE(tagNames[k]))
+
+
+     IF tagInd[0] EQ -1 THEN STOP
+
+     nHere  = N_ELEMENTS(struct.(tagInd))
+
+     STR_ELEMENT,struct,tagNames[k],(struct.(tagInd))[0:(nHere-2)],/ADD_REPLACE
+
+  ENDFOR
 
 END
