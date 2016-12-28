@@ -12,7 +12,7 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
   ;;    LOAD_FASTLOC_AND_FASTLOC_TIMES,fastLoc,fastLoc_times
   ;; ENDIF
 
-  ;;Make sure time array is monotonic
+  ;;Make sure time array is monotonic and unique
   CHECK_SORTED,timeArr,tSorted,SORTED_I=tSort_i,/QUIET
   IF ~tSorted THEN BEGIN
      PRINT,"Input time array not sorted! Providing sorted inds for you so you can pick up the pieces of your life ..."
@@ -20,6 +20,15 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
   ENDIF ELSE BEGIN
      times           = timeArr
   ENDELSE
+
+  uniq_i = UNIQ(times)
+
+  IF N_ELEMENTS(uniq_i) NE N_ELEMENTS(times) THEN BEGIN
+     PRINT,"Time array is not unique! Providing uniq inds (even better) so you can stop wasting everyone's time"
+
+     tSort_i         = UNIQ(timeArr,SORT(timeArr))
+     times           = timeArr[tSort_i]
+  ENDIF
 
   ;; tmpFL_i         = WHERE(fastLoc.orbit EQ orb,nTmpFLTimes)
   
