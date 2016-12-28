@@ -58,7 +58,8 @@ PRO PRINT_HIST, data, BINSIZE =  binsize, INPUT = input,  MAX = max, $
                 SIGMA = sigma, NO_ERROR = no_error, FORCE_BINSIZE = force, $
                 NORMALIZE = normalize, QUIET = quiet, $
                 PRINT_EMPTY_BINS=print_empty_bins, $
-                UNIQS=uniqs
+                UNIQS=uniqs, $
+                TOTAL=total
 
   quiet                                                = keyword_set(quiet)
 
@@ -202,6 +203,24 @@ PRO PRINT_HIST, data, BINSIZE =  binsize, INPUT = input,  MAX = max, $
         ENDFOR
      END
   ENDCASE
+
+  IF KEYWORD_SET(total) THEN BEGIN
+     PRINT,''
+     PRINT,FORMAT='("TOTAL N: ",I0)',TOTAL(dist)
+     PRINT,''
+     this = MOMENT(data)
+     this = [this,MEDIAN(data)]
+     PRINT,FORMAT='(A0,T15,A0,T30,A0,T45,A0)', $
+           "Mean", $
+           "Median", $
+           "Std. Dev.", $
+           "Skew"
+     PRINT,FORMAT='(G-12.3,T15,G-12.3,T30,G-12.3,T45,G-12.3)', $
+           this[0], $
+           this[3], $
+           this[1], $
+           this[2]
+  ENDIF
 
   RETURN
 END
