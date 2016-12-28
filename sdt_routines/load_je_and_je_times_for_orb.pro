@@ -22,15 +22,7 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
 
   COMPILE_OPT IDL2
 
-  COMMON JELOAD,JEL__curFile, $
-     JEL__je_hash, $
-     JEL__je_keys, $
-     JEL__je_tRange_hash, $
-     JEL__je_tRange_inds_hash, $
-     JEL__orb1, $
-     JEL__orb2, $
-     JEL__orbSuff, $
-     JEL__use_dupeless
+  @common__jeload_vars.pro
 
   dbDir      = '/home/spencerh/software/sdt/batch_jobs/saves_output_etc/Alfven_study/20160520--get_Newell_identification_for_Alfven_events--NOT_despun/'
 

@@ -49,7 +49,9 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
   proDir       = '~/idl/lib/hatch_idl_utils/coordinate_conversions/'        
 
-  nExec    = KEYWORD_SET(create_timeStamps) + KEYWORD_SET(get_GEI_coords) + KEYWORD_SET(do_GEO_MAG_conversions) + KEYWORD_SET(do_AACGM_conversions) + KEYWORD_SET(stitch_files)
+  nExec    = KEYWORD_SET(create_timeStamps     ) + KEYWORD_SET(get_GEI_coords      ) + $
+             KEYWORD_SET(do_GEO_MAG_conversions) + KEYWORD_SET(do_AACGM_conversions) + $
+             KEYWORD_SET(stitch_files)
 
   CASE nExec OF
      0: BEGIN
@@ -169,7 +171,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
   FOR i=0,nCPUs DO BEGIN
 
      ind1         = i*divFactor
-     ind2         = ( ((i+1)*divFactor) < (nTot - 1) )
+     ind2         = ( ((i+1)*divFactor - 1) < (nTot - 1) )
      indArr       = [[indArr],[ind1,ind2]]
 
      indSuff      = STRING(FORMAT='("--",I0,"-",I0)',ind1,ind2)
