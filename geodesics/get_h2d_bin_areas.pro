@@ -2,7 +2,7 @@
 ; NAME:                        GET_H2D_BIN_AREAS
 ;
 ; PURPOSE:                     And now you wanna know the area, too?!?!?!
-;
+;                              Well, you can have it--in km^2
 ; CATEGORY:
 ;
 ; INPUTS:
@@ -41,6 +41,7 @@
 ;
 ; MODIFICATION HISTORY:      2016/03/12 Barnebarn
 ;
+; Notáte bien—se dan las áreas en kilometros cuadrados
 ;-
 PRO GET_H2D_BIN_AREAS,areas, $
                       CENTERS1=centers1,CENTERS2=centers2, $
