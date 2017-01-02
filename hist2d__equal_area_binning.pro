@@ -169,7 +169,7 @@ FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
          FOR k=0,N_ELEMENTS(latSwitch_i)-2 DO BEGIN
             tmpInds        = [latSwitch_i[k]:(latSwitch_i[k+1]-1)]
 
-            FOR kk=0,N_ELEMENTS(tmpInds)-1 DO BEGIN
+            FOR kk=0,N_ELEMENTS(tmpInds)-1 DO BEGIN             ;;Here we are matching individual observations to a bin on a given ILAT row
                match       = WHERE((MLTsc GE EA__s.minM[tmpInds[kk]]) AND (MLTsc LT EA__s.maxM[tmpInds[kk]]) AND $
                              (ILATsc GE EA__s.minI[tmpInds[kk]]) AND (ILATsc LT EA__s.maxI[tmpInds[kk]]),/NULL)
                sum[match]  = tmpInds[kk]

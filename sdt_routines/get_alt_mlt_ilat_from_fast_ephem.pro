@@ -3,6 +3,7 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
                                      OUT_ALT=alt, $
                                      OUT_MLT=mlt, $
                                      OUT_ILAT=ilat, $
+                                     OUT_NEVENTS=nEvents, $
                                      LOGLUN=logLun
   
 
@@ -13,33 +14,40 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
   ;; ENDIF
 
   ;;Make sure time array is monotonic and unique
-  CHECK_SORTED,timeArr,tSorted,SORTED_I=tSort_i,/QUIET
-  IF ~tSorted THEN BEGIN
-     PRINT,"Input time array not sorted! Providing sorted inds for you so you can pick up the pieces of your life ..."
-     times           = timeArr[tSort_i]
-  ENDIF ELSE BEGIN
-     times           = timeArr
-  ENDELSE
+  ;; CHECK_SORTED,timeArr,tSorted,SORTED_I=tSort_i,/QUIET
+  ;; IF ~tSorted THEN BEGIN
+  ;;    PRINT,"Input time array not sorted! Providing sorted inds for you so you can pick up the pieces of your life ..."
+  ;;    times           = timeArr[tSort_i]
+  ;; ENDIF ELSE BEGIN
+  ;;    times           = timeArr
+  ;; ENDELSE
 
-  uniq_i = UNIQ(times)
-
-  IF N_ELEMENTS(uniq_i) NE N_ELEMENTS(times) THEN BEGIN
+  uniq_i  = UNIQ(timeArr,SORT(timeArr))
+  nUniq   = N_ELEMENTS(uniq_i)
+  nEvents = N_ELEMENTS(timeArr)
+  IF nUniq NE nEvents THEN BEGIN
      PRINT,"Time array is not unique! Providing uniq inds (even better) so you can stop wasting everyone's time"
 
-     tSort_i         = UNIQ(timeArr,SORT(timeArr))
+     ;; tSort_i         = UNIQ(timeArr,SORT(timeArr))
+     tSort_i         = TEMPORARY(uniq_i)
      times           = timeArr[tSort_i]
-  ENDIF
+     nEvents         = TEMPORARY(nUniq)
+  ENDIF ELSE BEGIN
+     ;; times           = timeArr
+     tSort_i         = !NULL
+     ;; tSort_i         = LINDGEN(N_ELEMENTS(timeArr))
+  ENDELSE
 
   ;; tmpFL_i         = WHERE(fastLoc.orbit EQ orb,nTmpFLTimes)
   
   ;; IF nTmpFLTimes LT 2 THEN BEGIN
      PRINT,"Getting orb data for orbit " + STRCOMPRESS(orb,/REMOVE_ALL) + '...'
-     GET_FA_ORBIT,times,/TIME_ARRAY
+     GET_FA_ORBIT,(N_ELEMENTS(tSort_i) GT 0 ? times : timeArr),/TIME_ARRAY
      get_data,'ALT',DATA=alt
      get_data,'MLT',DATA=mlt
      get_data,'ILAT',DATA=ilat
 
-     IF N_ELEMENTS(alt.y) NE N_ELEMENTS(times) THEN STOP
+     IF N_ELEMENTS(alt.y) NE nEvents THEN STOP
      alt             = alt.y
      mlt             = mlt.y
      ilat            = ilat.y
