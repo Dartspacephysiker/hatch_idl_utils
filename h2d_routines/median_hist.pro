@@ -9,11 +9,16 @@
 ;PTRHIST will return the ptrHist used to create the arrays of data for
 ;a given histo cell
 
+;01/08/2016
+; Added MAXIMUM keyword in case we want the max val.
 ;02/18/2015
 ;OUTFILE and PLOT_I are intended to provide more information about the statistics involved
 ;in each dataset corresponding to a given MLT/ILAT bin. PLOT_I is otherwise useless for this routine
 
+
 FUNCTION MEDIAN_HIST,MLT,ILAT,data, $
+                     MAXIMUM=maximum, $
+                     MINIMUM=minimum, $
                       BINSIZE1=Binsize1, BINSIZE2=Binsize2, $
                       INPUT=Input, MAX1=Max1, MAX2=Max2, MIN1=Min1, MIN2=Min2,$
                       OMAX1=Omax1, OMAX2=Omax2, OMIN1=Omin1, OMIN2=Omin2, $
@@ -164,10 +169,20 @@ FUNCTION MEDIAN_HIST,MLT,ILAT,data, $
      IF N_ELEMENTS(*(ptrHist(hist_i[i]))) EQ 1 THEN BEGIN
         ;;geometric mean of 1 sample is just the sample itself
         ;;also, geometric standard deviation 
-        medHist(hist_i[i])=*(ptrHist(hist_i[i])) 
+        medHist(hist_i[i]) = *(ptrHist(hist_i[i])) 
      ENDIF ELSE BEGIN
         ;;trickier here
-        medHist(hist_i[i])=MEDIAN(*ptrHist(hist_i[i]))
+        CASE 1 OF
+           KEYWORD_SET(maximum): BEGIN
+              medHist(hist_i[i]) = MAX(*ptrHist(hist_i[i]))
+           END
+           KEYWORD_SET(minimum): BEGIN
+              medHist(hist_i[i]) = MIN(*ptrHist(hist_i[i]))
+           END
+           ELSE: BEGIN
+              medHist(hist_i[i]) = MEDIAN(*ptrHist(hist_i[i]))
+           END
+        ENDCASE
      ENDELSE
      
   ENDIF ELSE BEGIN
@@ -175,9 +190,20 @@ FUNCTION MEDIAN_HIST,MLT,ILAT,data, $
 ;    ...if we're not doing log-normal stats, that is
      FOR i=0,N_ELEMENTS(hist_i)-1 DO BEGIN
         IF N_ELEMENTS(*(ptrHist(hist_i[i]))) EQ 1 THEN BEGIN
-           medHist(hist_i[i])=*(ptrHist(hist_i[i])) 
+           medHist(hist_i[i]) = *(ptrHist(hist_i[i])) 
         ENDIF ELSE BEGIN
-           medHist(hist_i[i])=MEDIAN(*ptrHist(hist_i[i]))
+           CASE 1 OF
+              KEYWORD_SET(maximum): BEGIN
+                 medHist(hist_i[i]) = MAX(*ptrHist(hist_i[i]))
+              END
+              KEYWORD_SET(minimum): BEGIN
+                 medHist(hist_i[i]) = MIN(*ptrHist(hist_i[i]))
+              END
+              ELSE: BEGIN
+                 medHist(hist_i[i]) = MEDIAN(*ptrHist(hist_i[i]))
+              END
+           ENDCASE
+
         ENDELSE
      ENDFOR
   ENDELSE

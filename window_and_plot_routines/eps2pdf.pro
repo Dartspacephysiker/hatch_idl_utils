@@ -12,7 +12,7 @@ PRO EPS2PDF,filNavn_uten_ekst, $
 
   CASE 1 OF
      KEYWORD_SET(to_PNG): BEGIN
-        SPAWN,'/SPENCEdata/Research/tips_tricks_n_assorted/png_ps_and_image_manipulation/convert_ps_to_png__white_rotated.sh ' + filNavn_uten_ekst + ekst, $
+        SPAWN,'/SPENCEdata/Research/tips_tricks_n_assorted/media_manipulation/png_ps_and_image_manipulation/convert_ps_to_png__white_rotated.sh ' + filNavn_uten_ekst + ekst, $
               EXIT_STATUS=exitStat
 
      END
