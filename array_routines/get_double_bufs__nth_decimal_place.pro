@@ -6,14 +6,18 @@
 ;;   For that trick, please see GET_DOUBLE_STREAKS.
 ;;
 PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
-                                          N=n, $
-                                          DELTA=delta, $
-                                          START_I=start_i, $
-                                          STOP_I=stop_i, $
-                                          STREAKLENS=streakLens, $
+                                       N=nMin, $
+                                       DELTA=delta, $
+                                       START_I=start_i, $
+                                       STOP_I=stop_i, $
+                                       STREAKLENS=streakLens, $
                                        OUT_RATES=rates, $
-                                          FLOOR=floor, $
-                                          CEILING=ceiling;; , $
+                                       FLOOR=floor, $
+                                       CEILING=ceiling, $
+                                       BADSTART_I=badStart_i, $
+                                       BADSTOP_I=badStop_i, $
+                                       BADSTREAKLENS=badStreakLens, $
+                                       OUT_BADRATES=badRates
                                           ;; NAN=nan
 
   COMPILE_OPT IDL2
@@ -38,14 +42,14 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
      good = LINDGEN(N_ELEMENTS(nums))
   ENDELSE
 
-  IF N_ELEMENTS(n) EQ 0 THEN n = 1
+  IF N_ELEMENTS(nMin) EQ 0 THEN nMin = 1
 
-  IF n EQ 0 THEN BEGIN
+  IF nMin EQ 0 THEN BEGIN
      PRINT,"N must be greater than zero!"
      RETURN
   ENDIF
 
-  IF N_ELEMENTS(nums[good]) LE n THEN BEGIN
+  IF N_ELEMENTS(nums[good]) LE nMin THEN BEGIN
      PRINT,'Insufficient data to search for streak length = ' + $
            STRCOMPRESS(n,/REMOVE_ALL) + '! Out ...'
      RETURN
@@ -159,6 +163,12 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
   streakLens  = !NULL
   nTotStreaks = 0
   rates       = !NULL
+
+  badStart_ii    = !NULL
+  badStop_ii     = !NULL
+  badStreakLens  = !NULL
+  nTotBadStreaks = 0
+  badRates       = !NULL
   FOR k=0,nUniq-1 DO BEGIN
      
      streaksHere = 0
@@ -172,7 +182,7 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
         END
      ENDCASE
 
-     IF nTmp LT n THEN CONTINUE
+     ;; IF nTmp LT nMin THEN CONTINUE
 
      diff     = tmp_ii - SHIFT(tmp_ii,1)
      
@@ -203,11 +213,24 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
 
      tmpStrk  = stop_iii-start_iii
 
-     goodStreak_iv = WHERE(tmpStrk GE n,nGoodStreaks)
+     goodStreak_iv = WHERE(tmpStrk GE nMin,nGoodStreaks, $
+                           COMPLEMENT=badStreak_iv,NCOMPLEMENT=nBadStreaks)
+
+     IF nBadStreaks GT 0 THEN BEGIN
+        badStreakLens   = [badStreakLens,tmpStrk[badStreak_iv]]
+        badStart_ii     = [badStart_ii,tmp_ii[start_iii[badStreak_iv]]]
+        badStop_ii      = [badStop_ii,tmp_ii[stop_iii[badStreak_iv]]]
+        nTotBadStreaks += nBadStreaks
+
+        IF ARG_PRESENT(badRates) THEN BEGIN
+           badRates     = [badRates,rateTot[tmp_ii[start_iii[badStreak_iv]]]]
+        ENDIF
+
+     ENDIF
 
      IF nGoodStreaks EQ 0 THEN CONTINUE
 
-     nTotStreaks++
+     nTotStreaks += nGoodStreaks
 
      streakLens  = [streakLens,tmpStrk[goodStreak_iv]]
      start_ii    = [start_ii,tmp_ii[start_iii[goodStreak_iv]]]
@@ -219,6 +242,22 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
 
   ENDFOR
 
+  ;;Take care of bad streaks, if they exist
+  IF nTotBadStreaks GT 0 THEN BEGIN
+     badStart_i     = good[badStart_ii]
+     badStop_i      = good[badStop_ii]
+
+     sort           = SORT(badStart_i)
+     badStreakLens  = badStreakLens[sort]
+     badStart_i     = badStart_i[sort]
+     badStop_i      = badStop_i[sort]
+
+     IF ARG_PRESENT(badRates) THEN BEGIN
+        badRates    = badRates[sort]
+     ENDIF
+
+  ENDIF
+
   IF nTotStreaks EQ 0 THEN RETURN
 
   start_i     = good[start_ii]
@@ -228,5 +267,7 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
   streakLens  = streakLens[sort]
   start_i     = start_i[sort]
   stop_i      = stop_i[sort]
-
+  IF ARG_PRESENT(rates) THEN BEGIN
+     rates    = rates[sort]
+  ENDIF
 END
