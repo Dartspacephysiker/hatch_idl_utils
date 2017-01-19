@@ -158,12 +158,16 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
   ;;                       OUT_DIFFTOT=diffTot, $
   ;;                       NUNIQ=nUniq)
 
+  start_i     = !NULL
+  stop_i      = !NULL
   start_ii    = !NULL
   stop_ii     = !NULL
   streakLens  = !NULL
   nTotStreaks = 0
   rates       = !NULL
 
+  badStart_i     = !NULL
+  badStop_i      = !NULL
   badStart_ii    = !NULL
   badStop_ii     = !NULL
   badStreakLens  = !NULL
