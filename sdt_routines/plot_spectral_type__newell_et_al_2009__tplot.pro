@@ -64,85 +64,93 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   ;; endif
 
   STR_ELEMENT,limits,'no_strict_types',value=no_strict_types
-  IF no_strict_types EQ -1 THEN no_strict_types = 0
+  CASE N_ELEMENTS(no_strict_types) OF
+     0: BEGIN
+        no_strict_types = 0
+     END
+     1: BEGIN
+        IF no_strict_types EQ -1 THEN no_strict_types = 0
+     END
+  ENDCASE
 
-  nSpectra            = N_ELEMENTS(events.x)
+
+  nSpectra       = N_ELEMENTS(events.x)
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;PLOT PRELIMS
-  ;; monoVal             = 2
-  ;; strictMVal          = 3
-  ;; broadVal            = 4
-  ;; strictBVal          = 5
-  ;; diffuseVal          = 6
-  monoVal             = 1
-  strictMVal          = 2
-  broadVal            = 3
-  strictBVal          = 4
-  diffuseVal          = 5
+  ;; mVal        = 2
+  ;; mSVal       = 3
+  ;; bVal        = 4
+  ;; bSVal       = 5
+  ;; diffuseVal  = 6
+  mVal           = 1
+  mSVal          = 2
+  bVal           = 3
+  bSVal          = 4
+  dVal           = 5
 
-  monoCol             = 'blue'
-  strictMCol          = 'green'
-  broadCol            = 'red'
-  strictBCol          = 'purple'
-  diffuseCol          = 'black'
+  mCol           = 'blue'
+  mSCol          = 'green'
+  bCol           = 'red'
+  bSCol          = 'purple'
+  dCol           = 'black'
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;SORT EVENTS
-  ;; time                = MAKE_ARRAY(nSpectra,/DOUBLE ,VALUE=-1)
-  mono                = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
-  strictM             = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
-  broad               = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
-  strictB             = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
-  diffuse             = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
+  ;; time        = MAKE_ARRAY(nSpectra,/DOUBLE ,VALUE=-1)
+  mono           = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
+  monoS          = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
+  broad          = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
+  broadS         = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
+  diffuse        = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
 
-  mono_i              = WHERE(events.mono    EQ 1,nMono,/NULL)
-  strictM_i           = WHERE(events.mono    EQ 2,nStrictM,/NULL)
-  broad_i             = WHERE(events.broad   EQ 1,nBroad,/NULL)
-  strictB_i           = WHERE(events.broad   EQ 2,nStrictB,/NULL)
-  diffuse_i           = WHERE(events.diffuse EQ 1,nDiffuse,/NULL)
+  m_i            = WHERE(events.mono    EQ 1,nM,/NULL)
+  mS_i           = WHERE(events.mono    EQ 2,nMS,/NULL)
+  b_i            = WHERE(events.broad   EQ 1,nB,/NULL)
+  bS_i           = WHERE(events.broad   EQ 2,nBS,/NULL)
+  d_i            = WHERE(events.diffuse EQ 1,nDiffuse,/NULL)
 
   IF KEYWORD_SET(no_strict_types) THEN BEGIN
-     IF nMono GT 0 THEN BEGIN
-        IF nStrictM GT 0 THEN BEGIN
-           mono_i     = ([mono_i,strictM_i])[SORT([mono_i,strictM_i])]
-           nMono += nStrictM
+     IF nM GT 0 THEN BEGIN
+        IF nMS GT 0 THEN BEGIN
+           m_i   = ([m_i,mS_i])[SORT([m_i,mS_i])]
+           nM += nMS
         ENDIF
      ENDIF ELSE BEGIN
-        IF nStrictM GT 0 THEN BEGIN
-           mono_i     = strictM_i
-           nMono      = nStrictM
+        IF nMS GT 0 THEN BEGIN
+           m_i   = mS_i
+           nM    = nMS
         ENDIF
      ENDELSE
 
-     IF nBroad GT 0 THEN BEGIN
-        IF nStrictB GT 0 THEN BEGIN
-           broad_i     = ([broad_i,strictB_i])[SORT([broad_i,strictB_i])]
-           nBroad     += nStrictB
+     IF nB GT 0 THEN BEGIN
+        IF nBS GT 0 THEN BEGIN
+           b_i   = ([b_i,bS_i])[SORT([b_i,bS_i])]
+           nB     += nBS
         ENDIF
      ENDIF ELSE BEGIN
-        IF nStrictB GT 0 THEN BEGIN
-           broad_i     = strictB_i
-           nBroad      = nStrictB
+        IF nBS GT 0 THEN BEGIN
+           b_i   = bS_i
+           nB    = nBS
         ENDIF
      ENDELSE
 
-     nStrictM         = 0
-     nStrictB         = 0
-     strictM_i        = !NULL
-     strictB_i        = !NULL
+     nMS         = 0
+     nBS         = 0
+     mS_i        = !NULL
+     bS_i        = !NULL
   ENDIF
 
-  mono[mono_i]        = monoVal
-  strictM[strictM_i]  = strictMVal
-  broad[broad_i]      = broadVal
-  strictB[strictB_i]  = strictBVal
-  diffuse[diffuse_i]  = diffuseVal
+  mono[m_i]      = mVal
+  monoS[mS_i]    = mSVal
+  broad[b_i]     = bVal
+  broadS[bS_i]   = bSVal
+  diffuse[d_i]   = dVal
 
   ;; datArr              = 
   ;; x                   = [[events.time_e],[events.time_e],[events.time_e],[events.time_e],[events.time_e]]
   x                   = [[events.x],[events.x],[events.x],[events.x],[events.x]]
-  y                   = [[mono]        ,[strictM]    ,[broad]    ,[strictB]     ,[diffuse] ]
+  y                   = [[mono]    ,[monoS]   ,[broad]   ,[broadS]  ,[diffuse] ]
 
   if keyword_set(overplot) then oplot=overplot
   overplot = 1
@@ -263,7 +271,7 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   ;; ;else if d2 gt 1 then col=bytescale(pure_col=d2) $
   ;; else if d2 gt 1 then col=bytescale(findgen(d2)) $
   ;; else col = !p.color
-  ;; col  =   [monoCol       ,strictMCol   ,broadCol   ,strictBCol    ,diffuseCol]
+  ;; col  =   [mCol       ,mSCol   ,bCol   ,bSCol    ,dCol]
   ;; col  =   [ 100      ,120   ,250   ,30    ,190]
 
 ;; if keyword_set(nocolor) then if nocolor ne 2 or !d.name eq 'PS' then $
