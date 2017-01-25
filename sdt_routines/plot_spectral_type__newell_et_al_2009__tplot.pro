@@ -214,8 +214,8 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   add_str_element,plotstuff,'psym',psym,/REPLACE
   add_str_element,oplotstuff,'psym',psym,/REPLACE
 
-  add_str_element,plotstuff,'symsize',0.7
-  add_str_element,oplotstuff,'symsize',0.7
+  ;; add_str_element,plotstuff,'symsize',0.7
+  ;; add_str_element,oplotstuff,'symsize',0.7
 
 
   ;; if count eq 0 then ind = indgen(n_elements(x))  else ind = good(ind)
