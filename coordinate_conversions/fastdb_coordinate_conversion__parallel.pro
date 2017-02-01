@@ -242,8 +242,8 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         PRINT,'coordDir          ',coordDir
         PRINT,'orig_routineName  ',orig_routineName
         PRINT,'check_if_exists   ',KEYWORD_SET(check_if_exists)
-        PRINT,'times[[0,-1]      ',times[tmpInds[[0,-1]]]
-        PRINT,'timesStr[[0,-1]   ',TIME_TO_STR(times[tmpInds[[0,-1]]],/MSEC)
+        PRINT,'times[[0,-1]      ',times[[tmpInds[0],tmpInds[-1]]]
+        PRINT,'timesStr[[0,-1]   ',TIME_TO_STR(times[[tmpInds[0],tmpInds[-1]]],/MSEC)
         PRINT,'tmpFile           ',tmpFiles[i]
         PRINT,'outFile           ',outFiles[i]
         PRINT,'timeFile          ',timeFiles[i]
