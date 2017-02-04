@@ -16,6 +16,8 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
                                       TIME_RANGE_INDICES_OUT=time_range_indices, $
                                       NINTERVALS_OUT=number_of_intervals, $
                                       OUT_JEFILENAME=jeFileName, $
+                                      OUT_FILE_ORB1=orb1, $
+                                      OUT_FILE_ORB2=orb2, $
                                       CLEAN_DUPES=clean_dupes, $
                                       ;; OUT_JEFILEDIR=jeFileDir, $
                                       QUIET=quiet
@@ -24,14 +26,16 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
 
   @common__jeload_vars.pro
 
-  dbDir      = '/home/spencerh/software/sdt/batch_jobs/saves_output_etc/Alfven_study/20160520--get_Newell_identification_for_Alfven_events--NOT_despun/'
+  dbDir      = '/home/spencerh/software/sdt/batch_jobs/saves_output_etc/eesa_time_intervals/'
 
   IF KEYWORD_SET(use_dupeless) THEN BEGIN
 
-     dbPref  = 'cleaned_Je__Je_tRanges__and_Je_tRange_inds__0-16361--noDupes.sav--orbs_'
+     ;; dbPref  = 'cleaned_Je__Je_tRanges__and_Je_tRange_inds__0-16361--noDupes.sav--orbs_'
+     dbPref  = 'cleaned_Je__Je_tRanges__and_Je_tRange_inds__500-25007--noDupes.sav--orbs_'
 
      minOrb  = 500
-     maxOrb  = 16361
+     ;; maxOrb  = 16361
+     maxOrb  = 24507
 
      IF (orbit_num LT minOrb) OR (orbit_num GT maxOrb) THEN BEGIN
         PRINT,"Don't have a file corresponding to orbit " + $
@@ -41,7 +45,8 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
 
      ;; orb1    = LONG(ROUND_TO_NTH_DECIMAL_PLACE(orbit_num,3,/FLOOR) > 500)
      orb1    = LONG(ROUND_TO_NTH_DECIMAL_PLACE(orbit_num,3,/FLOOR))
-     orb2    = LONG((ROUND_TO_NTH_DECIMAL_PLACE(orbit_num+1,3,/CEIL) - 1) < 16362)
+     ;; orb2    = LONG((ROUND_TO_NTH_DECIMAL_PLACE(orbit_num+1,3,/CEIL) - 1) < 16362)
+     orb2    = LONG((ROUND_TO_NTH_DECIMAL_PLACE(orbit_num+1,3,/CEIL) - 1) < (maxOrb+1))
 
   ENDIF ELSE BEGIN
 

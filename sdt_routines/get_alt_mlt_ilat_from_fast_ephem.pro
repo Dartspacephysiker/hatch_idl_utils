@@ -3,6 +3,7 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
                                      OUT_ALT=alt, $
                                      OUT_MLT=mlt, $
                                      OUT_ILAT=ilat, $
+                                     OUT_MAPRATIO=mapRatio, $
                                      OUT_NEVENTS=nEvents, $
                                      LOGLUN=logLun
   
@@ -42,15 +43,27 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
   
   ;; IF nTmpFLTimes LT 2 THEN BEGIN
      PRINT,"Getting orb data for orbit " + STRCOMPRESS(orb,/REMOVE_ALL) + '...'
-     GET_FA_ORBIT,(N_ELEMENTS(tSort_i) GT 0 ? times : timeArr),/TIME_ARRAY
+     GET_FA_ORBIT,(N_ELEMENTS(tSort_i) GT 0 ? times : timeArr),/TIME_ARRAY,/ALL
      get_data,'ALT',DATA=alt
      get_data,'MLT',DATA=mlt
      get_data,'ILAT',DATA=ilat
+     GET_DATA,'B_model',DATA=bMod
+     GET_DATA,'BFOOT',DATA=bFoot
 
      IF N_ELEMENTS(alt.y) NE nEvents THEN STOP
-     alt             = alt.y
-     mlt             = mlt.y
-     ilat            = ilat.y
+     alt       = (TEMPORARY(alt)).y
+     mlt       = (TEMPORARY(mlt)).y
+     ilat      = (TEMPORARY(ilat)).y
+
+     mag1      = (bMod.y[*,0]*bMod.y[*,0]+ $
+                  bMod.y[*,1]*bMod.y[*,1]+ $
+                  bMod.y[*,2]*bMod.y[*,2])^0.5
+     mag2      = (bFoot.y[*,0]*bFoot.y[*,0]+ $
+                  bFoot.y[*,1]*bFoot.y[*,1]+ $
+                  bFoot.y[*,2]*bFoot.y[*,2])^0.5
+     mapRatio  = TEMPORARY(mag2)/TEMPORARY(mag1)
+
+     
   ;; ENDIF ELSE BEGIN
   ;;    ;;Just interp, if we already have it ...
   ;;    tmpFLTimes      = fastLoc_times[tmpFL_i]
