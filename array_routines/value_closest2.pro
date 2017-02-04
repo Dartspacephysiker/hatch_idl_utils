@@ -18,7 +18,7 @@ FUNCTION VALUE_CLOSEST2,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
               onlyExtreme = 1
            END
            1: BEGIN
-              IF ((vector[inds]-values) LT 0) AND (N_ELEMENTS(vector) GT (inds+1)) THEN inds++
+              IF ((vector[inds[check]]-values[check]) LT 0) AND (N_ELEMENTS(vector) GT (inds[check]+1)) THEN inds[check]++
            END
            ELSE: BEGIN
               adjMe = WHERE( ((vector[inds]-values) LT 0) AND (N_ELEMENTS(vector) GT (inds+1)),nAdj)
@@ -34,7 +34,7 @@ FUNCTION VALUE_CLOSEST2,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
               onlyExtreme = 1
            END
            1: BEGIN
-              IF ((vector[inds]-values) GT 0) AND (inds GT 0) THEN inds--
+              IF ((vector[inds[check]]-values[check]) GT 0) AND (inds[check] GT 0) THEN inds[check]--
            END
            ELSE: BEGIN
               adjMe = WHERE( ((vector[inds]-values) GT 0) AND (inds GT 0),nAdj)
