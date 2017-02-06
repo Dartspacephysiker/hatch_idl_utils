@@ -10,6 +10,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
    times, $
    NCPUSTORUN=nCPUsToRun, $
    STARTCPU=startCPU, $
+   STOPCPU=stopCPU, $
    CREATE_TIMESTAMPS=create_timeStamps, $
    GET_GEI_COORDS=get_GEI_coords, $
    DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
@@ -165,7 +166,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
   IF ~KEYWORD_SET(nCPUsToRun) THEN nCPUsToRun = nCPUs
   IF ~KEYWORD_SET(startCPU  ) THEN startCPU   = 0
-  stopCPU = (startCPU + nCPUsToRun - 1) < (nCPUs - 1)
+  stopCPU = (N_ELEMENTS(stopCPU) GT 0 ? stopCPU : (startCPU + nCPUsToRun - 1) < (nCPUs - 1))
 
   PRINT,"FASTDB_COORDINATE_CONVERSION__PARALLEL: " + STRCOMPRESS(nTot,/REMOVE_ALL) + " inds total"
   FOR i=0,nCPUs DO BEGIN
