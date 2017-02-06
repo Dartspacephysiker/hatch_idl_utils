@@ -15,7 +15,7 @@ PRO GET_FAST_GEI_COORDS,times, $
   IF FILE_TEST(GEI_coord_dir + '/' + GEI_coord_filename) THEN BEGIN
      PRINT,"File exists: " + GEI_coord_dir + '/' + GEI_coord_filename
      PRINT,"You need to confirm that you want it."
-     STOP
+     RETURN
   ENDIF
 
   GET_FA_ORBIT,times,/TIME_ARRAY,/ALL,/DEFINITIVE
