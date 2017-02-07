@@ -26,6 +26,14 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
 
   @common__jeload_vars.pro
 
+  je                   = !NULL
+  time_ranges          = !NULL
+  time_range_indices   = !NULL
+  number_of_intervals  = !NULL
+  jeFileName           = !NULL
+  orb1                 = !NULL
+  orb2                 = !NULL
+
   dbDir      = '/home/spencerh/software/sdt/batch_jobs/saves_output_etc/eesa_time_intervals/'
 
   IF KEYWORD_SET(use_dupeless) THEN BEGIN
@@ -239,6 +247,9 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
 
         IF (JEL__je_keys.WHERE(orbit_num)) EQ !NULL THEN BEGIN
            IF ~KEYWORD_SET(quiet) THEN PRINT,"Couldn't get orbit " + STRCOMPRESS(orbit_num,/REMOVE_ALL) + "!"
+
+           IF ARG_PRESENT(jeFileName) THEN jeFileName = JEL__curFile ;dbPref+orbSuff
+
            RETURN,-1
         ENDIF
 
@@ -308,6 +319,9 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
   ;;Get us out (of the U.N.!) in case there is nothing to talk about
   IF (WHERE(JEL__je_keys EQ orbit_num))[0] EQ -1 THEN BEGIN
      IF ~KEYWORD_SET(quiet) THEN PRINT,'No data for orb ' + STRCOMPRESS(orbit_num,/REMOVE_ALL)
+
+     IF ARG_PRESENT(jeFileName) THEN jeFileName = JEL__curFile ;dbPref+orbSuff
+
      RETURN,-1
   ENDIF
 

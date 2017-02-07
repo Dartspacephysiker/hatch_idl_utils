@@ -78,6 +78,6 @@ FUNCTION MAKE_EVENLY_SPACED_TIME_SERIES,time, $
      END
   ENDCASE
 
-  RETURN,(strt + INDGEN(n_points)*delta_t)
+  RETURN,(strt + DINDGEN(n_points)*delta_t)
 
 END
