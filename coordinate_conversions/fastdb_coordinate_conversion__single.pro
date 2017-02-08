@@ -5,10 +5,12 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
                                          GET_GEI_COORDS=get_GEI_coords, $
                                          DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
                                          DO_AACGM_CONVERSIONS=do_AACGM_conversions, $
+                                         GET_DIPOLETILT_DATA=get_dipoleTilt_data, $
                                          ;; STITCH_FILES=stitch_files, $
                                          ORIG_ROUTINENAME=orig_routineName, $
                                          COORDFILE=GEO_MAG_filename, $
                                          GEI_COORD_FILENAME=GEI_coord_filename, $
+                                         DPTILT_FILENAME=dpTilt_filename, $
                                          COORDDIR=coordDir, $
                                          TIMEFILE=timeFile, $
                                          EPHEMFILEINDARR=ephemFileIndArr, $
@@ -138,6 +140,17 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
 
      RETURN
 
+  ENDIF
+
+  IF KEYWORD_SET(get_dipoleTilt_data) THEN BEGIN
+
+     RESTORE,timeFile
+     timeStr = TEMPORARY(timeTmpstr)
+
+     GET_DIPOLETILT_DATA,timeStr,times, $
+                         OUTFILE=dpTilt_fileName, $
+                         OUTDIR=coordDir, $
+                         ORIG_ROUTINENAME=orig_routineName
   ENDIF
 
   ;; IF KEYWORD_SET(stitch_files) THEN BEGIN

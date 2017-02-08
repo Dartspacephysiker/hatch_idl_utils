@@ -1,12 +1,12 @@
 ;;02/08/17
 PRO CONVERT_TIME_STRING_TO_YMDHMS_ARRAYS,timeStr, $
-   OUT_YEARARR=yearArr, $
-   OUT_DOYARR=DOYArr, $
-   OUT_MONTHARR=monthArr, $
-   OUT_DAYARR=dayArr, $
-   OUT_HOURARR=hourArr, $
-   OUT_MINARR=minArr, $
-   OUT_SECARR=secArr
+                                         OUT_YEARARR=yearArr, $
+                                         OUT_DOYARR=DOYArr, $
+                                         OUT_MONTHARR=monthArr, $
+                                         OUT_DAYARR=dayArr, $
+                                         OUT_HOURARR=hourArr, $
+                                         OUT_MINARR=minArr, $
+                                         OUT_SECARR=secArr
 
   COMPILE_OPT IDL2
 

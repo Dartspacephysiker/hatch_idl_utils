@@ -16,6 +16,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
    DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
    DO_AACGM_CONVERSIONS=do_AACGM_conversions, $
    STITCH_FILES=stitch_files, $
+   GET_DIPOLETILT_DATA=get_dipoleTilt_data, $
    ORIG_ROUTINENAME=orig_routineName, $
    COORDFILE_PREF=GEO_MAG_file_pref, $
    GEI_COORD_FILENAME_PREF=GEI_coord_filename_pref, $
@@ -46,13 +47,14 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
                 'create_fastdb_tstamps.pro', $
                 'get_fast_gei_coords.pro', $
                 'convert_gei_coords_to_geo_and_mag_coords.pro', $
-                'convert_geo_to_aacgm.pro']
+                'convert_geo_to_aacgm.pro', $
+                'get_dipoletilt_data.pro']
 
-  proDir       = '~/idl/lib/hatch_idl_utils/coordinate_conversions/'        
+  proDir     = '~/idl/lib/hatch_idl_utils/coordinate_conversions/'        
 
-  nExec    = KEYWORD_SET(create_timeStamps     ) + KEYWORD_SET(get_GEI_coords      ) + $
-             KEYWORD_SET(do_GEO_MAG_conversions) + KEYWORD_SET(do_AACGM_conversions) + $
-             KEYWORD_SET(stitch_files)
+  nExec      = KEYWORD_SET(create_timeStamps     ) + KEYWORD_SET(get_GEI_coords      ) + $
+               KEYWORD_SET(do_GEO_MAG_conversions) + KEYWORD_SET(do_AACGM_conversions) + $
+               KEYWORD_SET(stitch_files)           + KEYWORD_SET(get_dipoleTilt_data )
 
   CASE nExec OF
      0: BEGIN
@@ -65,6 +67,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         PRINT,"DO_GEO_MAG_CONVERSIONS"        
         PRINT,"DO_AACGM_CONVERSIONS"        
         PRINT,"STITCH_FILES"        
+        PRINT,"GET_DIPOLETILT_DATA"        
         PRINT,""
 
         RETURN
@@ -87,6 +90,9 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
               execType = '/STITCH_FILES'
               dry_run  = 1 ;'cause we don't need to do anything in parallel
            END
+           KEYWORD_SET(get_dipoleTilt_data): BEGIN
+              execType = '/GET_DIPOLETILT_DATA'
+           END
         ENDCASE
 
         pre = 'OK, here it is: '
@@ -102,6 +108,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         PRINT,"DO_GEO_MAG_CONVERSIONS"        
         PRINT,"DO_AACGM_CONVERSIONS"        
         PRINT,"STITCH_FILES"        
+        PRINT,"GET_DIPOLETILT_DATA"        
         PRINT,""
 
      END
@@ -154,12 +161,20 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
   ENDIF
 
+  IF ~KEYWORD_SET(dpTilt_file_pref) THEN BEGIN
+     dpTilt_file_pref = outFile_pref + '-dpTilt'
+
+     PRINT,"No dpTilt_file_pref provided, so I'm setting it to this: '" + dpTilt_file_pref + "'"
+
+  ENDIF
+
   ;;Now start the show!
   tmpFiles     = !NULL
   outFiles     = !NULL
   timeFiles    = !NULL
   GEI_files    = !NULL
   GEO_MAGFiles = !NULL
+  dpTiltFiles  = !NULL
   indArr       = !NULL
   nTot         = N_ELEMENTS(times)
   divFactor    = nTot/nCPUs+1
@@ -171,17 +186,18 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
   PRINT,"FASTDB_COORDINATE_CONVERSION__PARALLEL: " + STRCOMPRESS(nTot,/REMOVE_ALL) + " inds total"
   FOR i=0,nCPUs DO BEGIN
 
-     ind1         = i*divFactor
-     ind2         = ( ((i+1)*divFactor - 1) < (nTot - 1) )
-     indArr       = [[indArr],[ind1,ind2]]
+     ind1             = i*divFactor
+     ind2             = ( ((i+1)*divFactor - 1) < (nTot - 1) )
+     indArr           = [[indArr],[ind1,ind2]]
 
-     indSuff      = STRING(FORMAT='("--",I0,"-",I0)',ind1,ind2)
+     indSuff          = STRING(FORMAT='("--",I0,"-",I0)',ind1,ind2)
 
-     tmpFiles     = [tmpFiles ,STRING(FORMAT='("TMP_",A0,"-",I0,A0)',outFile_pref,i,indSuff)]
-     outFiles     = [outFiles ,STRING(FORMAT='(A0,A0,"-",I0,A0)'    ,outFile_pref,"-AACGM",i,indSuff)]
-     timeFiles    = [timeFiles,STRING(FORMAT='(A0,"-",I0,A0)'       ,timeFile_pref,i,indSuff)]
-     GEI_Files    = [GEI_Files,STRING(FORMAT='(A0,"-",I0,A0)'       ,GEI_coord_filename_pref,i,indSuff)]
-     GEO_MAGFiles = [GEO_MAGFiles,STRING(FORMAT='(A0,"-",I0,A0)'    ,GEO_MAG_file_pref,i,indSuff)]
+     tmpFiles         = [tmpFiles        ,STRING(FORMAT='("TMP_",A0,"-",I0,A0)',outFile_pref,i,indSuff)]
+     outFiles         = [outFiles        ,STRING(FORMAT='(A0,A0,"-",I0,A0)'    ,outFile_pref,"-AACGM",i,indSuff)]
+     timeFiles        = [timeFiles       ,STRING(FORMAT='(A0,"-",I0,A0)'       ,timeFile_pref,i,indSuff)]
+     GEI_Files        = [GEI_Files       ,STRING(FORMAT='(A0,"-",I0,A0)'       ,GEI_coord_filename_pref,i,indSuff)]
+     GEO_MAGFiles     = [GEO_MAGFiles    ,STRING(FORMAT='(A0,"-",I0,A0)'       ,GEO_MAG_file_pref,i,indSuff)]
+     dpTiltFiles      = [dpTiltFiles     ,STRING(FORMAT='(A0,"-",I0,A0)'       ,dpTilt_file_pref,i,indSuff)]
 
   ENDFOR
 
@@ -199,6 +215,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
      PRINT,"timeFile    : ",timeFiles   [i]
      PRINT,"GEI_File    : ",GEI_files   [i]
      PRINT,"GEO_MAGFile : ",GEO_MAGFiles[i]
+     PRINT,"dpTiltFile : ",dpTiltFiles[i]
 
   ENDFOR
 
@@ -250,6 +267,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         PRINT,'timeFile          ',timeFiles[i]
         PRINT,'GEI_coord_filename',GEI_files[i]
         PRINT,'GEO_MAG_fileName  ',GEO_MAGFiles[i]
+        PRINT,'dpTilt_fileName  ',dpTiltFiles[i]
      ENDIF
 
      ;; CASE 1 OF
@@ -291,6 +309,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         oBridge[i]->SetVar, 'timeFile'          ,coordDir+timeFiles[i]
         oBridge[i]->SetVar, 'GEI_coord_filename',GEI_files[i]
         oBridge[i]->SetVar, 'GEO_MAG_fileName'  ,GEO_MAGFiles[i]
+        oBridge[i]->SetVar, 'dpTilt_fileName'  ,dpTiltFiles[i]
         oBridge[i]->SetVar, 'R_E'               ,R_E
         oBridge[i]->SetVar, 'altitude_max'      ,altitude_max
         oBridge[i]->SetVar, 'allow_fl_trace'    ,allow_fl_trace
@@ -305,6 +324,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
            tmptimeFiles         = oBridge[i]->GetVar('timeFile'          )
            tmpGEI_files         = oBridge[i]->GetVar('GEI_coord_filename')
            tmpGEO_MAGFiles      = oBridge[i]->GetVar('GEO_MAG_fileName'  )
+           tmpdpTiltFiles      = oBridge[i]->GetVar('dpTilt_fileName'  )
 
            STOP
 
@@ -315,6 +335,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
               DO_GEO_MAG_CONVERSIONS=do_GEO_MAG_conversions, $
               DO_AACGM_CONVERSIONS=do_AACGM_conversions, $
               ;; STITCH_FILES=stitch_files, $
+              GET_DIPOLETILT_DATA=get_dipoleTilt_data, $
               R_E=R_E, $
               ALTITUDE_MAX=altitude_max, $
               ALLOW_FL_TRACE=allow_fl_trace, $
@@ -324,6 +345,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
               COORDDIR=tmpCoordDir, $
               COORDFILE=tmpGEO_MAGfiles, $
               GEI_COORD_FILENAME=tmpGEI_files, $
+              DPTILT_FILENAME=tmpdpTiltFiles, $
               CHECK_IF_EXISTS=tmpCheck_if_exists, $
               ORIG_ROUTINENAME=tmporig_routineName
 
@@ -339,6 +361,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
                   'COORDDIR=coordDir,' + $
                   'COORDFILE=GEO_MAG_fileName,' + $
                   'GEI_COORD_FILENAME=GEI_coord_filename,' + $
+                  'DPTILT_FILENAME=dpTilt_filename,' + $
                   'CHECK_IF_EXISTS=check_if_exists,' + $
                   'ORIG_ROUTINENAME=orig_routineName'
 
@@ -423,28 +446,32 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
      fileType = ''
 
-     have_time_files  = 1B
-     have_AACGM_files = 1B
-     have_GEO_files   = 1B
-     have_GEI_files   = 1B
-     N_TIME           = 0LL
-     N_AACGM          = 0LL
-     N_GEO            = 0LL
-     N_MAG            = 0LL
-     N_GEI            = 0LL
+     have_time_files      = 1B
+     have_AACGM_files     = 1B
+     have_GEO_files       = 1B
+     have_GEI_files       = 1B
+     have_dpTilt_files    = 1B
+     N_TIME               = 0LL
+     N_AACGM              = 0LL
+     N_GEO                = 0LL
+     N_MAG                = 0LL
+     N_GEI                = 0LL
+     N_dpTilt             = 0LL
      ;; nTrims           = 0
      PRINT,"Checking to make sure files exist + total number of inds"
      nFiles = N_ELEMENTS(outFiles)-1 ;one at end is meaningless
      FOR k=0,nFiles-1 DO BEGIN
-        tmpHTIME         = BYTE(FILE_TEST(coordDir+timeFiles[k]   ))
-        tmpHAACGM        = BYTE(FILE_TEST(coordDir+outFiles[k]    ))
-        tmpHGEO          = BYTE(FILE_TEST(coordDir+GEO_MAGFiles[k]))
-        tmpHGEI          = BYTE(FILE_TEST(coordDir+GEI_files[k]   ))
+        tmpHTIME           = BYTE(FILE_TEST(coordDir+timeFiles[k]   ))
+        tmpHAACGM          = BYTE(FILE_TEST(coordDir+outFiles[k]    ))
+        tmpHGEO            = BYTE(FILE_TEST(coordDir+GEO_MAGFiles[k]))
+        tmpHGEI            = BYTE(FILE_TEST(coordDir+GEI_files[k]   ))
+        tmpHdpTilt         = BYTE(FILE_TEST(coordDir+dpTilt_files[k]   ))
 
-        have_time_files  = have_TIME_files  AND tmpHTIME
-        have_AACGM_files = have_AACGM_files AND tmpHAACGM
-        have_GEO_files   = have_GEO_files   AND tmpHGEO
-        have_GEI_files   = have_GEI_files   AND tmpHGEI
+        have_time_files    = have_TIME_files   AND tmpHTIME
+        have_AACGM_files   = have_AACGM_files  AND tmpHAACGM
+        have_GEO_files     = have_GEO_files    AND tmpHGEO
+        have_GEI_files     = have_GEI_files    AND tmpHGEI
+        have_dpTilt_files  = have_dpTilt_files AND tmpHdpTilt
 
         IF tmpHTIME THEN BEGIN
            RESTORE,coordDir+timeFiles[k]
@@ -511,6 +538,21 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
            PRINT,"Missing GEI file: " + GEI_files[k]
         ENDELSE
 
+        IF tmpHdpTilt THEN BEGIN
+           RESTORE,coordDir+dpTilt_files[k]
+
+           IF KEYWORD_SET(trim_one_off) THEN BEGIN
+              IF (k LT (nFiles-1)) THEN BEGIN
+                 TRIM_OFF_LAST_IND,tiltAngle,'alt'
+              ENDIF
+           ENDIF
+
+           N_dpTilt    += N_ELEMENTS(tiltAngle.angle)
+           tiltAngle    = !NULL
+        ENDIF ELSE BEGIN
+           PRINT,"Missing dpTilt file: " + dpTilt_files[k]
+        ENDELSE
+
      ENDFOR
      ;; PRINT,'nTrims: ',nTrims
 
@@ -547,6 +589,13 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         ENDIF
      ENDIF
 
+     IF have_dpTilt_files THEN BEGIN
+        IF (N_dpTilt EQ nTot) THEN BEGIN
+           stitchable    = [stitchable,'dpTilt']
+           final_dpTiltFile = outFile_pref + '-dpTilt.sav'
+        ENDIF
+     ENDIF
+
      IF N_ELEMENTS(stitchable) EQ 0 THEN BEGIN
         PRINT,"No stitchable groups of files! Returning ..."
         RETURN
@@ -555,11 +604,12 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
      PRINT,FORMAT='("Coordinate systems that are stitchable: ",5(A0,:,", "))',stitchable
      PRINT,'Hvilken? (Type all applicable, separated by space--or type QUIT or STOP)'
 
-     stitch_TIME  = 0B
-     stitch_AACGM = 0B
-     stitch_GEO   = 0B
-     stitch_MAG   = 0B
-     stitch_GEI   = 0B
+     stitch_TIME    = 0B
+     stitch_AACGM   = 0B
+     stitch_GEO     = 0B
+     stitch_MAG     = 0B
+     stitch_GEI     = 0B
+     stitch_dpTilt  = 0B
 
      cont = 0
      WHILE ~cont DO BEGIN
@@ -601,7 +651,14 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
                  IF (WHERE(STRUPCASE(stitchable) EQ 'GEI'))[0] NE -1 THEN BEGIN
                     stitch_GEI = 1B
                  ENDIF ELSE BEGIN
-                    PRINT,"Can't stitch GI!"
+                    PRINT,"Can't stitch GEI!"
+                 ENDELSE
+              END
+              'dpTilt': BEGIN
+                 IF (WHERE(STRUPCASE(stitchable) EQ 'dpTilt'))[0] NE -1 THEN BEGIN
+                    stitch_dpTilt = 1B
+                 ENDIF ELSE BEGIN
+                    PRINT,"Can't stitch dpTilt!"
                  ENDELSE
               END
               "QUIT": BEGIN
@@ -620,7 +677,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
 
         ENDFOR
 
-           nStitch = stitch_TIME + stitch_AACGM + stitch_GEO + stitch_MAG + stitch_GEI
+           nStitch = stitch_TIME + stitch_AACGM + stitch_GEO + stitch_MAG + stitch_GEI + stitch_dpTilt
            IF nStitch EQ 0 THEN BEGIN
               PRINT,"You provided no valid options. Try again."
            ENDIF ELSE BEGIN
@@ -819,6 +876,49 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         SAVE,GEI,FILENAME=coordDir+final_GEIFile
         
         GEI = !NULL
+     ENDIF
+
+     IF stitch_dpTilt THEN BEGIN
+
+        dpTilt          = {TIME: 'Use sw_data times, silly', $
+                           ANGLE: MAKE_ARRAY(nTot,/FLOAT), $
+                           CUSPLOC_N_GSM: MAKE_ARRAY(3,nTot,/FLOAT), $
+                           CUSPLOC_S_GSM: MAKE_ARRAY(3,nTot,/FLOAT), $
+                           CUSPLOC_N_GEO: MAKE_ARRAY(3,nTot,/FLOAT), $
+                           CUSPLOC_S_GEO: MAKE_ARRAY(3,nTot,/FLOAT), $
+                           CREATED: GET_TODAY_STRING(/DO_YYYYMMDD_FMT), $
+                           ORIGINATING_ROUTINE: orig_routineName}
+        
+        curInd = 0LL
+
+        FOR k=0,nFiles-1 DO BEGIN
+           RESTORE,coordDir+dpTilt_files[k]
+           
+           IF KEYWORD_SET(trim_one_off) THEN BEGIN
+              IF (k LT (nFiles-1)) THEN BEGIN
+                 TRIM_OFF_LAST_IND,dpTiltcoords,['alt','lng','lat']
+              ENDIF
+           ENDIF
+
+           nHere   = N_ELEMENTS(tiltAngle.angle)
+           tmpInds = [curInd:(curInd+nHere-1)]
+
+           dpTilt.angle[tmpInds]           = tiltAngle.angle
+           dpTilt.cuspLoc_N_GSM[*,tmpInds] = tiltAngle.cuspLoc_N_GSM
+           dpTilt.cuspLoc_S_GSM[*,tmpInds] = tiltAngle.cuspLoc_S_GSM
+           dpTilt.cuspLoc_N_GEO[*,tmpInds] = tiltAngle.cuspLoc_N_GEO
+           dpTilt.cuspLoc_S_GEO[*,tmpInds] = tiltAngle.cuspLoc_S_GEO
+
+           curInd   += nHere
+
+           tiltAngle = !NULL
+
+        ENDFOR
+
+        PRINT,"Saving stitched dpTilt file to " + final_dpTiltFile
+        SAVE,dpTilt,FILENAME=coordDir+final_dpTiltFile
+        
+        dpTilt = !NULL
      ENDIF
 
   ENDIF
