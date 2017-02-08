@@ -43,7 +43,7 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
 
      minOrb  = 500
      ;; maxOrb  = 16361
-     maxOrb  = 24507
+     maxOrb  = 25007
 
      IF (orbit_num LT minOrb) OR (orbit_num GT maxOrb) THEN BEGIN
         PRINT,"Don't have a file corresponding to orbit " + $
