@@ -465,7 +465,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         tmpHAACGM          = BYTE(FILE_TEST(coordDir+outFiles[k]    ))
         tmpHGEO            = BYTE(FILE_TEST(coordDir+GEO_MAGFiles[k]))
         tmpHGEI            = BYTE(FILE_TEST(coordDir+GEI_files[k]   ))
-        tmpHdpTilt         = BYTE(FILE_TEST(coordDir+dpTilt_files[k]   ))
+        tmpHdpTilt         = BYTE(FILE_TEST(coordDir+dpTiltFiles[k]   ))
 
         have_time_files    = have_TIME_files   AND tmpHTIME
         have_AACGM_files   = have_AACGM_files  AND tmpHAACGM
@@ -539,7 +539,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         ENDELSE
 
         IF tmpHdpTilt THEN BEGIN
-           RESTORE,coordDir+dpTilt_files[k]
+           RESTORE,coordDir+dpTiltFiles[k]
 
            IF KEYWORD_SET(trim_one_off) THEN BEGIN
               IF (k LT (nFiles-1)) THEN BEGIN
@@ -550,7 +550,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
            N_dpTilt    += N_ELEMENTS(tiltAngle.angle)
            tiltAngle    = !NULL
         ENDIF ELSE BEGIN
-           PRINT,"Missing dpTilt file: " + dpTilt_files[k]
+           PRINT,"Missing dpTilt file: " + dpTiltFiles[k]
         ENDELSE
 
      ENDFOR
@@ -654,8 +654,8 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
                     PRINT,"Can't stitch GEI!"
                  ENDELSE
               END
-              'dpTilt': BEGIN
-                 IF (WHERE(STRUPCASE(stitchable) EQ 'dpTilt'))[0] NE -1 THEN BEGIN
+              'DPTILT': BEGIN
+                 IF (WHERE(STRUPCASE(stitchable) EQ 'DPTILT'))[0] NE -1 THEN BEGIN
                     stitch_dpTilt = 1B
                  ENDIF ELSE BEGIN
                     PRINT,"Can't stitch dpTilt!"
@@ -892,7 +892,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         curInd = 0LL
 
         FOR k=0,nFiles-1 DO BEGIN
-           RESTORE,coordDir+dpTilt_files[k]
+           RESTORE,coordDir+dpTiltFiles[k]
            
            IF KEYWORD_SET(trim_one_off) THEN BEGIN
               IF (k LT (nFiles-1)) THEN BEGIN

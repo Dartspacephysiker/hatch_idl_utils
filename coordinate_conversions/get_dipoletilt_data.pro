@@ -6,7 +6,7 @@ PRO GET_DIPOLETILT_DATA,timeStr,times, $
 
   COMPILE_OPT IDL2
 
-  IF N_ELEMENTS(outFile) EQ 0 OR N_ELEMENTS(outDir) EQ 0 THEN STOP
+  IF N_ELEMENTS(outFile) EQ 0 OR N_ELEMENTS(outDir) EQ 0 OR N_ELEMENTS(orig_routineName) EQ 0 THEN STOP
 
   IF FILE_TEST(outDir+outFile) THEN BEGIN
      PRINT,"File exists: " + outDir+outFile
@@ -105,9 +105,9 @@ PRO GET_DIPOLETILT_DATA,timeStr,times, $
                         CREATED: GET_TODAY_STRING(/DO_YYYYMMDD_FMT), $
                         ORIGINATING_ROUTINE: orig_routineName}
 
-  IF KEYWORD_SET(orig_routineName) THEN BEGIN
-     coords.originating_routine = orig_routineName
-  ENDIF
+  ;; IF KEYWORD_SET(orig_routineName) THEN BEGIN
+  ;;    tiltAngle.originating_routine = orig_routineName
+  ;; ENDIF
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Save it
