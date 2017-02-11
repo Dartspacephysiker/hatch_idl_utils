@@ -14,6 +14,7 @@ FUNCTION VALUE_CLOSEST,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
   COMPILE_OPT idl2
 
   PRINT,"Assuming you actually want VALUE_CLOSEST2 ..."
+  STOP
   ret = VALUE_CLOSEST2(vector,values,diffs,ONLY_GE=only_GE,ONLY_LE=only_LE,SUCCESS=success,QUIET=quiet)
   RETURN,ret
 
