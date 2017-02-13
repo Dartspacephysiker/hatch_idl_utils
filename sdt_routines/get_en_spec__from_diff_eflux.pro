@@ -37,202 +37,164 @@
 ;	Current version only works for FAST
 ;-
 
-pro get_en_spec,data_str,  $
-	T1=t1, $
-	T2=t2, $
-;	ENERGY=en, $
-;	ERANGE=er, $
-;	EBINS=ebins, $
-	ANGLE=an, $
-	ARANGE=ar, $
-	BINS=bins, $
-	gap_time=gap_time, $ 
-	no_data=no_data, $
-	units = units,  $
-        name  = name, $
-	bkg = bkg, $
-        missing = missing, $
-        floor = floor, $
-        retrace = retrace, $
-        CALIB = calib
+FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,dat,  $
+                                      T1=t1, $
+                                      T2=t2, $
+                                      ;;	ENERGY=en, $
+                                      ;;	ERANGE=er, $
+                                      ;;	EBINS=ebins, $
+                                      ANGLE=an, $
+                                      ARANGE=ar, $
+                                      BINS=bins, $
+                                      gap_time=gap_time, $ 
+                                      no_data=no_data, $
+                                      units = units,  $
+                                      name  = name, $
+                                      bkg = bkg, $
+                                      missing = missing, $
+                                      floor = floor, $
+                                      retrace = retrace, $
+                                      CALIB = calib
 
+  COMPILE_OPT idl2
+  
+  ;;	Time how long the routine takes
+  ex_start = SYSTIME(1)
 
+  ;;	Set defaults for keywords, etc.
+  ;; n        = 0
+  max      = N_ELEMENTS(dat.data_name)
+  all_same = 1
 
-;	Time how long the routine takes
-ex_start = systime(1)
+  ;; ytitle  = data_str + '_en_spec'
+  nbins   = dat.nbins[0]
+  nmaxvar = dat.nenergy
 
-;	Set defaults for keywords, etc.
+  default_gap_time = 200.
+  IF dat.project_name[0] EQ 'FAST' THEN BEGIN
+     nmaxvar = 96
+     default_gap_time = 8.
+  ENDIF
+  IF NOT KEYWORD_SET(gap_time) THEN gap_time = default_gap_time
 
-n = 0
-max = 30000        ; this could be improved
-all_same = 1
+  time   = DBLARR(max)
+  data   = FLTARR(max,nmaxvar)
+  var    = FLTARR(max,nmaxvar)
+  nvar   = dat.nenergy
+  nmax   = nvar
 
-routine = 'get_'+data_str
+  units  = dat.units_name
+  IF NOT KEYWORD_SET(units)   THEN   units = 'Counts'
+  IF NOT KEYWORD_SET(missing) THEN missing = !values.f_nan
 
-;t = 0             ; get first sample
-;dat = call_function(routine,t,CALIB=calib,index=0)
-; FAST uses "start" keyword
+  last_time = dat.time[0]
+  ;;	Collect the data - Main Loop
+  n = 0
+  FOR k=0,max-1 DO BEGIN
 
-if keyword_set(t1) then begin
-	t=t1
-	if routine eq 'get_fa_sebs' then dat = call_function(routine,t,/first) else dat = call_function(routine,t,CALIB=calib)
-endif else begin
-	t = 1000             ; get first sample
-	dat = call_function(routine,t,CALIB=calib, /start)
-endelse
+     IF dat.valid[k] EQ 0 THEN BEGIN
+        time[k]   = (last_time) + dbadtime
+        data[k,*] = missing
+        var[k,*]  = missing
 
-if dat.valid eq 0 then begin no_data = 1 & return & end $
-else no_data = 0
+        PRINT,'Invalid packet, dat.valid ne 1, at: ',TIME_TO_STR(dat.time[k])
 
-ytitle = data_str + '_en_spec'
-last_time = (dat.time+dat.end_time)/2.
-nbins = dat.nbins
-nmaxvar = dat.nenergy
+        CONTINUE
+     ENDIF
 
-default_gap_time = 200.
-if dat.project_name eq 'FAST' then begin
-	nmaxvar=96
-	default_gap_time = 8.
-endif
-if not keyword_set(gap_time) then gap_time = default_gap_time
+     count = dat.nbins[k]
+     IF KEYWORD_SET(an) THEN bins = ANGLE_TO_BINS(REDUCE_SYNTH_DIFF_EFLUX_STRUCT(dat,k,/NO_SHIFTVALS),an)
+     if KEYWORD_SET(ar) THEN BEGIN
+        nb   = dat.nbins
+        bins = BYTARR(nb)
+        IF ar[0] GT ar[1] THEN BEGIN
+           bins[ar[0]:nb-1]  = 1
+           bins[0:ar[1]]     = 1
+        ENDIF ELSE BEGIN
+           bins[ar[0]:ar[1]] = 1
+        ENDELSE
+     ENDIF
 
-time   = dblarr(max)
-data   = fltarr(max,nmaxvar)
-var   = fltarr(max,nmaxvar)
-nvar = dat.nenergy
-nmax=nvar
+     ;; Set the "count" to the number of bins summed over
+     IF NOT KEYWORD_SET(bins) THEN ind = INDGEN(dat.nbins[k]) ELSE ind = WHERE(bins,count)
+     IF units EQ 'Counts' THEN norm = 1 ELSE norm = count
 
-if not keyword_set(units) then units = 'Counts'
-if not keyword_set(missing) then missing = !values.f_nan
+     IF ABS((dat.time[k]+dat.end_time[k])/2.-last_time) GE gap_time THEN BEGIN
+        IF k GE 2 THEN dbadtime = time[k-1] - time[k-2] else dbadtime = gap_time/2.
+        time[k]   = (last_time) + dbadtime
+        data[k,*] = missing
+        var[k,*]  = missing
+        IF (dat.time[k]+dat.end_time[k])/2. GT time[k-1] + gap_time THEN BEGIN
+           time[k]   = (dat.time[k]+dat.end_time[k])/2. - dbadtime
+           data[k,*] = missing
+           var[k,*]  = missing
+           n=n+1
+        endif
+     endif
 
-;	Collect the data - Main Loop
-    
-; May want to use the following lines when "index" is operational in FAST get* routines    
-;times = call_function(routine,t,CALIB=calib, /times)
-;for idx=0,n_elements(times)-1 do begin
-;    if (dat.valid eq 0) or (n ge max) then  goto, continue  ; goto YUCK!
+     IF KEYWORD_SET(bkg  ) THEN dat = SUB3D(dat,bkg)
+     IF KEYWORD_SET(units) THEN dat = CONV_UNITS(dat,units)
 
-if keyword_set(t2) then tmax=t2 else tmax=1.e30
-
-while (dat.valid ne 0) and (n lt max) do begin
-if (dat.valid eq 1) then begin
-
-	count = dat.nbins
-	if keyword_set(an) then bins=angle_to_bins(dat,an)
-	if keyword_set(ar) then begin
-		nb=dat.nbins
-		bins=bytarr(nb)
-		if ar(0) gt ar(1) then begin
-			bins(ar(0):nb-1)=1
-			bins(0:ar(1))=1
-		endif else begin
-			bins(ar(0):ar(1))=1
-		endelse
-	endif
-; Set the "count" to the number of bins summed over
-	if not keyword_set(bins) then ind=indgen(dat.nbins) else ind=where(bins,count)
-	if units eq 'Counts' then norm = 1 else norm = count
-
-	if abs((dat.time+dat.end_time)/2.-last_time) ge gap_time then begin
-		if n ge 2 then dbadtime = time(n-1) - time(n-2) else dbadtime = gap_time/2.
-		time(n) = (last_time) + dbadtime
-		data(n,*) = missing
-		var(n,*) = missing
-		n=n+1
-		if (dat.time+dat.end_time)/2. gt time(n-1) + gap_time then begin
-			time(n) = (dat.time+dat.end_time)/2. - dbadtime
-			data(n,*) = missing
-			var(n,*) = missing
-			n=n+1
-		endif
-	endif
-
-	if keyword_set(bkg) then dat = sub3d(dat,bkg)
-	if keyword_set(units) then dat = conv_units(dat,units)
-
-	nvar = dat.nenergy
-	if nvar gt nmax then nmax = nvar
-	time(n)   = (dat.time+dat.end_time)/2.
-	if ind(0) ne -1 then begin
-		data(n,0:nvar-1) = total( dat.data(*,ind), 2)/norm
-		var(n,0:nvar-1) = total( dat.energy(*,ind), 2)/count
-	endif else begin
-		data(n,0:nvar-1) = 0
-		var(n,0:nvar-1) = total( dat.energy(*,0), 2)
-	endelse
+     nvar = dat.nenergy
+     IF nvar GT nmax THEN nmax = nvar
+     time[k]  = (dat.time[k]+dat.end_time[k])/2.
+     IF ind[0] NE -1 THEN BEGIN
+        data[k,0:nvar-1]  = TOTAL( dat.data[*,ind,k], 2)/norm
+        var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind,k], 2)/count
+     ENDIF ELSE BEGIN
+        data[k,0:nvar-1]  = 0
+        var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind,k], 2)
+     endelse
 
 ; test the following lines, the 96-6-19 version of tplot did not work with !values.f_nan
-;	if nvar lt nmaxvar then data(n,nvar:nmaxvar-1) = !values.f_nan
-;	if nvar lt nmaxvar then var(n,nvar:nmaxvar-1) = !values.f_nan
-	if nvar lt nmaxvar then data(n,nvar:nmaxvar-1) = data(n,nvar-1)
-	if nvar lt nmaxvar then var(n,nvar:nmaxvar-1) = 1.5*var(n,nvar-1)-.5*var(n,nvar-2)
+;	if nvar lt nmaxvar THEN data[k,nvar:nmaxvar-1) = !values.f_nan
+;	if nvar lt nmaxvar THEN var[k,nvar:nmaxvar-1) = !values.f_nan
+     if nvar lt nmaxvar THEN data[k,nvar:nmaxvar-1] = data[k,nvar-1]
+     if nvar lt nmaxvar THEN var[k,nvar:nmaxvar-1] = 1.5*var[k,nvar-1]-.5*var[k,nvar-2]
 
-	if (all_same eq 1) then begin
-		if dimen1(where(var(n,0:nvar-1) ne var(0,0:nvar-1))) gt 1 then all_same = 0
-	endif
-	last_time = time(n)
-	n=n+1
+     IF (all_same EQ 1) THEN BEGIN
+        IF DIMEN1(WHERE(var[k,0:nvar-1] NE var[0,0:nvar-1])) GT 1 THEN all_same = 0
+     ENDIF
+     last_time = time[k]
 
-endif else begin
-	print,'Invalid packet, dat.valid ne 1, at: ',time_to_str(dat.time)
-endelse
+     n++
+  ENDFOR
 
-	dat = call_function(routine,t,CALIB=calib,/ad)
-;	dat = call_function(routine,t,CALIB=calib,index=idx)
-	if dat.valid ne 0 then if dat.time gt tmax then dat.valid=0
+  ;;	Store the data
+  ;; IF count NE nbins THEN ytitle = ytitle+'_'+STRTRIM(count,2)
+  ;; IF ~KEYWORD_SET(name) THEN name = ytitle else ytitle = name
+  ;; ytitle = ytitle+' ('+units+')'
 
-endwhile
-;endfor
-;continue:
-
-;	Store the data
-
-	if count ne nbins then ytitle = ytitle+'_'+strtrim(count,2)
-	if keyword_set(name) eq 0 then name=ytitle else ytitle = name
-	ytitle = ytitle+' ('+units+')'
-
-if not keyword_set(retrace) then begin
+  IF NOT KEYWORD_SET(retrace) THEN BEGIN
 ;	If you want to plot the retrace, set the retrace flag to 1.
-	data = data(0:n-1,0:nmax-1)
-	var = var(0:n-1,0:nmax-1)
-endif else begin
-	data = data(0:n-1,retrace:nmax-1)
-	var = var(0:n-1,retrace:nmax-1)
-endelse
+     data = data[0:k-1,0:nmax-1]
+     var  = var[0:k-1,0:nmax-1]
+  ENDIF ELSE BEGIN
+     data = data[0:k-1,retrace:nmax-1]
+     var  = var[0:k-1,retrace:nmax-1]
+  ENDELSE
 
-print,'all_same=',all_same
-;labels=''
-; The following has be removed so that FAST summary cdf files contain both arrays
-;if all_same then begin
-;	var = reform(var(0,*))
-;	labels = strtrim( round(var) ,2)+ ' eV'
-;endif
+  PRINT,'all_same=',all_same
 
-time = time(0:n-1)
+  IF KEYWORD_SET(t1) THEN BEGIN
+     ind  = WHERE(time ge t1)
+     time = TIME[ind]
+     data = data[ind,*]
+     var  = var[ind,*]
+  ENDIF
+  IF KEYWORD_SET(t2) THEN BEGIN
+     ind  = WHERE(time LE t2)
+     time = time[ind]
+     data = data[ind,*]
+     var  = var[ind,*]
+  endif
 
-if keyword_set(t1) then begin
-	ind=where(time ge t1)
-	time=time(ind)
-	data=data(ind,*)
-	var=var(ind,*)
-endif
-if keyword_set(t2) then begin
-	ind=where(time le t2)
-	time=time(ind)
-	data=data(ind,*)
-	var=var(ind,*)
-endif
+  datastr = {x:time,y:data,v:var}
 
-;datastr = {ztitle:units,x:time,y:data,v:var,  $
-;	labels:labels,	$
-;    ylog:1,panel_size:2.}
-datastr = {x:time,y:data,v:var}
-store_data,name,data=datastr
+  ex_time = SYSTIME(1) - ex_start
+  MESSAGE,STRING(ex_time)+' seconds execution time.',/cont,/info
+  PRINT,'Number of data points = ',n
 
-ex_time = systime(1) - ex_start
-message,string(ex_time)+' seconds execution time.',/cont,/info
-print,'Number of data points = ',n
+  RETURN,dataStr
 
-return
-
-end
+END
