@@ -21,7 +21,6 @@
 ;	FLOOR:  	Sets the minimum value of any data point to sqrt(bkg).
 ;	MISSING: 	value for bad data.
 ;	RETRACE: 	Set to number of retrace energy steps to be eliminated starting at energy step 0
-;	CALIB:		Calib keyword passed on to get_"get_dat"_ts
 ;
 ;
 ;
@@ -37,7 +36,7 @@
 ;	Current version only works for FAST
 ;-
 
-FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,dat,  $
+FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
                                       T1=t1, $
                                       T2=t2, $
                                       ;;	ENERGY=en, $
@@ -46,15 +45,14 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,dat,  $
                                       ANGLE=an, $
                                       ARANGE=ar, $
                                       BINS=bins, $
-                                      gap_time=gap_time, $ 
-                                      no_data=no_data, $
-                                      units = units,  $
-                                      name  = name, $
-                                      bkg = bkg, $
-                                      missing = missing, $
-                                      floor = floor, $
-                                      retrace = retrace, $
-                                      CALIB = calib
+                                      GAP_TIME=gap_time, $ 
+                                      NO_DATA=no_data, $
+                                      UNITS=units,  $
+                                      NAME=name, $
+                                      BKG=bkg, $
+                                      MISSING=missing, $
+                                      FLOOR=floor, $
+                                      RETRACE=retrace
 
   COMPILE_OPT idl2
   
@@ -63,15 +61,15 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,dat,  $
 
   ;;	Set defaults for keywords, etc.
   ;; n        = 0
-  max      = N_ELEMENTS(dat.data_name)
+  max      = N_ELEMENTS(diff_eFlux.data_name)
   all_same = 1
 
   ;; ytitle  = data_str + '_en_spec'
-  nbins   = dat.nbins[0]
-  nmaxvar = dat.nenergy
+  nbins   = diff_eFlux.nbins[0]
+  nmaxvar = diff_eFlux.nenergy
 
   default_gap_time = 200.
-  IF dat.project_name[0] EQ 'FAST' THEN BEGIN
+  IF diff_eFlux.project_name[0] EQ 'FAST' THEN BEGIN
      nmaxvar = 96
      default_gap_time = 8.
   ENDIF
@@ -80,31 +78,38 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,dat,  $
   time   = DBLARR(max)
   data   = FLTARR(max,nmaxvar)
   var    = FLTARR(max,nmaxvar)
-  nvar   = dat.nenergy
+  nvar   = diff_eFlux.nenergy
   nmax   = nvar
 
-  units  = dat.units_name
+  units  = diff_eFlux.units_name
   IF NOT KEYWORD_SET(units)   THEN   units = 'Counts'
   IF NOT KEYWORD_SET(missing) THEN missing = !values.f_nan
 
-  last_time = dat.time[0]
+  last_time = diff_eFlux.time[0]
   ;;	Collect the data - Main Loop
   n = 0
   FOR k=0,max-1 DO BEGIN
 
-     IF dat.valid[k] EQ 0 THEN BEGIN
+     dat = MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k)
+
+     ;; IF diff_eFlux.valid[k] EQ 0 THEN BEGIN
+     IF dat.valid EQ 0 THEN BEGIN
         time[k]   = (last_time) + dbadtime
         data[k,*] = missing
         var[k,*]  = missing
 
-        PRINT,'Invalid packet, dat.valid ne 1, at: ',TIME_TO_STR(dat.time[k])
+        ;; PRINT,'Invalid packet, diff_eFlux.valid ne 1, at: ',TIME_TO_STR(diff_eFlux.time[k])
+        PRINT,'Invalid packet, diff_eFlux.valid ne 1, at: ',TIME_TO_STR(dat.time)
 
         CONTINUE
      ENDIF
 
-     count = dat.nbins[k]
-     IF KEYWORD_SET(an) THEN bins = ANGLE_TO_BINS(REDUCE_SYNTH_DIFF_EFLUX_STRUCT(dat,k,/NO_SHIFTVALS),an)
+     ;; count = diff_eFlux.nbins[k]
+     count = dat.nbins
+     ;; IF KEYWORD_SET(an) THEN bins = ANGLE_TO_BINS(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(dat,k),an)
+     IF KEYWORD_SET(an) THEN bins = ANGLE_TO_BINS(dat,an)
      if KEYWORD_SET(ar) THEN BEGIN
+        ;; nb   = diff_eFlux.nbins
         nb   = dat.nbins
         bins = BYTARR(nb)
         IF ar[0] GT ar[1] THEN BEGIN
@@ -116,16 +121,20 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,dat,  $
      ENDIF
 
      ;; Set the "count" to the number of bins summed over
-     IF NOT KEYWORD_SET(bins) THEN ind = INDGEN(dat.nbins[k]) ELSE ind = WHERE(bins,count)
+     ;; IF NOT KEYWORD_SET(bins) THEN ind = INDGEN(diff_eFlux.nbins[k]) ELSE ind = WHERE(bins,count)
+     IF NOT KEYWORD_SET(bins) THEN ind = INDGEN(dat.nbins) ELSE ind = WHERE(bins,count)
      IF units EQ 'Counts' THEN norm = 1 ELSE norm = count
 
-     IF ABS((dat.time[k]+dat.end_time[k])/2.-last_time) GE gap_time THEN BEGIN
+     ;; IF ABS((diff_eFlux.time[k]+diff_eFlux.end_time[k])/2.-last_time) GE gap_time THEN BEGIN
+     IF ABS((dat.time+dat.end_time)/2.-last_time) GE gap_time THEN BEGIN
         IF k GE 2 THEN dbadtime = time[k-1] - time[k-2] else dbadtime = gap_time/2.
         time[k]   = (last_time) + dbadtime
         data[k,*] = missing
         var[k,*]  = missing
-        IF (dat.time[k]+dat.end_time[k])/2. GT time[k-1] + gap_time THEN BEGIN
-           time[k]   = (dat.time[k]+dat.end_time[k])/2. - dbadtime
+        ;; IF (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2. GT time[k-1] + gap_time THEN BEGIN
+        IF (dat.time+dat.end_time)/2. GT time[k-1] + gap_time THEN BEGIN
+           ;; time[k]   = (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2. - dbadtime
+           time[k]   = (dat.time+dat.end_time)/2. - dbadtime
            data[k,*] = missing
            var[k,*]  = missing
            n=n+1
@@ -135,15 +144,20 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,dat,  $
      IF KEYWORD_SET(bkg  ) THEN dat = SUB3D(dat,bkg)
      IF KEYWORD_SET(units) THEN dat = CONV_UNITS(dat,units)
 
+     ;; nvar = diff_eFlux.nenergy
      nvar = dat.nenergy
      IF nvar GT nmax THEN nmax = nvar
-     time[k]  = (dat.time[k]+dat.end_time[k])/2.
+     ;; time[k]  = (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2.
+     time[k]  = (dat.time+dat.end_time)/2.
      IF ind[0] NE -1 THEN BEGIN
-        data[k,0:nvar-1]  = TOTAL( dat.data[*,ind,k], 2)/norm
-        var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind,k], 2)/count
+        ;; data[k,0:nvar-1]  = TOTAL( diff_eFlux.data[*,ind,k], 2)/norm
+        ;; var[k,0:nvar-1]   = TOTAL( diff_eFlux.energy[*,ind,k], 2)/count
+        data[k,0:nvar-1]  = TOTAL( dat.data[*,ind], 2)/norm
+        var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind], 2)/count
      ENDIF ELSE BEGIN
         data[k,0:nvar-1]  = 0
-        var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind,k], 2)
+        ;; var[k,0:nvar-1]   = TOTAL( diff_eFlux.energy[*,ind,k], 2)
+        var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind], 2)
      endelse
 
 ; test the following lines, the 96-6-19 version of tplot did not work with !values.f_nan
