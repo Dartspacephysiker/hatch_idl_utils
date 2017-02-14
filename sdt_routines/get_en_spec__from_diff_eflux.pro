@@ -81,9 +81,11 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   nvar   = diff_eFlux.nenergy
   nmax   = nvar
 
-  units  = diff_eFlux.units_name
-  IF NOT KEYWORD_SET(units)   THEN   units = 'Counts'
-  IF NOT KEYWORD_SET(missing) THEN missing = !values.f_nan
+  IF NOT KEYWORD_SET(units) THEN BEGIN
+     units  = diff_eFlux.units_name
+     ;; units = 'Counts'
+  ENDIF
+  IF NOT KEYWORD_SET(missing) THEN missing = !VALUES.F_NaN
 
   last_time = diff_eFlux.time[0]
   ;;	Collect the data - Main Loop
