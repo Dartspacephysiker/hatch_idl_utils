@@ -13,7 +13,8 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 ANGLESTR=angleStr, $
                                 ESPECUNITS=eSpecUnits, $
                                 ELECTRON_ENERGY_LIMS=energy_electrons, $
-                                SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file
+                                SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
+                                _EXTRA=e
 
   COMPILE_OPT idl2
 
