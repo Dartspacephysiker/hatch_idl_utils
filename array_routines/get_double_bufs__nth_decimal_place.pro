@@ -51,7 +51,7 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
 
   IF N_ELEMENTS(nums[good]) LE nMin THEN BEGIN
      PRINT,'Insufficient data to search for streak length = ' + $
-           STRCOMPRESS(n,/REMOVE_ALL) + '! Out ...'
+           STRCOMPRESS(nMin,/REMOVE_ALL) + '! Out ...'
      RETURN
   ENDIF
 
