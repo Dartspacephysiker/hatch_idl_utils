@@ -77,6 +77,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
 
   time   = DBLARR(max)
   data   = FLTARR(max,nmaxvar)
+  ddata  = FLTARR(max,nmaxvar)
   var    = FLTARR(max,nmaxvar)
   nvar   = diff_eFlux.nenergy
   nmax   = nvar
@@ -96,9 +97,10 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
 
      ;; IF diff_eFlux.valid[k] EQ 0 THEN BEGIN
      IF dat.valid EQ 0 THEN BEGIN
-        time[k]   = (last_time) + dbadtime
-        data[k,*] = missing
-        var[k,*]  = missing
+        time[k]    = (last_time) + dbadtime
+        data[k,*]  = missing
+        ddata[k,*] = missing
+        var[k,*]   = missing
 
         ;; PRINT,'Invalid packet, diff_eFlux.valid ne 1, at: ',TIME_TO_STR(diff_eFlux.time[k])
         PRINT,'Invalid packet, diff_eFlux.valid ne 1, at: ',TIME_TO_STR(dat.time)
@@ -130,15 +132,17 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      ;; IF ABS((diff_eFlux.time[k]+diff_eFlux.end_time[k])/2.-last_time) GE gap_time THEN BEGIN
      IF ABS((dat.time+dat.end_time)/2.-last_time) GE gap_time THEN BEGIN
         IF k GE 2 THEN dbadtime = time[k-1] - time[k-2] else dbadtime = gap_time/2.
-        time[k]   = (last_time) + dbadtime
-        data[k,*] = missing
-        var[k,*]  = missing
+        time[k]    = (last_time) + dbadtime
+        data[k,*]  = missing
+        ddata[k,*] = missing
+        var[k,*]   = missing
         ;; IF (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2. GT time[k-1] + gap_time THEN BEGIN
         IF (dat.time+dat.end_time)/2. GT time[k-1] + gap_time THEN BEGIN
            ;; time[k]   = (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2. - dbadtime
-           time[k]   = (dat.time+dat.end_time)/2. - dbadtime
-           data[k,*] = missing
-           var[k,*]  = missing
+           time[k]    = (dat.time+dat.end_time)/2. - dbadtime
+           data[k,*]  = missing
+           ddata[k,*] = missing
+           var[k,*]   = missing
            n=n+1
         endif
      endif
@@ -154,10 +158,12 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      IF ind[0] NE -1 THEN BEGIN
         ;; data[k,0:nvar-1]  = TOTAL( diff_eFlux.data[*,ind,k], 2)/norm
         ;; var[k,0:nvar-1]   = TOTAL( diff_eFlux.energy[*,ind,k], 2)/count
-        data[k,0:nvar-1]  = TOTAL( dat.data[*,ind], 2)/norm
-        var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind], 2)/count
+        data[k,0:nvar-1]  = TOTAL( dat.data[*,ind],  2)/norm
+        ddata[k,0:nvar-1] = TOTAL( dat.ddata[*,ind], 2)/norm
+        var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind],2)/count
      ENDIF ELSE BEGIN
         data[k,0:nvar-1]  = 0
+        ddata[k,0:nvar-1] = 0
         ;; var[k,0:nvar-1]   = TOTAL( diff_eFlux.energy[*,ind,k], 2)
         var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind], 2)
      endelse
@@ -165,8 +171,13 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
 ; test the following lines, the 96-6-19 version of tplot did not work with !values.f_nan
 ;	if nvar lt nmaxvar THEN data[k,nvar:nmaxvar-1) = !values.f_nan
 ;	if nvar lt nmaxvar THEN var[k,nvar:nmaxvar-1) = !values.f_nan
-     if nvar lt nmaxvar THEN data[k,nvar:nmaxvar-1] = data[k,nvar-1]
-     if nvar lt nmaxvar THEN var[k,nvar:nmaxvar-1] = 1.5*var[k,nvar-1]-.5*var[k,nvar-2]
+     ;; if nvar lt nmaxvar THEN data[k,nvar:nmaxvar-1] = data[k,nvar-1]
+     ;; if nvar lt nmaxvar THEN var[k,nvar:nmaxvar-1] = 1.5*var[k,nvar-1]-.5*var[k,nvar-2]
+     IF nvar LT nmaxvar THEN BEGIN
+        data[k,nvar:nmaxvar-1]  = data[k,nvar-1]
+        ddata[k,nvar:nmaxvar-1] = ddata[k,nvar-1]
+        var[k,nvar:nmaxvar-1]   = 1.5*var[k,nvar-1]-.5*var[k,nvar-2]
+     ENDIF
 
      IF (all_same EQ 1) THEN BEGIN
         IF DIMEN1(WHERE(var[k,0:nvar-1] NE var[0,0:nvar-1])) GT 1 THEN all_same = 0
@@ -183,29 +194,33 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
 
   IF NOT KEYWORD_SET(retrace) THEN BEGIN
 ;	If you want to plot the retrace, set the retrace flag to 1.
-     data = data[0:k-1,0:nmax-1]
-     var  = var[0:k-1,0:nmax-1]
+     data  = data[0:k-1,0:nmax-1]
+     ddata = ddata[0:k-1,0:nmax-1]
+     var   = var[0:k-1,0:nmax-1]
   ENDIF ELSE BEGIN
-     data = data[0:k-1,retrace:nmax-1]
-     var  = var[0:k-1,retrace:nmax-1]
+     data  = data[0:k-1,retrace:nmax-1]
+     ddata = ddata[0:k-1,retrace:nmax-1]
+     var   = var[0:k-1,retrace:nmax-1]
   ENDELSE
 
   PRINT,'all_same=',all_same
 
   IF KEYWORD_SET(t1) THEN BEGIN
-     ind  = WHERE(time ge t1)
-     time = TIME[ind]
-     data = data[ind,*]
-     var  = var[ind,*]
+     ind   = WHERE(time ge t1)
+     time  = TIME[ind]
+     data  = data[ind,*]
+     ddata = ddata[ind,*]
+     var   = var[ind,*]
   ENDIF
   IF KEYWORD_SET(t2) THEN BEGIN
-     ind  = WHERE(time LE t2)
-     time = time[ind]
-     data = data[ind,*]
-     var  = var[ind,*]
+     ind   = WHERE(time LE t2)
+     time  = time[ind]
+     data  = data[ind,*]
+     ddata = ddata[ind,*]
+     var   = var[ind,*]
   endif
 
-  datastr = {x:time,y:data,v:var}
+  datastr = {x:time,y:data,v:var,yerr:ddata}
 
   ex_time = SYSTIME(1) - ex_start
   MESSAGE,STRING(ex_time)+' seconds execution time.',/cont,/info

@@ -5,10 +5,12 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
                                   IN_PROTOSTRUCT=in_protoStruct, $
                                   SDT_NAME=name, $
                                   ANGLE=angle, $
+                                  ESPECUNITS=eSpecUnits, $
                                   ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                                   FIT_EACH_ANGLE=fit_each_angle, $
                                   TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct, $
                                   OUT_ONEDAT=out_oneDat, $
+                                  DEF_ONECOUNT=dEF_oneCount, $
                                   QUIET=quiet
 
   COMPILE_OPT idl2
@@ -48,7 +50,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
      CASE 1 OF
         KEYWORD_SET(fit_each_angle): BEGIN
            tempCount = PREP_EFLUX_DATA(tempDat, $
-                                            UNITS=units, $          
+                                            UNITS=eSpecUnits, $          
                                             RETRACE=retrace, $
                                             VEL=vel, $
                                             ANGLE=an, $
@@ -57,13 +59,13 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
                                             NO_SORT=no_sort)
         END
         KEYWORD_SET(try_synthetic_SDT_struct): BEGIN
-           SPEC2D,tempDat,UNITS='eflux',ANGLE=angle, $
+           SPEC2D,tempDat,UNITS=eSpecUnits,ANGLE=angle, $
                   OUT_DAT=tempCount, $
                   OUT_FASTSTR=tempCountSDT, $
                   /NO_PLOT
         END
         ELSE: BEGIN
-           SPEC2D,tempDat,UNITS='eflux',ANGLE=angle, $
+           SPEC2D,tempDat,UNITS=eSpecUnits,ANGLE=angle, $
                   OUT_DAT=tempCount, $
                   /NO_PLOT
         END
@@ -165,7 +167,9 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
      ENDIF
   ENDELSE
 
-  STORE_DATA,name,DATA=dEF_oneCount
+  IF KEYWORD_SET(old_mode) THEN BEGIN
+     STORE_DATA,name,DATA=dEF_oneCount
+  ENDIF
 
   IF KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
      STORE_DATA,name+"SDT",DATA=dEF_oneCountSDT

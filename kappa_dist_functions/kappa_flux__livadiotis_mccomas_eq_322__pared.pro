@@ -9,7 +9,7 @@
 ; A[4]: bulkAngle, Angle between bulk velocity, u_b, and velocity in direction for which we're interested in the distribution
 
 ; This function returns s^3/cm^3-km^3
-PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder
+PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder,UNITS=units
 
   COMPILE_OPT idl2
   
@@ -20,7 +20,9 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder
   speedOfLight      = DOUBLE(299792.458) ;km / s
   electron_mass     = DOUBLE(5.1099891e5)/speedOfLight^2   ;eV/c^2
 
-
+  IF N_ELEMENTS(units) EQ 0 THEN BEGIN
+     units               = 'eFlux'
+  ENDIF
   
   IF N_ELEMENTS(A) LT 4 THEN BEGIN
      PRINT,"Must have all four estimates for kappa dist! ( E_b, T, kappa, n[, bulkAngle, m] )"
@@ -60,8 +62,25 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder
 
   ;; Finv                   = n * ( electron_mass / 2.D ) ^ (1.5D) ;* DOUBLE(1e15)
 
+  ;;Also employed in KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC
   ;;Converts to eFlux units
-  Finv               = n * ( electron_mass / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+  ;; Finv               = n * ( electron_mass / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+  Finv            = n * ( electron_mass / 2.D ) ^ (1.5D) ;* DOUBLE(1e15)
+
+  CASE STRUPCASE(units) OF
+     'EFLUX': BEGIN
+        ;;Converts to differential energy flux units, eV/(cm^2-s-sr-eV)
+        
+        ;; Finv            = n * ( m / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+        Finv     *= DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+     END
+     'FLUX': BEGIN
+        ;;Convert to differential number flux units, #/(cm^2-s-sr-eV)
+        ;; Finv      = n * ( m / 2.D ) ^ (1.5D) * energy
+        ;; Finv     *= energy
+        Finv     *= DOUBLE(2e5) * energy / inMass^2 ;/  inDT
+     END
+  ENDCASE
 
   ;;First chunk
   ;; FK1                = (DOUBLE((!PI * T * (kappa - 1.5D + helpMeNotBeZero ) )))^(-1.5D)

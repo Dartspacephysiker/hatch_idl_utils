@@ -10,7 +10,8 @@
 
 ; This function returns s^3/cm^3-km^3
 
-FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP
+FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
+   UNITS=units
 
   COMPILE_OPT idl2
 
@@ -26,6 +27,10 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP
      PRINT,"Must have all four estimates for kappa dist! ( E_b, T, kappa, n[, bulkAngle, m] )"
      PRINT,"Returning..."
      ;; RETURN,-1
+  ENDIF
+
+  IF N_ELEMENTS(units) EQ 0 THEN BEGIN
+     units               = 'eFlux'
   ENDIF
 
   energy                 = DOUBLE(energy)
@@ -56,8 +61,20 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP
 
   Finv            = n * ( m / 2.D ) ^ (1.5D) ;* DOUBLE(1e15)
 
-  ;;Converts to eFlux units
-  Finv            = n * ( m / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+  CASE STRUPCASE(units) OF
+     'EFLUX': BEGIN
+        ;;Converts to differential energy flux units, eV/(cm^2-s-sr-eV)
+        
+        ;; Finv            = n * ( m / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+        Finv     *= DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+     END
+     'FLUX': BEGIN
+        ;;Convert to differential number flux units, #/(cm^2-s-sr-eV)
+        ;; Finv      = n * ( m / 2.D ) ^ (1.5D) * energy
+        ;; Finv     *= energy
+        Finv     *= DOUBLE(2e5) * energy / inMass^2 ;/  inDT
+     END
+  ENDCASE
 
   ;;First chunk
   ;; FK1          = (DOUBLE((!PI * T * (kappa - 1.5D + helpMeNotBeZero ) )))^(-1.5D)

@@ -77,6 +77,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                     ;; ANGLE=e_angle, $
                     NAME__DIFF_EFLUX=name__diff_eFlux, $
                     /CALC_GEOM_FACTORS, $
+                    UNITS=eSpecUnits, $          
                     FIT_EACH_ANGLE=fit_each_angle, $
                     SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                     OUT_DIFF_EFLUX=diff_eflux, $
