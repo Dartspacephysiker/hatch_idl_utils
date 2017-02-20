@@ -68,11 +68,11 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
      e_angle           = lc_angleRange
 
      IF KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
-        angleStr       = STRING(FORMAT='("--loss-cone_e_angle_",F0.1,"-",F0.1)', $
+        angleStr       = STRING(FORMAT='("-loss-cone_e_angle_",F0.1,"-",F0.1)', $
                           lc_angleRange[0], $
                           lc_angleRange[1])
      ENDIF ELSE BEGIN
-        angleStr       = STRING(FORMAT='("--only_field-aligned_e_angle_",F0.1,"-",F0.1)', $
+        angleStr       = STRING(FORMAT='("-only_field-aligned_e_angle_",F0.1,"-",F0.1)', $
                           lc_angleRange[0], $
                           lc_angleRange[1])
      ENDELSE
@@ -81,7 +81,7 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
            custom_e_angleRange[0], $
            custom_e_angleRange[1]
      e_angle           = custom_e_angleRange
-     angleStr          = STRING(FORMAT='("--e_angle_",F0.1,"-",F0.1)', $
+     angleStr          = STRING(FORMAT='("-e_angle_",F0.1,"-",F0.1)', $
                        custom_e_angleRange[0], $
                        custom_e_angleRange[1])
   ENDELSE

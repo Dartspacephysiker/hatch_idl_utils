@@ -9,7 +9,8 @@
 ; A[4]: bulkAngle, Angle between bulk velocity, u_b, and velocity in direction for which we're interested in the distribution
 
 ; This function returns s^3/cm^3-km^3
-PRO MAXWELL_FLUX,X,A,F,pder
+PRO MAXWELL_FLUX,X,A,F,pder, $
+                 UNITS=units
 
   COMPILE_OPT idl2
   
@@ -20,7 +21,9 @@ PRO MAXWELL_FLUX,X,A,F,pder
   speedOfLight      = DOUBLE(299792.458) ;km / s
   electron_mass     = DOUBLE(5.1099891e5)/speedOfLight^2   ;eV/c^2
 
-
+  IF N_ELEMENTS(units) EQ 0 THEN BEGIN
+     units               = 'eFlux'
+  ENDIF
   
   IF N_ELEMENTS(A) LT 4 THEN BEGIN
      PRINT,"Must have all four estimates for Maxwell dist! ( E_b, T, kappa, n[, bulkAngle, m] )"
@@ -37,15 +40,6 @@ PRO MAXWELL_FLUX,X,A,F,pder
   bulkAngle         = N_ELEMENTS(A) GT 4 ? DOUBLE(A[4])*!PI / 180.0 : 0
   inMass            = 5.6856602e-06 ;mass in eV/(km/s)^2
 
-  ;; inMass         = N_ELEMENTS(A) GT 5 ? DOUBLE(A[5])             : 5.6856602e-06 ;mass in eV/(km/s)^2
-  ;; inDT           = DOUBLE(A[4])
-  ;; m              = electron_mass
-
-  ;;Make sure kappa is fo' real
-  IF kappa LE 1.5D THEN BEGIN
-     kappa          = 1.5001D
-  ENDIF
-
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Chunks of the function
   ;;The whole thing is, as you see below, Finv*FG1*FG2*FG3
@@ -53,7 +47,22 @@ PRO MAXWELL_FLUX,X,A,F,pder
   ;; Finv                   = n * ( electron_mass / 2.D ) ^ (1.5D) ;* DOUBLE(1e15)
 
   ;;Converts to eFlux units
-  Finv               = n * ( electron_mass / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+  Finv               = n * ( electron_mass / 2.D ) ^ (1.5D) 
+
+  CASE STRUPCASE(units) OF
+     'EFLUX': BEGIN
+        ;;Converts to differential energy flux units, eV/(cm^2-s-sr-eV)
+        
+        ;; Finv            = n * ( m / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+        Finv     *= DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+     END
+     'FLUX': BEGIN
+        ;;Convert to differential number flux units, #/(cm^2-s-sr-eV)
+        ;; Finv      = n * ( m / 2.D ) ^ (1.5D) * energy
+        ;; Finv     *= energy
+        Finv     *= DOUBLE(2e5) * energy / inMass^2 ;/  inDT
+     END
+  ENDCASE
 
   ;;First chunk
   FG1                = DOUBLE(( !PI * T  ))^(-1.5D)
@@ -61,11 +70,6 @@ PRO MAXWELL_FLUX,X,A,F,pder
   ;;Second chunk
   FG2_innie          = SQRT(energy) - SQRT(E_b)
   FG2                = EXP( (-1.D) * ( FG2_innie )^2 / T ) 
-
-  ;;Third chunk, in parts that become useful later for PDs
-  ;; f_e                = (SQRT(energy) - SQRT(E_b)*COS(bulkAngle))^2 + E_b * (SIN(bulkAngle))^2
-  ;; fk3_in             = 1.D + f_e / ( (kappa - 1.5D) * T )
-  ;; FG3                = ( fk3_in ) ^ ( -1.D - kappa )
 
   ;;Fini
   F                  = Finv*FG1*FG2

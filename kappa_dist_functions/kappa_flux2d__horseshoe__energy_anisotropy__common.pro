@@ -103,7 +103,7 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
            tempP[0] = tempP[0]*K_EA__bFunc[k_ea_ii[i]]
            ;; tempP[0] = tempP[0]*K_EA__bFunc[i]
 
-           MAXWELL_FLUX,tempEn,tempP,angleSlice
+           MAXWELL_FLUX,tempEn,tempP,angleSlice,UNITS=units
 
            Zmodel[*,i]  = angleSlice * K_EA__gFunc[k_ea_ii[i]] ; Bingham and Cairns [2000]
            ;; Zmodel[*,i]  = angleSlice * K_EA__gFunc[i]          ; Bingham and Cairns [2000]
