@@ -195,7 +195,7 @@ FUNCTION PREP_EFLUX_DATA, $
      ENDELSE
 
      minvar             = MIN(theta,indminvar)
-
+     indminvar++
      xdat               = TRANSPOSE(xdat)
      ydat               = TRANSPOSE(ydat)
      dydat              = TRANSPOSE(dydat)
@@ -258,8 +258,6 @@ FUNCTION PREP_EFLUX_DATA, $
   ENDCASE
 
 
-;; IF arg_present(out_fastStr) THEN BEGIN
-
   out_fastStr           = {data_name:data3d.data_name, $
                            valid:data3d.valid, $
                            project_name:data3d.project_name, $
@@ -286,8 +284,6 @@ FUNCTION PREP_EFLUX_DATA, $
                            en_index:data3d.en_index, $
                            npts:data3d.npts, $
                            index:data3d.index}
-
-;; ENDIF
 
   RETURN,out_fastStr
 END

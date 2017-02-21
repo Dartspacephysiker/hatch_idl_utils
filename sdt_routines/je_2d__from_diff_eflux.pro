@@ -1,4 +1,4 @@
-;;02/14/17
+;;2017/02/14
 FUNCTION JE_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                 ENERGY=en, $
                                 ERANGE=er, $
@@ -18,13 +18,13 @@ FUNCTION JE_2D__FROM_DIFF_EFLUX,diff_eFlux, $
 
   FOR k=0,max-1 DO BEGIN
 
-     je.y[k]  = JE_2D(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k), $
-                      ENERGY=en, $
-                      ERANGE=er, $
-                      EBINS=ebins, $
-                      ANGLE=an, $
-                      ARANGE=ar, $
-                      BINS=bins)
+     je.y[k]  = JE_2D_FS(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k), $
+                         ENERGY=en, $
+                         ERANGE=er, $
+                         EBINS=ebins, $
+                         ANGLE=an, $
+                         ARANGE=ar, $
+                         BINS=bins)
      
   ENDFOR
 

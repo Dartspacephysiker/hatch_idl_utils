@@ -1,5 +1,5 @@
-;;2017/02/14
-FUNCTION J_2D__FROM_DIFF_EFLUX,diff_eFlux, $
+;;2017/02/21
+FUNCTION N_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                ENERGY=en, $
                                ERANGE=er, $
                                EBINS=ebins, $
@@ -14,11 +14,11 @@ FUNCTION J_2D__FROM_DIFF_EFLUX,diff_eFlux, $
 
   max         = N_ELEMENTS(diff_eFlux.data_name)
   time        = (diff_eFlux.time+diff_eFlux.end_time)/2.
-  j           = {x:TEMPORARY(time),y:MAKE_ARRAY(max,/FLOAT)}
+  n           = {x:TEMPORARY(time),y:MAKE_ARRAY(max,/FLOAT)}
 
   FOR k=0,max-1 DO BEGIN
 
-     j.y[k]   = J_2D_FS(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k), $
+     j.y[k]   = N_2D_FS(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k), $
                         ENERGY=en, $
                         ERANGE=er, $
                         EBINS=ebins, $
@@ -34,7 +34,6 @@ FUNCTION J_2D__FROM_DIFF_EFLUX,diff_eFlux, $
      PRINT,'Number of data points = ',max
   ENDIF
 
-  RETURN,j
+  RETURN,n
 
 END
-
