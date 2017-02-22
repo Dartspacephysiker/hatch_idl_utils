@@ -62,11 +62,10 @@ FUNCTION MOMENTERRORS_2D,dat2, $
   data     = REFORM(dat.data[bins2_i],nEBins,nABins)
   ddata    = REFORM(dat.ddata[bins2_i],nEBins,nABins)
 
-
   energy   = dat.energy[ebins_i]
-  ;; denergy  = dat.denergy[ebins2]
-  theta    = dat.theta[abins_i]/!RADEG
-  ;; dtheta   = dat.dtheta[abins_i]/!RADEG
+  denergy  = dat.denergy[ebins_i]
+  theta    = REFORM(dat.theta[0,abins_i])
+  dtheta   = REFORM((dat.dtheta[0,abins_i]))
   ;; mass     = dat.mass * 1.6e-22
   ;; Const    = 1.6e-12
 
@@ -75,6 +74,8 @@ FUNCTION MOMENTERRORS_2D,dat2, $
   species  = dat.mass GT 6e-6 ;0=electron, 1=ion; electron mass is 5.68566e-06 eV/c^2 (c in km/s)
 
   errThing = PLASMA_MOMENTERRORS__GERSHMAN(data,ddata,species,energy,theta, $ ;phi, $
+                                           DENERGY=dEnergy, $
+                                           DTHETA=dTheta, $
                                            PRESSURE_COVAR_CALC=pressure_covar_calc, $
                                            HEATFLUX_COVAR_CALC=heatFlux_covar_calc, $
                                            /SANS_PHI, $

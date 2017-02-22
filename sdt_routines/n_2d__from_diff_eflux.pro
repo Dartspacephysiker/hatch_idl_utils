@@ -18,7 +18,7 @@ FUNCTION N_2D__FROM_DIFF_EFLUX,diff_eFlux, $
 
   FOR k=0,max-1 DO BEGIN
 
-     j.y[k]   = N_2D_FS(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k), $
+     n.y[k]   = N_2D_FS(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k), $
                         ENERGY=en, $
                         ERANGE=er, $
                         EBINS=ebins, $

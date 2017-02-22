@@ -37,6 +37,11 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
 
   ;;Collect angles
   IF KEYWORD_SET(just_one) THEN BEGIN
+     IF N_ELEMENTS(WHERE(north_south EQ north_south[0])) NE N_ELEMENTS(north_south) THEN BEGIN
+        PRINT,"You're in a mixed-hemisphere situation, which spells trouble. Better call Doc."
+        STOP
+     ENDIF
+
      north_south    = north_south[0]
      lcw            = lcw[0]
   ENDIF
