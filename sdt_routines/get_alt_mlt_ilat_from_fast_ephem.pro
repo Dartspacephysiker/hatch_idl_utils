@@ -10,6 +10,17 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
 
   COMPILE_OPT idl2
 
+  IF N_ELEMENTS(timeArr) EQ 0 THEN BEGIN
+     PRINT,'Bogus'
+
+     alt      = -999
+     mlt      = -999
+     ilat     = -999
+     mapRatio = -999
+     nEvents  = 0
+     RETURN
+  ENDIF
+
   ;; IF N_ELEMENTS(fastLoc) EQ 0 OR N_ELEMENTS(fastLoc_times) EQ 0 THEN BEGIN
   ;;    LOAD_FASTLOC_AND_FASTLOC_TIMES,fastLoc,fastLoc_times
   ;; ENDIF
@@ -42,26 +53,31 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
   ;; tmpFL_i         = WHERE(fastLoc.orbit EQ orb,nTmpFLTimes)
   
   ;; IF nTmpFLTimes LT 2 THEN BEGIN
-     PRINT,"Getting orb data for orbit " + STRCOMPRESS(orb,/REMOVE_ALL) + '...'
-     GET_FA_ORBIT,(N_ELEMENTS(tSort_i) GT 0 ? times : timeArr),/TIME_ARRAY,/ALL
-     get_data,'ALT',DATA=alt
-     get_data,'MLT',DATA=mlt
-     get_data,'ILAT',DATA=ilat
-     GET_DATA,'B_model',DATA=bMod
-     GET_DATA,'BFOOT',DATA=bFoot
+  IF KEYWORD_SET(orb) THEN BEGIN
+     PRINT,"Getting ephem data for orbit " + STRCOMPRESS(orb,/REMOVE_ALL) + '...'
+  ENDIF ELSE BEGIN
+     PRINT,"Getting ephem data for " + STRCOMPRESS(N_ELEMENTS(timeArr),/REMOVE_ALL) + ' times ...'
+  ENDELSE
 
-     IF N_ELEMENTS(alt.y) NE nEvents THEN STOP
-     alt       = (TEMPORARY(alt)).y
-     mlt       = (TEMPORARY(mlt)).y
-     ilat      = (TEMPORARY(ilat)).y
+  GET_FA_ORBIT,(N_ELEMENTS(tSort_i) GT 0 ? times : timeArr),/TIME_ARRAY,/ALL
+  get_data,'ALT',DATA=alt
+  get_data,'MLT',DATA=mlt
+  get_data,'ILAT',DATA=ilat
+  GET_DATA,'B_model',DATA=bMod
+  GET_DATA,'BFOOT',DATA=bFoot
 
-     mag1      = (bMod.y[*,0]*bMod.y[*,0]+ $
-                  bMod.y[*,1]*bMod.y[*,1]+ $
-                  bMod.y[*,2]*bMod.y[*,2])^0.5
-     mag2      = (bFoot.y[*,0]*bFoot.y[*,0]+ $
-                  bFoot.y[*,1]*bFoot.y[*,1]+ $
-                  bFoot.y[*,2]*bFoot.y[*,2])^0.5
-     mapRatio  = TEMPORARY(mag2)/TEMPORARY(mag1)
+  IF N_ELEMENTS(alt.y) NE nEvents THEN STOP
+  alt       = (TEMPORARY(alt)).y
+  mlt       = (TEMPORARY(mlt)).y
+  ilat      = (TEMPORARY(ilat)).y
+
+  mag1      = (bMod.y[*,0]*bMod.y[*,0]+ $
+               bMod.y[*,1]*bMod.y[*,1]+ $
+               bMod.y[*,2]*bMod.y[*,2])^0.5
+  mag2      = (bFoot.y[*,0]*bFoot.y[*,0]+ $
+               bFoot.y[*,1]*bFoot.y[*,1]+ $
+               bFoot.y[*,2]*bFoot.y[*,2])^0.5
+  mapRatio  = TEMPORARY(mag2)/TEMPORARY(mag1)
 
      
   ;; ENDIF ELSE BEGIN

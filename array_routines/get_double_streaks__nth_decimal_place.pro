@@ -13,11 +13,16 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
    STOP_I=stop_i, $
    STREAKLENS=streakLens, $
    T_STREAKLENS=streakLens_t, $
+   NSTREAKS=nStreaks, $
    FLOOR=floor, $
    CEILING=ceiling, $
    PRINT_START_STOP_TIMES=print_start_stop_times, $
    PRINT__INCLUDE_CURRENT=print__include_current, $
    PRINT_MAXIMUS__INCLUDE_CURRENT=print_maximus__include_current, $
+   SORT_BY_STREAKLEN=sort_by_streakLen, $
+   SORT_BY_T_STREAKLEN=sort_by_streakLen_t, $
+   SORT_REVERSE=sort_reverse, $
+   NO_SORT=no_sort, $
    OUTLUN=outLun
 
   COMPILE_OPT IDL2
@@ -122,9 +127,9 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
         doQuit      = 1
      ENDIF ELSE BEGIN
 
-        goodStreak_ii = CGSETINTERSECTION(goodStreak_ii,goodTStreak_ii,COUNT=nGoodStreaks)
+        goodStreak_ii = CGSETINTERSECTION(goodStreak_ii,goodTStreak_ii,COUNT=nStreaks)
 
-        IF nGoodStreaks EQ 0 THEN BEGIN
+        IF nStreaks EQ 0 THEN BEGIN
            doQuit = 1
         ENDIF
      ENDELSE
@@ -144,7 +149,23 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
   start_i        = start_i[goodStreak_ii]
   stop_i         = stop_i[goodStreak_ii]
 
-  sort           = SORT(start_i)
+  CASE 1 OF
+     KEYWORD_SET(sort_by_streakLen): BEGIN
+        sort     = SORT(streakLens)
+     END
+     KEYWORD_SET(sort_by_streakLen_t): BEGIN
+        sort     = SORT(streakLens_t)
+     END
+     KEYWORD_SET(no_sort): BEGIN
+        sort     = LINDGEN(nStreaks)
+     END
+     ELSE: BEGIN
+        sort     = SORT(start_i)
+     END
+  ENDCASE
+  IF KEYWORD_SET(sort_reverse) THEN BEGIN
+     sort        = REVERSE(sort)
+  ENDIF
   streakLens     = streakLens[sort]
   streakLens_t   = streakLens_t[sort]
   start_i        = start_i[sort]
