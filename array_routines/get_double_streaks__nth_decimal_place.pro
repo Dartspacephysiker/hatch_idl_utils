@@ -153,16 +153,21 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
 
   IF KEYWORD_SET(print_start_stop_times) THEN BEGIN
      printLun = (N_ELEMENTS(outLun) GT 0 ? outLun : -1)
-     PRINTF,printLun,FORMAT='(A0,T25,A0,T50,A0,T62,A0,T72,A0)','Start T', $
-            'Stop T', $
-            'Tot T diff', $
-            'N Diff', $
-            'Avg T diff'
-     FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
-        CASE 1 OF
-           KEYWORD_SET(print_maximus__include_current): BEGIN
+     CASE 1 OF
+        KEYWORD_SET(print_maximus__include_current): BEGIN
+           PRINTF,printLun,FORMAT='(A0,T10,A0,T35,A0,T60,A0,T72,A0,T82,A0,T92,A0,T102,A0)', $
+                  'Orbit', $
+                  'Start T', $
+                  'Stop T', $
+                  'Tot T diff', $
+                  'N Diff', $
+                  'Avg T diff', $
+                  'ESA Cur', $
+                  'Mag Cur'
+           FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
               PRINTF,printLun, $
-                     FORMAT='(A0,T25,A0,T50,G-0.5,T62,I-10,T72,G-0.5,T82,G-0.5,T92,G-0.5)', $
+                     FORMAT='(I0,T10,A0,T35,A0,T60,G-0.5,T72,I-10,T82,G-0.5,T92,G-0.5,T102,G-0.5)', $
+                     maximus.orbit[start_i[k]], $
                      TIME_TO_STR(nums[start_i[k]],/MSEC), $
                      TIME_TO_STR(nums[stop_i[k]],/MSEC), $
                      nums[stop_i[k]]-nums[start_i[k]], $
@@ -171,8 +176,17 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
                           (nums[start_i[k]:stop_i[k]])[0:-2]), $
                      MEDIAN(maximus.esa_current[start_i[k]:stop_i[k]]), $
                      MEDIAN(maximus.mag_current[start_i[k]:stop_i[k]])
-           END
-           KEYWORD_SET(print__include_current): BEGIN
+           ENDFOR
+        END
+        KEYWORD_SET(print__include_current): BEGIN
+           PRINTF,printLun,FORMAT='(A0,T25,A0,T50,A0,T62,A0,T72,A0,T82)', $
+                  'Start T', $
+                  'Stop T', $
+                  'Tot T diff', $
+                  'N Diff', $
+                  'Avg T diff', $
+                  'Current'
+           FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
               PRINTF,printLun, $
                      FORMAT='(A0,T25,A0,T50,G-0.5,T62,I-10,T72,G-0.5,T82,G-0.5)', $
                      TIME_TO_STR(nums[start_i[k]],/MSEC), $
@@ -182,9 +196,16 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
                      MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
                           (nums[start_i[k]:stop_i[k]])[0:-2]), $
                      MEDIAN(pCurrent[start_i[k]:stop_i[k]])
-
-           END
-           ELSE: BEGIN
+           ENDFOR
+        END
+        ELSE: BEGIN
+           PRINTF,printLun,FORMAT='(A0,T25,A0,T50,A0,T62,A0,T72,A0)', $
+                  'Start T', $
+                  'Stop T', $
+                  'Tot T diff', $
+                  'N Diff', $
+                  'Avg T diff'
+           FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
               PRINTF,outLun, $
                      FORMAT='(A0,T25,A0,T50,G-0.5,T65,I-10,T80,G-0.5)', $
                      TIME_TO_STR(nums[start_i[k]],/MSEC), $
@@ -193,8 +214,8 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
                      streakLens[k], $
                      MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
                           (nums[start_i[k]:stop_i[k]])[0:-2])
-           END
-        ENDCASE
-     ENDFOR
+           ENDFOR
+        END
+     ENDCASE
   ENDIF
 END
