@@ -21,6 +21,11 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
    PRINT_MAXIMUS__INCLUDE_CURRENT=print_maximus__include_current, $
    SORT_BY_STREAKLEN=sort_by_streakLen, $
    SORT_BY_T_STREAKLEN=sort_by_streakLen_t, $
+   SORT_BY_AVG_DT=sort_by_avg_dt, $
+   SORT_BY_MAGNITUDE_ESA_CURRENT=ABS_jESA_sort, $
+   SORT_BY_MAGNITUDE_MAG_CURRENT=ABS_jMAG_sort, $
+   SORT_BY_ESA_CURRENT=jESA_sort, $
+   SORT_BY_MAG_CURRENT=jMAG_sort, $
    SORT_REVERSE=sort_reverse, $
    NO_SORT=no_sort, $
    OUTLUN=outLun
@@ -149,6 +154,48 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
   start_i        = start_i[goodStreak_ii]
   stop_i         = stop_i[goodStreak_ii]
 
+  ;;Prep for sorting, printing, if requested
+  maximus_sorting       = KEYWORD_SET(print_maximus__include_current) AND ISA(maximus)
+  IF (KEYWORD_SET(ABS_jESA_sort) OR $
+      KEYWORD_SET(ABS_jMAG_sort) OR $
+      KEYWORD_SET(jESA_sort    ) OR $
+      KEYWORD_SET(jMAG_sort    ))   $
+  THEN BEGIN
+     IF KEYWORD_SET(print_maximus__include_current) THEN BEGIN
+     ENDIF ELSE BEGIN
+        maximus_sorting = 0B
+        PRINT,"Illegalities! Gotta include maximus if you want this to happen: "
+        PRINT,FORMAT='(A0,T25,":",I0)',"ABS_jESA_sort",KEYWORD_SET(ABS_jESA_sort)
+        PRINT,FORMAT='(A0,T25,":",I0)',"ABS_jMAG_sort",KEYWORD_SET(ABS_jMAG_sort)
+        PRINT,FORMAT='(A0,T25,":",I0)',"jESA_sort    ",KEYWORD_SET(jESA_sort    )
+        PRINT,FORMAT='(A0,T25,":",I0)',"jMAG_sort    ",KEYWORD_SET(jMAG_sort    )
+        ABS_jESA_sort = !NULL
+        ABS_jMAG_sort = !NULL
+        jESA_sort     = !NULL
+        jMAG_sort     = !NULL
+     ENDELSE
+  ENDIF
+
+  IF KEYWORD_SET(sort_by_avg_dt) OR $
+     KEYWORD_SET(maximus_sorting) THEN BEGIN
+     
+     mean_dt           = MAKE_ARRAY(nStreaks,VALUE=0.,/FLOAT)
+     IF KEYWORD_SET(print_maximus__include_current) THEN BEGIN
+        med_jESA       = MAKE_ARRAY(nStreaks,VALUE=0.,/FLOAT)
+        med_jMAG       = MAKE_ARRAY(nStreaks,VALUE=0.,/FLOAT)
+     ENDIF
+
+     FOR k=0,nStreaks-1 DO BEGIN
+        mean_dt[k]     = MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
+                           (nums[start_i[k]:stop_i[k]])[0:-2])
+        IF KEYWORD_SET(print_maximus__include_current) THEN BEGIN
+           med_jESA[k] = MEDIAN(maximus.esa_current[start_i[k]:stop_i[k]])
+           med_jMAG[k] = MEDIAN(maximus.mag_current[start_i[k]:stop_i[k]])
+        ENDIF
+     ENDFOR
+  ENDIF
+  
+  ;;Sorting stuff
   CASE 1 OF
      KEYWORD_SET(sort_by_streakLen): BEGIN
         sort     = SORT(streakLens)
@@ -159,18 +206,39 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
      KEYWORD_SET(no_sort): BEGIN
         sort     = LINDGEN(nStreaks)
      END
+     KEYWORD_SET(sort_by_avg_dt): BEGIN
+        sort     = SORT(mean_dt)
+     END
+     KEYWORD_SET(ABS_jESA_sort): BEGIN
+        sort     = SORT(ABS(med_jESA))
+     END
+     KEYWORD_SET(ABS_jMAG_sort): BEGIN
+        sort     = SORT(ABS(med_jMAG))
+     END
+     KEYWORD_SET(jESA_sort    ): BEGIN
+        sort     = SORT(med_jESA)
+     END
+     KEYWORD_SET(jMAG_sort    ): BEGIN     
+        sort     = SORT(med_jMAG)
+     END
      ELSE: BEGIN
         sort     = SORT(start_i)
      END
   ENDCASE
+
   IF KEYWORD_SET(sort_reverse) THEN BEGIN
      sort        = REVERSE(sort)
   ENDIF
+
   streakLens     = streakLens[sort]
   streakLens_t   = streakLens_t[sort]
   start_i        = start_i[sort]
   stop_i         = stop_i[sort]
-
+  IF KEYWORD_SET(print_maximus__include_current) THEN BEGIN
+     mean_dt     = mean_dt[sort]
+     med_jESA    = med_jESA[sort]
+     med_jMAG    = med_jMAG[sort]
+  ENDIF
 
   IF KEYWORD_SET(print_start_stop_times) THEN BEGIN
      printLun = (N_ELEMENTS(outLun) GT 0 ? outLun : -1)
@@ -180,9 +248,9 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
                   'Orbit', $
                   'Start T', $
                   'Stop T', $
-                  'Tot T diff', $
-                  'N Diff', $
-                  'Avg T diff', $
+                  'Len (s)', $
+                  'N pts', $
+                  'Avg dt', $
                   'ESA Cur', $
                   'Mag Cur'
            FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
@@ -193,19 +261,18 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
                      TIME_TO_STR(nums[stop_i[k]],/MSEC), $
                      nums[stop_i[k]]-nums[start_i[k]], $
                      streakLens[k], $
-                     MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
-                          (nums[start_i[k]:stop_i[k]])[0:-2]), $
-                     MEDIAN(maximus.esa_current[start_i[k]:stop_i[k]]), $
-                     MEDIAN(maximus.mag_current[start_i[k]:stop_i[k]])
+                     mean_dt[k], $
+                     med_jESA[k], $
+                     med_jMAG[k]
            ENDFOR
         END
         KEYWORD_SET(print__include_current): BEGIN
            PRINTF,printLun,FORMAT='(A0,T25,A0,T50,A0,T62,A0,T72,A0,T82)', $
                   'Start T', $
                   'Stop T', $
-                  'Tot T diff', $
-                  'N Diff', $
-                  'Avg T diff', $
+                  'Len (s)', $
+                  'N pts', $
+                  'Avg dt', $
                   'Current'
            FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
               PRINTF,printLun, $
@@ -223,9 +290,9 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
            PRINTF,printLun,FORMAT='(A0,T25,A0,T50,A0,T62,A0,T72,A0)', $
                   'Start T', $
                   'Stop T', $
-                  'Tot T diff', $
-                  'N Diff', $
-                  'Avg T diff'
+                  'Len (s)', $
+                  'N pts', $
+                  'Avg dt'
            FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
               PRINTF,outLun, $
                      FORMAT='(A0,T25,A0,T50,G-0.5,T65,I-10,T80,G-0.5)', $
