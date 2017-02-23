@@ -153,7 +153,7 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
 
   IF KEYWORD_SET(print_start_stop_times) THEN BEGIN
      printLun = (N_ELEMENTS(outLun) GT 0 ? outLun : -1)
-     PRINTF,outLun,FORMAT='(A0,T25,A0,T50,A0,T62,A0,T72,A0)','Start T', $
+     PRINTF,printLun,FORMAT='(A0,T25,A0,T50,A0,T62,A0,T72,A0)','Start T', $
             'Stop T', $
             'Tot T diff', $
             'N Diff', $
@@ -161,7 +161,7 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
      FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
         CASE 1 OF
            KEYWORD_SET(print_maximus__include_current): BEGIN
-              PRINTF,outLun, $
+              PRINTF,printLun, $
                      FORMAT='(A0,T25,A0,T50,G-0.5,T62,I-10,T72,G-0.5,T82,G-0.5,T92,G-0.5)', $
                      TIME_TO_STR(nums[start_i[k]],/MSEC), $
                      TIME_TO_STR(nums[stop_i[k]],/MSEC), $
@@ -173,7 +173,7 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
                      MEDIAN(maximus.mag_current[start_i[k]:stop_i[k]])
            END
            KEYWORD_SET(print__include_current): BEGIN
-              PRINTF,outLun, $
+              PRINTF,printLun, $
                      FORMAT='(A0,T25,A0,T50,G-0.5,T62,I-10,T72,G-0.5,T82,G-0.5)', $
                      TIME_TO_STR(nums[start_i[k]],/MSEC), $
                      TIME_TO_STR(nums[stop_i[k]],/MSEC), $
