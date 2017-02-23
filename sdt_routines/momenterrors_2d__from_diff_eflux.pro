@@ -6,7 +6,7 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                           ANGLE=an, $
                                           ARANGE=ar, $
                                           BINS=bins, $
-                                          CONV_TO_CM=conv_to_cm, $
+                                          ;; CONV_TO_CM=conv_to_cm, $
                                           QUIET=quiet
 
   COMPILE_OPT IDL2
@@ -24,18 +24,12 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
   errThingList = LIST()
   FOR k=0,max-1 DO BEGIN
 
-     ;; tmpGuy   = CONV_UNITS(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k),'dfStd') ;distribution function, in "standard" units (s^3/m^6)
-
-     ;; errThing = PLASMA_MOMENTERRORS__GERSHMAN(tmpGuy.data,tmpGuy.ddata,species,energy,theta, $;phi, $
-     ;;                                          PRESSURE_COVAR_CALC=pressure_covar_calc, $
-     ;;                                          HEATFLUX_COVAR_CALC=heatFlux_covar_calc, $
-     ;;                                          /SANS_PHI)
-     
      errThing    = MOMENTERRORS_2D(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k), $
                                    ENERGY=en,ERANGE=er,EBINS=ebins,$
                                    ANGLE=an,ARANGE=ar, $
-                                   BINS=bins, $
-                                   CONV_TO_CM=conv_to_cm)
+                                   BINS=bins);; , $
+                                   ;; CONV_TO_CM=conv_to_cm
+     
      errThingList.Add,TEMPORARY(errThing)
 
   ENDFOR

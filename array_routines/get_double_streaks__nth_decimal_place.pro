@@ -244,8 +244,32 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
      printLun = (N_ELEMENTS(outLun) GT 0 ? outLun : -1)
      CASE 1 OF
         KEYWORD_SET(print_maximus__include_current): BEGIN
-           PRINTF,printLun,FORMAT='(A0,T10,A0,T35,A0,T60,A0,T72,A0,T82,A0,T92,A0,T102,A0)', $
+           ;; PRINTF,printLun,FORMAT='(A0,T10,A0,T35,A0,T60,A0,T72,A0,T82,A0,T92,A0,T102,A0)', $
+           ;;        'Orbit', $
+           ;;        'Start T', $
+           ;;        'Stop T', $
+           ;;        'Len (s)', $
+           ;;        'N pts', $
+           ;;        'Avg dt', $
+           ;;        'ESA Cur', $
+           ;;        'Mag Cur'
+           ;; FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
+           ;;    PRINTF,printLun, $
+           ;;           FORMAT='(I0,T10,A0,T35,A0,T60,G-0.5,T72,I-10,T82,G-0.5,T92,G-0.5,T102,G-0.5)', $
+           ;;           maximus.orbit[start_i[k]], $
+           ;;           TIME_TO_STR(nums[start_i[k]],/MSEC), $
+           ;;           TIME_TO_STR(nums[stop_i[k]],/MSEC), $
+           ;;           nums[stop_i[k]]-nums[start_i[k]], $
+           ;;           streakLens[k], $
+           ;;           mean_dt[k], $
+           ;;           med_jESA[k], $
+           ;;           med_jMAG[k]
+           ;; ENDFOR
+           PRINTF,printLun,FORMAT='(A0,T10,A0,T20,A0,T30,A0,T40,A0,T65,A0,T90,A0,T102,A0,T112,A0,T122,A0,T132,A0)', $
                   'Orbit', $
+                  'MLT', $
+                  'ILAT', $
+                  'ALT', $
                   'Start T', $
                   'Stop T', $
                   'Len (s)', $
@@ -255,8 +279,11 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
                   'Mag Cur'
            FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
               PRINTF,printLun, $
-                     FORMAT='(I0,T10,A0,T35,A0,T60,G-0.5,T72,I-10,T82,G-0.5,T92,G-0.5,T102,G-0.5)', $
+                     FORMAT='(I0,T10,F0.2,T20,F0.2,T30,F0.2,T40,A0,T65,A0,T90,G-0.5,T102,I-10,T112,G-0.5,T122,G-0.5,T132,G-0.5)', $
                      maximus.orbit[start_i[k]], $
+                     maximus.mlt[start_i[k]], $
+                     maximus.ilat[start_i[k]], $
+                     maximus.alt[start_i[k]], $
                      TIME_TO_STR(nums[start_i[k]],/MSEC), $
                      TIME_TO_STR(nums[stop_i[k]],/MSEC), $
                      nums[stop_i[k]]-nums[start_i[k]], $
