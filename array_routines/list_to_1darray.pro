@@ -40,7 +40,7 @@ FUNCTION LIST_TO_1DARRAY,list, $
                  array  = list[iFirst,safe_i]
               ENDIF
            ENDIF ELSE BEGIN
-              array  = list[iFirst]
+              array  = REFORM(list[iFirst],N_ELEMENTS(list[iFirst]))
            ENDELSE
         ENDIF
 
@@ -70,7 +70,7 @@ FUNCTION LIST_TO_1DARRAY,list, $
                  array  = [array,list[i,safe_i]]
               ENDIF
            ENDIF ELSE BEGIN
-              array  = [array,list[i]]
+              array  = [array,REFORM(list[i],N_ELEMENTS(list[i]))]
            ENDELSE
         ENDIF
 

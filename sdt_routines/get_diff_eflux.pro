@@ -10,6 +10,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct, $
                    OUT_DIFF_EFLUX=diff_eflux, $
                    SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
+                   DIFF_EFLUX_FILE=diff_eFlux_file, $
                    LOAD_DAT_FROM_FILE=loadFile, $
                    LOAD_DIR=loadDir
                    
@@ -18,18 +19,18 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
   COMPILE_OPT idl2
 
   got_restored  = 0
-  IF KEYWORD_SET(loadFile) THEN BEGIN
+  IF KEYWORD_SET(loadFile) AND KEYWORD_SET(diff_eFlux_file) THEN BEGIN
 
      IF N_ELEMENTS(loadDir) EQ 0 THEN BEGIN
         loadDir = ''
      ENDIF
 
-     IF FILE_TEST(loadDir+loadFile) THEN BEGIN
-        PRINT,'Restoring ' + loadFile + '...'
-        RESTORE,loadDir+loadFile
+     IF FILE_TEST(loadDir+diff_eFlux_file) THEN BEGIN
+        PRINT,'Restoring ' + diff_eFlux_file + '...'
+        RESTORE,loadDir+diff_eFlux_file
         got_restored = (N_ELEMENTS(dat_eFlux) GT 0) OR (N_ELEMENTS(diff_eFlux) GT 0)
      ENDIF ELSE BEGIN
-        PRINT,"Couldn't find " + loadFile + "!!!"
+        PRINT,"Couldn't find " + diff_eFlux_file + "!!!"
         PRINT,'Attempting to get and save for you ...'
         couldntfindLoad = 1
      ENDELSE
@@ -65,7 +66,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         tempDat                                  = dat_eFlux[i]
 
         CASE 1 OF
-           KEYWORD_SET(fit_each_angle): BEGIN
+           KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0): BEGIN
               tempdiff_eflux = PREP_EFLUX_DATA(tempDat, $
                                                CALIB=calc_geom_factors, $
                                                UNITS=units, $          
@@ -94,7 +95,8 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
            shiftVals                             = [shiftVals,0]
         ENDIF                   ;ELSE BEGIN
 
-        IF ~KEYWORD_SET(fit_each_angle) AND ~KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
+        IF ~(KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0)) AND $
+           ~KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
            shiftMe                            = WHERE(tempDiff_eFlux.angles LT 0)
            shiftVal                           = MAX(shiftMe)
            shiftVals                          = [shiftVals,shiftVal]
@@ -145,7 +147,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         
      ENDIF ELSE BEGIN
 
-        IF ~KEYWORD_SET(fit_each_angle) THEN BEGIN
+        IF ~(KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0)) THEN BEGIN
            diff_eFlux                            =  {x:        TRANSPOSE(diff_eFlux.x), $
                                                      y:        TRANSPOSE(diff_eFlux.y), $
                                                      angles:   TRANSPOSE(diff_eFlux.angles), $
@@ -188,9 +190,13 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
   ENDIF
   
   IF KEYWORD_SET(save_diff_eFlux_to_file) OR KEYWORD_SET(couldntfindLoad) THEN BEGIN
-     IF KEYWORD_SET(couldntfindload) THEN save_diff_eFlux_to_file = loadFile
-     PRINT,"Saving diff_eFlux to file: " + save_diff_eFlux_to_file
-     SAVE,diff_eFlux,FILENAME=loadDir + save_diff_eFlux_to_file
+     IF (KEYWORD_SET(couldntfindload) OR (N_ELEMENTS(diff_eFlux_file) GT 0)) THEN BEGIN
+        save_diff_eFlux_to_file = diff_eFlux_file
+        PRINT,"Saving diff_eFlux to file: " + save_diff_eFlux_to_file
+        SAVE,diff_eFlux,FILENAME=loadDir + save_diff_eFlux_to_file
+     ENDIF ELSE BEGIN
+        PRINT,"Sorry, no save for you"
+     ENDELSE
   ENDIF
 
   IF KEYWORD_SET(old_mode) THEN BEGIN

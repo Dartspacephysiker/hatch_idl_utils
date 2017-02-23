@@ -52,7 +52,7 @@ PRO ADD_EFLUX_TO_EFLUX_STRUCT,diff_eflux,tempDiff_eflux, $
                          index:[diff_eFlux.index,tempDiff_eFlux.index]}
 
         END
-        KEYWORD_SET(fit_each_angle): BEGIN
+        KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0): BEGIN
            diff_eFlux = {data_name:[diff_eFlux.data_name,tempDiff_eFlux.data_name], $
                          valid:[diff_eFlux.valid, tempDiff_eFlux.valid], $
                          project_name:[diff_eFlux.project_name,tempDiff_eFlux.project_name], $

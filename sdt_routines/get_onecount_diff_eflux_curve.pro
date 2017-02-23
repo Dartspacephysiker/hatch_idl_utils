@@ -17,7 +17,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
 
   IF ~KEYWORD_SET(name) THEN BEGIN
      CASE 1 OF
-        KEYWORD_SET(fit_each_angle): BEGIN
+        (KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0)): BEGIN
            name                   = 'diff_eFlux_oneCount__fit_each_angle'
         END
         ELSE: BEGIN
@@ -48,7 +48,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
      tempDat.data[*,*]                           = 1
 
      CASE 1 OF
-        KEYWORD_SET(fit_each_angle): BEGIN
+        (KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0)): BEGIN
            tempCount = PREP_EFLUX_DATA(tempDat, $
                                             UNITS=eSpecUnits, $          
                                             RETRACE=retrace, $
@@ -78,7 +78,8 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
 
         ;; IF ~KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
 
-     IF ~KEYWORD_SET(fit_each_angle) AND ~KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
+     IF ~(KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0)) AND $
+        ~KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
         shiftMe                                  = WHERE(tempCount.angles LT 0)
         shiftVal                                 = MAX(shiftMe)
         shiftVals                                = [shiftVals,shiftVal]
@@ -128,7 +129,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
      
   ENDIF ELSE BEGIN
 
-     IF ~KEYWORD_SET(fit_each_angle) THEN BEGIN
+     IF ~(KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0)) THEN BEGIN
         dEF_oneCount                                =  {x:        TRANSPOSE(dEF_oneCount.x), $
                                                         y:        TRANSPOSE(dEF_oneCount.y), $
                                                         angles:   TRANSPOSE(dEF_oneCount.angles), $
