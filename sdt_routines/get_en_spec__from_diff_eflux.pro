@@ -79,6 +79,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   data   = FLTARR(max,nmaxvar)
   ddata  = FLTARR(max,nmaxvar)
   var    = FLTARR(max,nmaxvar)
+  dvar   = FLTARR(max,nmaxvar)
   nvar   = diff_eFlux.nenergy
   nmax   = nvar
 
@@ -101,6 +102,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
         data[k,*]  = missing
         ddata[k,*] = missing
         var[k,*]   = missing
+        dvar[k,*]  = missing
 
         ;; PRINT,'Invalid packet, diff_eFlux.valid ne 1, at: ',TIME_TO_STR(diff_eFlux.time[k])
         PRINT,'Invalid packet, diff_eFlux.valid ne 1, at: ',TIME_TO_STR(dat.time)
@@ -136,6 +138,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
         data[k,*]  = missing
         ddata[k,*] = missing
         var[k,*]   = missing
+        dvar[k,*]  = missing
         ;; IF (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2. GT time[k-1] + gap_time THEN BEGIN
         IF (dat.time+dat.end_time)/2. GT time[k-1] + gap_time THEN BEGIN
            ;; time[k]   = (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2. - dbadtime
@@ -143,6 +146,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
            data[k,*]  = missing
            ddata[k,*] = missing
            var[k,*]   = missing
+           dvar[k,*]  = missing
            n=n+1
         endif
      endif
@@ -161,11 +165,13 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
         data[k,0:nvar-1]  = TOTAL( dat.data[*,ind],  2)/norm
         ddata[k,0:nvar-1] = TOTAL( dat.ddata[*,ind], 2)/norm
         var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind],2)/count
+        dvar[k,0:nvar-1]  = TOTAL( dat.denergy[*,ind],2)/count
      ENDIF ELSE BEGIN
         data[k,0:nvar-1]  = 0
         ddata[k,0:nvar-1] = 0
         ;; var[k,0:nvar-1]   = TOTAL( diff_eFlux.energy[*,ind,k], 2)
         var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind], 2)
+        dvar[k,0:nvar-1]  = TOTAL( dat.denergy[*,ind], 2)
      endelse
 
 ; test the following lines, the 96-6-19 version of tplot did not work with !values.f_nan
@@ -177,6 +183,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
         data[k,nvar:nmaxvar-1]  = data[k,nvar-1]
         ddata[k,nvar:nmaxvar-1] = ddata[k,nvar-1]
         var[k,nvar:nmaxvar-1]   = 1.5*var[k,nvar-1]-.5*var[k,nvar-2]
+        dvar[k,nvar:nmaxvar-1]  = 1.5*dvar[k,nvar-1]-.5*dvar[k,nvar-2]
      ENDIF
 
      IF (all_same EQ 1) THEN BEGIN
@@ -197,10 +204,12 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      data  = data[0:k-1,0:nmax-1]
      ddata = ddata[0:k-1,0:nmax-1]
      var   = var[0:k-1,0:nmax-1]
+     dvar  = dvar[0:k-1,0:nmax-1]
   ENDIF ELSE BEGIN
      data  = data[0:k-1,retrace:nmax-1]
      ddata = ddata[0:k-1,retrace:nmax-1]
      var   = var[0:k-1,retrace:nmax-1]
+     dvar  = dvar[0:k-1,retrace:nmax-1]
   ENDELSE
 
   PRINT,'all_same=',all_same
@@ -211,6 +220,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      data  = data[ind,*]
      ddata = ddata[ind,*]
      var   = var[ind,*]
+     dvar  = dvar[ind,*]
   ENDIF
   IF KEYWORD_SET(t2) THEN BEGIN
      ind   = WHERE(time LE t2)
@@ -218,9 +228,10 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      data  = data[ind,*]
      ddata = ddata[ind,*]
      var   = var[ind,*]
+     dvar  = dvar[ind,*]
   endif
 
-  datastr = {x:time,y:data,v:var,yerr:ddata}
+  datastr = {x:time,y:data,v:var,yerr:ddata,verr:dvar/2.}
 
   ex_time = SYSTIME(1) - ex_start
   MESSAGE,STRING(ex_time)+' seconds execution time.',/cont,/info
