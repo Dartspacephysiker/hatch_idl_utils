@@ -55,7 +55,7 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
      RETURN
   ENDIF
 
-  IF ~ARRAY_EQUAL(SORT(nums[good]),INDGEN(N_ELEMENTS(good))) THEN BEGIN
+  IF ~ARRAY_EQUAL(SORT(nums[good]),LINDGEN(N_ELEMENTS(good))) THEN BEGIN
      PRINT,"Array is unsorted! Exiting ..."
      RETURN
   ENDIF
