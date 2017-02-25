@@ -30,7 +30,7 @@ PRO GET_STREAKS,input, $
      no_print_summary               = 0
   ENDIF
 
-  CHECK_SORTED,input,is_sorted
+  CHECK_SORTED,input,is_sorted,QUIET=quiet
   IF ~is_sorted THEN BEGIN
      PRINTF,lun,"Input to GET_STREAKS is not sorted!"
      RETURN
