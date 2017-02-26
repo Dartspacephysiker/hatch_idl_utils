@@ -26,7 +26,8 @@ PRO EPS2PDF,filNavn_uten_ekst, $
      END
      ELSE: BEGIN
 
-        SPAWN,'epspdf ' + filNavn_uten_ekst + ekst + ' ' + $
+        ;; SPAWN,'epspdf ' + filNavn_uten_ekst + ekst + ' ' + $
+        SPAWN,'convert ' + filNavn_uten_ekst + ekst + ' ' + $
               filNavn_uten_ekst + '.pdf' + $
               (KEYWORD_SET(quiet) ? ' > /dev/null' : ''), $
               (KEYWORD_SET(quiet) ? Result : Result), $
