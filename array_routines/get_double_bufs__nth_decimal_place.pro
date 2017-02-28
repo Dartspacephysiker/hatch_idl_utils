@@ -68,6 +68,7 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
 
 
   diffTot     = rounded - SHIFT(rounded,1)
+  diffTot[0]  = rounded[1]-rounded[0]
 
   uniq_ii     = UNIQ(diffTot,SORT(diffTot))
   
@@ -76,11 +77,13 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
 
   ;;For later
   IF ARG_PRESENT(rates) THEN BEGIN
-     rateTot     = ROUND_TO_NTH_DECIMAL_PLACE(nums[good],decimal_place, $
-                                              FLOOR=floor, $
-                                              CEILING=ceiling, $
-                                              /DOUBLE)
-     rateTot     = rateTot - SHIFT(rateTot,1)
+     ;; rateTot     = ROUND_TO_NTH_DECIMAL_PLACE(nums[good],decimal_place, $
+     ;;                                          FLOOR=floor, $
+     ;;                                          CEILING=ceiling, $
+     ;;                                          /DOUBLE)
+     ;; rateTot     = rateTot - SHIFT(rateTot,1)
+     rateTot = (nums[good])[1:-1]-(nums[good])[0:-2]
+     rateTot = [rateTot[0],rateTot]
   ENDIF
 
   IF N_ELEMENTS(delta) GT 0 THEN BEGIN
