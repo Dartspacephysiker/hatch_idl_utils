@@ -6,12 +6,14 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                           ANGLE=an, $
                                           ARANGE=ar, $
                                           BINS=bins, $
+                                          PRESSURE_COVAR_CALC=pressure_covar_calc, $
+                                          HEATFLUX_COVAR_CALC=heatFlux_covar_calc, $
                                           ;; CONV_TO_CM=conv_to_cm, $
                                           SC_POT=sc_pot, $
                                           EEB_OR_EES=eeb_or_ees, $
                                           QUIET=quiet
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ex_start    = SYSTIME(1)
 
@@ -23,7 +25,22 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
   ;; energy      = diff_eFlux.energy[*,0,0]
   ;; theta       = REFORM(diff_eFlux.theta[0,*,0])
 
-  errThingList = LIST()
+  ;; errThingList = LIST()
+  N_R         = 4 + (KEYWORD_SET(pressure_covar_calc) ? 6 : 0) + (KEYWORD_SET(heatFlux_covar_calc) ? 3 : 0)
+  errThingArr = {N   : MAKE_ARRAY(max,/DOUBLE), $
+                 Ux  : MAKE_ARRAY(max,/DOUBLE), $
+                 Uy  : MAKE_ARRAY(max,/DOUBLE), $
+                 Uz  : MAKE_ARRAY(max,/DOUBLE), $
+                 Pxx : MAKE_ARRAY(max,/DOUBLE), $
+                 Pyy : MAKE_ARRAY(max,/DOUBLE), $
+                 Pzz : MAKE_ARRAY(max,/DOUBLE), $
+                 Pxy : MAKE_ARRAY(max,/DOUBLE), $
+                 Pxz : MAKE_ARRAY(max,/DOUBLE), $
+                 Pyz : MAKE_ARRAY(max,/DOUBLE), $
+                 Hx  : MAKE_ARRAY(max,/DOUBLE), $
+                 Hy  : MAKE_ARRAY(max,/DOUBLE), $
+                 Hz  : MAKE_ARRAY(max,/DOUBLE), $
+                 R   : MAKE_ARRAY(max,N_R,N_R,/DOUBLE)}
 
   IF N_ELEMENTS(en) GT 1 AND NDIMEN(en) LT 2 THEN BEGIN
 
@@ -45,10 +62,28 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                    EBINS=ebins,$
                                    ANGLE=an, $
                                    ARANGE=ar, $
-                                   BINS=bins);; , $
+                                   BINS=bins, $
+                                   PRESSURE_COVAR_CALC=pressure_covar_calc, $
+                                   HEATFLUX_COVAR_CALC=heatFlux_covar_calc)
+
                                    ;; CONV_TO_CM=conv_to_cm
      
-     errThingList.Add,TEMPORARY(errThing)
+     ;; errThingList.Add,TEMPORARY(errThing)
+	errThingArr.N[k]      = errThing.N   
+        errThingArr.Ux[k]     = errThing.Ux  
+	errThingArr.Uy[k]     = errThing.Uy  
+	errThingArr.Uz[k]     = errThing.Uz  
+	errThingArr.Pxx[k]    = errThing.Pxx 
+	errThingArr.Pyy[k]    = errThing.Pyy 
+	errThingArr.Pzz[k]    = errThing.Pzz 
+	errThingArr.Pxy[k]    = errThing.Pxy 
+	errThingArr.Pxz[k]    = errThing.Pxz 
+	errThingArr.Pyz[k]    = errThing.Pyz 
+	errThingArr.Hx[k]     = errThing.Hx  
+	errThingArr.Hy[k]     = errThing.Hy  
+	errThingArr.Hz[k]     = errThing.Hz  
+	errThingArr.R[k,*,*]  = errThing.R   
+
 
   ENDFOR
   
@@ -58,7 +93,7 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
      PRINT,'Number of data points = ',max
   ENDIF
 
-  RETURN,errThingList
+  RETURN,errThingArr
 
 END
 

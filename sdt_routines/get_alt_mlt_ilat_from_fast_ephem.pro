@@ -8,7 +8,7 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
                                      LOGLUN=logLun
   
 
-  COMPILE_OPT idl2
+  COMPILE_OPT idl2,STRICTARRSUBS
 
   IF N_ELEMENTS(timeArr) EQ 0 THEN BEGIN
      PRINT,'Bogus'

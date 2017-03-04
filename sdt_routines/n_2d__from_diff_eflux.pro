@@ -10,7 +10,7 @@ FUNCTION N_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                EEB_OR_EES=eeb_or_ees, $
                                QUIET=quiet
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ex_start    = SYSTIME(1)
 

@@ -5,7 +5,9 @@ FUNCTION MOMENTERRORS_2D,dat2, $
                          EBINS=ebins, $
                          ANGLE=an, $
                          ARANGE=ar, $
-                         BINS=bins;; , $
+                         BINS=bins, $;; , $
+                         PRESSURE_COVAR_CALC=pressure_covar_calc, $
+                         HEATFLUX_COVAR_CALC=heatFlux_covar_calc
                          ;; CONV_TO_CM=conv_to_cm
 
   COMPILE_OPT IDL2
@@ -81,12 +83,13 @@ FUNCTION MOMENTERRORS_2D,dat2, $
                                     ;; /SANS_PHI, $
                                     ;; CONV_TO_CM=conv_to_cm)
   errThing = PLASMA_MOMENTERRORS__GERSHMAN(data,ddata,species,energy,theta, $ ;phi, $
-                                    DENERGY=dEnergy, $
-                                    DTHETA=dTheta, $
-                                    PRESSURE_COVAR_CALC=pressure_covar_calc, $
-                                    HEATFLUX_COVAR_CALC=heatFlux_covar_calc, $
-                                    /SANS_PHI);; , $
-                                    ;; CONV_TO_CM=conv_to_cm
+                                           DENERGY=dEnergy, $
+                                           DTHETA=dTheta, $
+                                           PRESSURE_COVAR_CALC=pressure_covar_calc, $
+                                           HEATFLUX_COVAR_CALC=heatFlux_covar_calc, $
+                                           /SANS_PHI, $
+                                           /SANS_OFFDIAG) ;; , $
+  ;; CONV_TO_CM=conv_to_cm
 
 
 

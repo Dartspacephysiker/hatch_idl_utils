@@ -4,7 +4,7 @@ FUNCTION MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX,diff_eFlux, $
    SC_POT=sc_pot, $
    EEB_OR_EES=eeb_or_ees
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   out_en_arr = [MIN(energy),MAX(energy)] # MAKE_ARRAY(N_ELEMENTS(diff_eFlux.time),VALUE=1.)
   ;; out_en_arr = [[MAKE_ARRAY(N_ELEMENTS(diff_eFlux.time),VALUE=1.)],[MAKE_ARRAY(N_ELEMENTS(diff_eFlux.time),VALUE=1.)]] # $
