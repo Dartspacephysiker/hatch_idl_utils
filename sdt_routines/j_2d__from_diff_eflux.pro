@@ -6,6 +6,8 @@ FUNCTION J_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                ANGLE=an, $
                                ARANGE=ar, $
                                BINS=bins, $
+                               SC_POT=sc_pot, $
+                               EEB_OR_EES=eeb_or_ees, $
                                QUIET=quiet
 
   COMPILE_OPT IDL2
@@ -16,10 +18,22 @@ FUNCTION J_2D__FROM_DIFF_EFLUX,diff_eFlux, $
   time        = (diff_eFlux.time+diff_eFlux.end_time)/2.
   j           = {x:TEMPORARY(time),y:MAKE_ARRAY(max,/FLOAT)}
 
+  IF N_ELEMENTS(en) GT 1 AND NDIMEN(en) LT 2 THEN BEGIN
+
+     en_arr   = MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX(diff_eFlux, $
+                                               ENERGY=en, $
+                                               SC_POT=sc_pot, $
+                                               EEB_OR_EES=eeb_or_ees)
+     
+     en       = TEMPORARY(en_arr)
+
+  ENDIF
+
   FOR k=0,max-1 DO BEGIN
 
      j.y[k]   = J_2D_FS(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k), $
-                        ENERGY=en, $
+                        ;; ENERGY=en, $
+                        ENERGY=N_ELEMENTS(en) GT 0 ? en[*,k] : !NULL , $
                         ERANGE=er, $
                         EBINS=ebins, $
                         ANGLE=an, $

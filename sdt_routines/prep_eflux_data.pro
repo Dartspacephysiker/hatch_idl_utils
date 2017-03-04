@@ -251,7 +251,7 @@ FUNCTION PREP_EFLUX_DATA, $
 
            END
            ELSE: BEGIN
-              geom      = geom[i]
+              geom      = geom[*,i]
            END
         ENDCASE
      END

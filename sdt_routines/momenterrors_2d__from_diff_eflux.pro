@@ -7,6 +7,8 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                           ARANGE=ar, $
                                           BINS=bins, $
                                           ;; CONV_TO_CM=conv_to_cm, $
+                                          SC_POT=sc_pot, $
+                                          EEB_OR_EES=eeb_or_ees, $
                                           QUIET=quiet
 
   COMPILE_OPT IDL2
@@ -22,11 +24,27 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
   ;; theta       = REFORM(diff_eFlux.theta[0,*,0])
 
   errThingList = LIST()
+
+  IF N_ELEMENTS(en) GT 1 AND NDIMEN(en) LT 2 THEN BEGIN
+
+     en_arr   = MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX(diff_eFlux, $
+                                               ENERGY=en, $
+                                               SC_POT=sc_pot, $
+                                               EEB_OR_EES=eeb_or_ees)
+     
+     en       = TEMPORARY(en_arr)
+
+  ENDIF
+
   FOR k=0,max-1 DO BEGIN
 
      errThing    = MOMENTERRORS_2D(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k), $
-                                   ENERGY=en,ERANGE=er,EBINS=ebins,$
-                                   ANGLE=an,ARANGE=ar, $
+                                   ;; ENERGY=en, $
+                                   ENERGY=N_ELEMENTS(en) GT 0 ? en[*,k] : !NULL , $
+                                   ERANGE=er, $
+                                   EBINS=ebins,$
+                                   ANGLE=an, $
+                                   ARANGE=ar, $
                                    BINS=bins);; , $
                                    ;; CONV_TO_CM=conv_to_cm
      
