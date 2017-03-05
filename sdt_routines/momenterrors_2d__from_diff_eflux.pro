@@ -16,32 +16,12 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
   COMPILE_OPT IDL2,STRICTARRSUBS
 
   ex_start    = SYSTIME(1)
-
   max         = N_ELEMENTS(diff_eFlux.data_name)
-  ;; time        = (diff_eFlux.time+diff_eFlux.end_time)/2.
-  ;; j           = {x:TEMPORARY(time),y:MAKE_ARRAY(max,/FLOAT)}
-
-  ;; species     = diff_eFlux.mass GT 6e-6 ;0=electron, 1=ion; electron mass is 5.68566e-06 eV/c^2 (c in km/s)
-  ;; energy      = diff_eFlux.energy[*,0,0]
-  ;; theta       = REFORM(diff_eFlux.theta[0,*,0])
-
-  ;; errThingList = LIST()
   N_R         = 4 + (KEYWORD_SET(pressure_covar_calc) ? 6 : 0) + (KEYWORD_SET(heatFlux_covar_calc) ? 3 : 0)
-  errThingArr = {N   : MAKE_ARRAY(max,/DOUBLE), $
-                 Ux  : MAKE_ARRAY(max,/DOUBLE), $
-                 Uy  : MAKE_ARRAY(max,/DOUBLE), $
-                 Uz  : MAKE_ARRAY(max,/DOUBLE), $
-                 Pxx : MAKE_ARRAY(max,/DOUBLE), $
-                 Pyy : MAKE_ARRAY(max,/DOUBLE), $
-                 Pzz : MAKE_ARRAY(max,/DOUBLE), $
-                 Pxy : MAKE_ARRAY(max,/DOUBLE), $
-                 Pxz : MAKE_ARRAY(max,/DOUBLE), $
-                 Pyz : MAKE_ARRAY(max,/DOUBLE), $
-                 Hx  : MAKE_ARRAY(max,/DOUBLE), $
-                 Hy  : MAKE_ARRAY(max,/DOUBLE), $
-                 Hz  : MAKE_ARRAY(max,/DOUBLE), $
-                 R   : MAKE_ARRAY(max,N_R,N_R,/DOUBLE)}
-
+  errThingArr = MAKE_BLANK_GERSHMAN_ERROR_STRUCT(max,N_R, $
+                                                 PRESSURE_COVAR_CALC=pressure_covar_calc, $
+                                                 HEATFLUX_COVAR_CALC=heatFlux_covar_calc)
+  
   IF N_ELEMENTS(en) GT 1 AND NDIMEN(en) LT 2 THEN BEGIN
 
      en_arr   = MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX(diff_eFlux, $
