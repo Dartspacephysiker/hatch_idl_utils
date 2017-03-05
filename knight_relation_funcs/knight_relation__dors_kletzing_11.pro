@@ -109,9 +109,9 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
   JV4s       = ( 1.D + JV4sub )^( (-1.0D) * kappa + 1)
 
   ;; Binomial approx
-  IF (WHERE(JV4sub LE 0.01D))[0] NE -1 THEN BEGIN
-     JV4s[WHERE(JV4sub LE 0.01D)] = 1.D + (1.0D - kappa ) * JV4sub[WHERE(JV4sub LE 0.01D)] 
-  ENDIF
+  ;; IF (WHERE(JV4sub LE 0.01D))[0] NE -1 THEN BEGIN
+  ;;    JV4s[WHERE(JV4sub LE 0.01D)] = 1.D + (1.0D - kappa ) * JV4sub[WHERE(JV4sub LE 0.01D)] 
+  ;; ENDIF
   JV4        = mRat * (1.D - (1.D - 1.D/mRat) * JV4s )
 
   Jpar       = JVinv * JV1 * JV2 * JV3 * JV4
