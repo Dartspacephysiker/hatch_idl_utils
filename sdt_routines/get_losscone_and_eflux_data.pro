@@ -82,6 +82,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                     SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                     OUT_DIFF_EFLUX=diff_eflux, $
                     SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
+                    DIFF_EFLUX_FILE=loadFile, $
                     LOAD_DAT_FROM_FILE=loadFile, $
                     LOAD_DIR=loadDir
 
