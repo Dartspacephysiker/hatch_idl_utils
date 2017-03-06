@@ -1,0 +1,9 @@
+;;2017/03/06
+FUNCTION KELVIN_TO_EV,kelvin, $
+                      TO_KELVIN=to_Kelvin
+
+  COMPILE_OPT IDL2,STRICTARRSUBS
+
+  RETURN,KEYWORD_SET(to_Kelvin) ? DOUBLE(kelvin)/8.621738D-5 : DOUBLE(kelvin)*8.621738D-5
+
+END
