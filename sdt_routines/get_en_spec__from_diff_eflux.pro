@@ -231,7 +231,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      dvar  = dvar[ind,*]
   endif
 
-  datastr = {x:time,y:data,v:var,yerr:ddata,verr:dvar/2.}
+  datastr = {x:time,y:data,v:var,yerr:ddata,verr:dvar}
 
   ex_time = SYSTIME(1) - ex_start
   MESSAGE,STRING(ex_time)+' seconds execution time.',/cont,/info
