@@ -94,7 +94,7 @@
 FUNCTION GPS_TO_UTC,GPS_week,GPS_mSec_of_week, $
                INVALID=invalid
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   nWeek                   = N_ELEMENTS(GPS_week        )
   nSec                    = N_ELEMENTS(GPS_mSec_of_week)

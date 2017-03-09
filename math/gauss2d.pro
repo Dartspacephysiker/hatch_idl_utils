@@ -66,7 +66,7 @@ FUNCTION GAUSS2D,dX,dY,sX,sY, $
                  INTEG_NPTS=integ_nPts
                  
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   @common__gauss2d.pro
   ;; RETURN,( 1. / ( 2. * !PI * sX * sY ) ) * EXP( (-1.) * ( dX^2 / ( 2. * sX^2 ) + dY^2 / ( 2. * sY^2 )) )

@@ -6,7 +6,7 @@ FUNCTION CREATE_FASTDB_TSTAMPS,timeTmp,nTot,timeFile, $
                                ALLOW_FL_TRACE=allow_fl_trace, $
                                DONT_SAVE_TIMESTAMPS=dont_save_timeStamps
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   @defaults__fastdb_coordinate_conversion.pro
 

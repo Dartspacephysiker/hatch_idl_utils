@@ -2,7 +2,7 @@
 FUNCTION EQUAL_SCALE_ARR,input, $
                          QUIET=quiet
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   GET_SINGLE_INDEX_STREAKS,input, $
                            N_STREAKS=n_streaks, $

@@ -1,7 +1,7 @@
 PRO REDUCE_EFLUX_TO_MIN_ANGLE,diff_eFlux, $
                               TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF ~KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
      minAngle   = MIN(ABS(diff_eFlux.angles),minAngleInd) 

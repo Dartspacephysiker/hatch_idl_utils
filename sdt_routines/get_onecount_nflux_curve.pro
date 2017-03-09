@@ -7,7 +7,7 @@ PRO GET_ONECOUNT_NFLUX_CURVE,t1,t2,oneCurve, $
                              OUT_ONEDAT=out_oneDat, $
                              QUIET=quiet
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF ~KEYWORD_SET(name) THEN BEGIN
      name                   = 'Je_oneCount'

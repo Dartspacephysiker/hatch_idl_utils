@@ -8,7 +8,7 @@ PRO CONVERT_TIME_STRING_TO_YMDHMS_ARRAYS,timeStr, $
                                          OUT_MINARR=minArr, $
                                          OUT_SECARR=secArr
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   nStr = N_ELEMENTS(timeStr)
   IF nStr EQ 0 THEN BEGIN

@@ -27,7 +27,7 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
    IS_MAXWELLIAN_FIT=is_maxwellian_fit, $
    UNITS=units
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   @common__kappa_flux2d__horseshoe__eanisotropy.pro
 

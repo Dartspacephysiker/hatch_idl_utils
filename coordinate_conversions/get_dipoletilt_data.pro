@@ -4,7 +4,7 @@ PRO GET_DIPOLETILT_DATA,timeStr,times, $
                         OUTDIR=outDir, $
                         ORIG_ROUTINENAME=orig_routineName
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF N_ELEMENTS(outFile) EQ 0 OR N_ELEMENTS(outDir) EQ 0 OR N_ELEMENTS(orig_routineName) EQ 0 THEN STOP
 

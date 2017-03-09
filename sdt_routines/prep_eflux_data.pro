@@ -37,7 +37,7 @@ FUNCTION PREP_EFLUX_DATA, $
    BINS=bins,     $
    NO_SORT=no_sort
   
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF (data_type(tempdat) ne 8) OR (tempdat.valid EQ 0) THEN BEGIN
      print,'Invalid Data'

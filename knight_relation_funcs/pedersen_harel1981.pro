@@ -17,7 +17,7 @@ FUNCTION PEDERSEN_HAREL1981,JEe,pot, $
                             OUT_POTBAR=potBar, $
                             POT_IN_JOULES=pot_in_joules
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   @common__dk_ode18.pro
 

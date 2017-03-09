@@ -6,7 +6,7 @@ FUNCTION LINLOG_ARR,data, $
                     USER_INDS=user_inds, $
                     OUTINDSTRUCT=out_indStruct
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   nData = N_ELEMENTS(data)
 

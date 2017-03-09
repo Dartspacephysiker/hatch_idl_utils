@@ -29,7 +29,7 @@ PRO CONVERT_VARNAMES_AND_RESAVE_OUTFILES,outFile, $
                                          var24Name,defVar24Name
 
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   varNames    = !NULL
   defVarNames = !NULL

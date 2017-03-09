@@ -6,7 +6,7 @@ FUNCTION GET_ESA_TIMERANGES, $
    STRINGS=strings, $
    TPLOT_VAR_LIST=tplot_var_list
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   t           = 0
   dat         = GET_FA_EES(t,/st)

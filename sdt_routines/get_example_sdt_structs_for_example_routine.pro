@@ -3,7 +3,7 @@ PRO GET_EXAMPLE_SDT_STRUCTS_FOR_EXAMPLE_ROUTINE,time, $
    QUIET=quiet, $
    UNITS=units
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   outDir       = '/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/example_SDT_structs/'
   outFilePref  = 'example_SDT_structs'

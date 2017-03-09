@@ -3,7 +3,7 @@ PRO STR_ELEMENT_FROM_LIST_OF_STRUCTS,list,name, $
                                           INDEX=index, $
                                           ERROR=error
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF N_ELEMENTS(name) EQ 0 THEN BEGIN
      error = 'Name undefined'

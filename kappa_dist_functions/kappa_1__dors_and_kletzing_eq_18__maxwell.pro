@@ -5,7 +5,7 @@
 ;;E field is naturally -phi_N[0], then, since E = -dPhi/dx
 PRO KAPPA_1__DORS_KLETZING_EQ_18__MAXWELL,X,phi_N
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   COMMON MAX2DPARAMS,M2D__temp,M2D__dens,M2D__R_B
 

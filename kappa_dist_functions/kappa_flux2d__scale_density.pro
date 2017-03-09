@@ -19,7 +19,7 @@
 FUNCTION KAPPA_FLUX2D__SCALE_DENSITY,X,Y,P, $
                                      KAPPA_1D_FITPARAMS=kappa1Dparams
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ;;Structure of each is [energies,angles]
   energies         = X

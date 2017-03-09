@@ -8,7 +8,7 @@ FUNCTION VARS_EXIST,saveFile,varNames,defVarnames, $
                     UPDATE_VARNAMES=update_varNames, $
                     QUIET=quiet
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ;;Initialized
   varNames_required_update   = 0

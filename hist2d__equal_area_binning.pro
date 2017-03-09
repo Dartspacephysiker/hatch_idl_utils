@@ -87,7 +87,7 @@ FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
                                      BINEDGE1=Binedge1,BINEDGE2=Binedge2;; , $
                                      ;; EQUAL_AREA_STRUCT=EA
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   @common__ea_binning.pro
 

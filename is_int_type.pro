@@ -9,7 +9,7 @@
 ; 15 		64-bit Unsigned Long (A 64-bit unsigned integer ranging in value from 0 to 18 446 744 073 709 551 615.)
 FUNCTION IS_INT_TYPE,data
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   RETURN,( (WHERE(SIZE(data,/TYPE) EQ [1,2,3,12,13,14,15]))[0] NE -1)
 

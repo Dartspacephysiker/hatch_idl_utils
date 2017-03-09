@@ -22,7 +22,7 @@ FUNCTION LOAD_JE_AND_JE_TIMES_FOR_ORB,orbit_num, $
                                       ;; OUT_JEFILEDIR=jeFileDir, $
                                       QUIET=quiet
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   @common__jeload_vars.pro
 

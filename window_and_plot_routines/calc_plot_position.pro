@@ -18,7 +18,7 @@ FUNCTION CALC_PLOT_POSITION,plot_index,nPlotColumns,nPlotRows, $
                             SPACE_HORIZ_BETWEEN_COLS=hPlotSpace, $
                             SPACE_VERT_BETWEEN_ROWS=vPlotSpace
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF plot_index LE 0 THEN BEGIN
      PRINT,"Warning! You're about to get junk from CALC_PLOT_POSITION"

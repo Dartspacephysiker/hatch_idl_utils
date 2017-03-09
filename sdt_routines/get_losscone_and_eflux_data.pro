@@ -16,7 +16,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
                                 _EXTRA=e
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF N_ELEMENTS(t2) EQ 0 THEN BEGIN
      t2                = t1

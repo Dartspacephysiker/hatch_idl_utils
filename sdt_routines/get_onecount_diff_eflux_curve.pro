@@ -17,7 +17,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
                                   LOAD_DIR=loadDir, $
                                   QUIET=quiet
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF KEYWORD_SET(diff_eFlux_file) THEN BEGIN
      oneCount_file = diff_eFlux_file.Replace('diff_eflux','diff_1Count')

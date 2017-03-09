@@ -1,7 +1,7 @@
 ;2016/03/21 This routine exists to provide an easy way to, you know, lay out some plots
 FUNCTION WINDOW_CUSTOM_NEXT_POS,NEXT_ROW=next_row,NEXT_COLUMN=next_column,HOLD_POSITION=hold_position
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   COMMON WINDOW_CUSTOM
  

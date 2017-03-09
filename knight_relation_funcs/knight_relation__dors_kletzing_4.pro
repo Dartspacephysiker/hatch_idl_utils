@@ -15,7 +15,7 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
                                           OUT_POTBAR=potBar, $
                                           NO_MULT_BY_CHARGE=no_mult_by_charge
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF N_ELEMENTS(R_B) EQ 0 THEN BEGIN
      mRat                = 30

@@ -6,7 +6,7 @@ FUNCTION MAKE_EVENLY_SPACED_TIME_SERIES,time, $
                                         N_POINTS=n_points, $
                                         EXCLUDE_ENDPOINT=exclude_endpoint
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ;;Get start and stop times
   nTimes = N_ELEMENTS(time)

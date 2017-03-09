@@ -20,7 +20,7 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE,X,Y,P, $
                                  BINGHAM_STYLE=Bingham_style, $
                                  MU_0=mu_0
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   @kappa_unitconversion_common.pro
 

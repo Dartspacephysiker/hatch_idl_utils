@@ -7,7 +7,7 @@ FUNCTION TIMEGEN_EASIER,t1_julDay,t2_julDay, $
                         OUT_MAXSEP=maxSep
 
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   nTypes   = 0
   IF KEYWORD_SET(monthInterval) THEN nTypes++

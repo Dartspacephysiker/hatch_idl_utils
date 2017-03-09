@@ -1,7 +1,7 @@
 ;;10/14/16
 PRO JOURNAL__20161014__READ_EQUAL_AREA_BINNING_TXT
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   todayStr     = GET_TODAY_STRING(/DO_YYYYMMDD_FMT)
   inDir        = '/SPENCEdata/Research/database/equal-area_binning/'

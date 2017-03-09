@@ -4,7 +4,7 @@ PRO SMOOTH_TSERIES,data, $
                    ZERO_UNSMOOTHABLES=zero_unsmoothables, $
                    NRECURSE=nRecurse
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF ~KEYWORD_SET(nRecurse) THEN nRecurse = 1
 

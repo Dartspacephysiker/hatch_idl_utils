@@ -7,7 +7,7 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
                              SDTNAME__INFERRED_E_NUMFLUX=e_numFluxName, $
                              QUIET=quiet
   
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF KEYWORD_SET(t1) THEN BEGIN
      CASE SIZE(t1,/TYPE) OF

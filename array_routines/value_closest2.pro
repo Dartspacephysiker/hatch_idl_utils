@@ -5,7 +5,7 @@ FUNCTION VALUE_CLOSEST2,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
                         ONLY_HAVE_EXTREME=onlyExtreme, $
                         QUIET=quiet
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   inds = VALUE_LOCATE(vector,values)
   

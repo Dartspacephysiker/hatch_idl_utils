@@ -1,7 +1,7 @@
 FUNCTION UTC_TO_JULDAY,UTC_Arr, $
                        VERBOSE=verbose
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   CASE SIZE(UTC_Arr,/TYPE) OF
      0: BEGIN

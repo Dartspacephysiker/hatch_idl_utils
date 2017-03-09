@@ -2,7 +2,7 @@
 PRO CLEAR_JELOAD_COMMON_VARS, $
    QUIET=quiet
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   @common__jeload_vars.pro
 

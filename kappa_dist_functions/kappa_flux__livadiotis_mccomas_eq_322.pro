@@ -20,7 +20,7 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322,X,A,F,pder, $
                                           MULTIPLY_BY_ENERGY=multiply_by_energy, $
                                           CMSQ_S_UNITS=cmsq_s_units
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
   
   energy                 = X
 

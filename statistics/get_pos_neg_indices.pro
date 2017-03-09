@@ -10,7 +10,7 @@ FUNCTION GET_POS_NEG_INDICES,data, $
                              OUT_STATS_NAME=stats_name, $
                              VERBOSE=verbose
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF N_ELEMENTS(stats_name) EQ 0 THEN stats_name = ''
 

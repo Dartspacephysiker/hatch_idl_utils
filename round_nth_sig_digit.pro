@@ -3,7 +3,7 @@ FUNCTION ROUND_NTH_SIG_DIGIT,nums,sig_digit, $
                              CEILING=ceiling, $
                              DOUBLE=double
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF ~KEYWORD_SET(sig_digit) THEN BEGIN
      sig_digit = 1

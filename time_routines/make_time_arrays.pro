@@ -10,7 +10,7 @@ PRO MAKE_TIME_ARRAYS, $
    OUT_JULDAY=julDay
                      
   
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ;; IF ~KEYWORD_SET(nYears) THEN BEGIN
   ;;    PRINT,"Must provide start year!"

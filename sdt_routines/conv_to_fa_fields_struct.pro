@@ -3,7 +3,7 @@
 FUNCTION CONV_TO_FA_FIELDS_STRUCT,dat, $
                                   BACK=back
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF SIZE(dat,/TYPE) NE 8 THEN BEGIN
      PRINT,'Must provide structure for this routine...'

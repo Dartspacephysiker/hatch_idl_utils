@@ -21,7 +21,7 @@ PRO CONVERT_GEO_TO_AACGM, $
    IN_NAMES=in_names, $
    DEFNAMES=defNames
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   TIC
   clock = TIC('warnMe')

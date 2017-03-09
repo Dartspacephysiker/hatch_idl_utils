@@ -5,7 +5,7 @@
 ;;Zeroth-order terms:
 PRO DORS_KLETZING__ODE_18
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   @common__dk_ode18.pro
 

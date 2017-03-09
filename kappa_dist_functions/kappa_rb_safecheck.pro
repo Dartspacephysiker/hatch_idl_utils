@@ -5,7 +5,7 @@ PRO KAPPA_RB_SAFECHECK,kappa,R_B, $
                        KAPPA_SAFE=kappaS, $
                        R_B_SAFE=R_BS
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
 
   increm = 0.00001D

@@ -4,7 +4,7 @@ PRO PRINT_DENS_ESTIMATE_STRUCT_V2,N_est, $
                                   TO_FILE=to_file, $
                                   OUTDIR=outDir
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF KEYWORD_SET(to_file) THEN BEGIN
      IF N_ELEMENTS(outDir) EQ 0 THEN BEGIN

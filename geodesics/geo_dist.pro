@@ -61,7 +61,7 @@ FUNCTION GEO_DIST, $
         RADIUS_METERS=radius_meters, $
 	SINGLE=singleopt
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
 ;***********************************************************************
 ;Define Constants

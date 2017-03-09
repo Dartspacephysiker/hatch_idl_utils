@@ -8,7 +8,7 @@ PRO GET_FAST_GEI_COORDS,times, $
                         ORIG_ROUTINENAME=orig_routineName, $
                         QUIET=quiet
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF ~KEYWORD_SET(quiet) THEN PRINT,"Getting " + STRCOMPRESS(N_ELEMENTS(times),/REMOVE_ALL) + " FAST ephemeris points in GEI coords ..."
 

@@ -39,7 +39,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
    DIAGNOSTIC=diag, $
    OK__CONTINUE_WITH_ONLY_FEW_CPUS=OK__low_CPU_number
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   @defaults__fastdb_coordinate_conversion.pro
 

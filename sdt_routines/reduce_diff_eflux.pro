@@ -4,7 +4,7 @@
 PRO REDUCE_DIFF_EFLUX,diff_eFlux, $
                       TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF SIZE(diff_eFlux,/TYPE) NE 8 THEN BEGIN
      PRINT,'diff_eFlux must be a struct!'

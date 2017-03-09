@@ -12,7 +12,7 @@
 PRO MAXWELL_FLUX,X,A,F,pder, $
                  UNITS=units
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
   
   ;; speedOfLight   = DOUBLE(29979245800.) ;cm / s
   ;; electron_mass  = DOUBLE(5.685e-16)   ;eV/(cm/s)^2

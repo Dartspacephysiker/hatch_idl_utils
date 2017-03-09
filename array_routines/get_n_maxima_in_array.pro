@@ -41,7 +41,7 @@ FUNCTION GET_N_MAXIMA_IN_ARRAY,data, $
                                OUT_EXCEEDED_THRESHOLD_I=out_exceed_i, $
                                OUT_EXCEEDED_THRESHOLD_N=out_exceed_n
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ;;Take care of bogus sitiations (and I do mean sitiations)
   nData                        = N_ELEMENTS(data)

@@ -25,7 +25,7 @@ PRO WINDOW_CUSTOM_LAYOUT, $
    SYM_TRANSPARENCY=sym_transparency, $
    SYM_COLOR=sym_color
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;window setup

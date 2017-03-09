@@ -6,7 +6,7 @@ PRO EPS2PDF,filNavn_uten_ekst, $
             TO_PNG=to_PNG, $
             QUIET=quiet
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ekst = KEYWORD_SET(ps) ? '.ps' : '.eps'
 

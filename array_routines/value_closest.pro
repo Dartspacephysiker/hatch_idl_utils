@@ -11,7 +11,7 @@ FUNCTION VALUE_CLOSEST,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
                        BATCH_MODE=batch_mode, $
                        QUIET=quiet
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   PRINT,"Assuming you actually want VALUE_CLOSEST2 ..."
   STOP

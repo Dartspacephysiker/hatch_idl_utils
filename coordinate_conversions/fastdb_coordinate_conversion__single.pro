@@ -28,7 +28,7 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
                                          IN_NAMES=in_names, $
                                          DEFNAMES=defNames
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   @defaults__fastdb_coordinate_conversion.pro
 

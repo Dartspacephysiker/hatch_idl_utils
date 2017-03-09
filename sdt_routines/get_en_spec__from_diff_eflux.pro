@@ -54,7 +54,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
                                       FLOOR=floor, $
                                       RETRACE=retrace
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
   
   ;;	Time how long the routine takes
   ex_start = SYSTIME(1)

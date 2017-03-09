@@ -13,7 +13,7 @@
 FUNCTION MAXWELL_FLUX__FUNC,X,P,DP, $
    UNITS=units
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   energy                 = X
 

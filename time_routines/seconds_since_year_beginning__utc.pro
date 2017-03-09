@@ -1,7 +1,7 @@
 ;2016/04/29 Gots to know DAT
 FUNCTION SECONDS_SINCE_YEAR_BEGINNING__UTC,times
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ;;What do we have here, anyway?
   CASE SIZE(times,/TYPE) OF

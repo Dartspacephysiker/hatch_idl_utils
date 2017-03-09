@@ -21,7 +21,7 @@ PRO GET_FA_PARTICLE_2DT,type,routine, $
    OUTFLOW_POSITIVE=outflow_positive, $
    PRECIPITATION_POSITIVE=precipitation_positive
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF N_ELEMENTS(lims) EQ 2 THEN lims = [lims,0] ;;Assume not logged
 

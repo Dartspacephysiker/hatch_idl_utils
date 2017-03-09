@@ -13,7 +13,7 @@ FUNCTION DOUBLE_UNIQ,nums,decimal_place, $
                      N_EACH_UNIQVAL=n_each_uniqVal, $
                      NUNIQ=nUniq
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
 
   retVal = KEYWORD_SET(null) ? !NULL : -1

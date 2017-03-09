@@ -7,7 +7,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX__POT_EQ_0,kappa,T_m,dens_m,pot,R_B,
    PLOT_TERMS=plot_terms, $
    PLOT_AS_FUNCTION_OF_KAPPA=plot_kappa
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
   
   ;; helpMeNotBeZero        = 1.e-6
   toJ                    = 1.6e-19 ;eV to J

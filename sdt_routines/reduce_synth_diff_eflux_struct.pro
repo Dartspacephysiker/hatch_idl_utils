@@ -2,7 +2,7 @@
 FUNCTION REDUCE_SYNTH_DIFF_EFLUX_STRUCT,synthStr,ind, $
                                         NO_SHIFTVALS=no_shiftVals
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
 
   IF KEYWORD_SET(no_shiftVals) THEN BEGIN

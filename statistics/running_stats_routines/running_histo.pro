@@ -85,7 +85,7 @@ FUNCTION RUNNING_HISTO,x,binWidth, $
                        ;; OUT_ERROR_BARS=out_error_bars, $
                        LUN=lun
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ;;Fake RUNNING_STATS_SETUP out by providing x twice
   status                        = RUNNING_STATS_SETUP(x,x,binWidth, $

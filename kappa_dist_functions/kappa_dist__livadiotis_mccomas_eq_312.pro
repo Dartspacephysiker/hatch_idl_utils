@@ -10,7 +10,7 @@
 ; A[5]: n,         Plasma density (NO!)
 PRO KAPPA_DIST__LIVADIOTIS_MCCOMAS_EQ_312,energy,A,F,pders
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
   
   ;; electron_mass          = DOUBLE(1.6e-19)
   electron_mass          = DOUBLE(5.109989e5)   ;eV/c^2

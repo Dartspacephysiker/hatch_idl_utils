@@ -16,7 +16,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    
   ;; QUIET=quiet
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   got_restored  = 0
   IF KEYWORD_SET(loadFile) AND KEYWORD_SET(diff_eFlux_file) THEN BEGIN

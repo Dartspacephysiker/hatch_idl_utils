@@ -24,7 +24,7 @@ PRO WINDOW_CUSTOM_SETUP, $
    CURRENT_PLOT_I=cur_plot_i
    ;; CURRENT_PLOT_POS=cur_plotPos
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   COMMON WINDOW_CUSTOM,WC__nPlotRows,WC__nPlotCols,WC__nPlots, $
      WC__mLeft,WC__mRight,WC__mBottom,WC__mTop, $

@@ -14,7 +14,7 @@ FUNCTION GET_FA_CHARE, $
    TPLT_VARS=tplt_vars, $
    QUIET=quiet
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF N_ELEMENTS(eeb_or_ees) EQ 0 THEN BEGIN
      eeb_or_ees = 'ees'

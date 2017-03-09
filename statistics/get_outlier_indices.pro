@@ -16,7 +16,7 @@ FUNCTION GET_OUTLIER_INDICES,data, $
                              VERBOSE=verbose
   
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF KEYWORD_SET(log_outliers) THEN BEGIN
 

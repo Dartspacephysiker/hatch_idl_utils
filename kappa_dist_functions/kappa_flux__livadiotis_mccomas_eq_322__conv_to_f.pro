@@ -15,7 +15,7 @@
 ; This function returns s^3/cm^3-km^3
 PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,A,F,pder
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
   
   energy                 = X
 

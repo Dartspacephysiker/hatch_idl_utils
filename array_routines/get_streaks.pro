@@ -15,7 +15,7 @@ PRO GET_STREAKS,input, $
                 NO_PRINT_SUMMARY=no_print_summary, $
                 QUIET=quiet
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF ~IS_INT_TYPE(input) THEN BEGIN
      IF ~KEYWORD_SET(quiet) THEN PRINT,"GET_STREAKS: Input not int type!"

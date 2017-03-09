@@ -7,7 +7,7 @@ PRO GET_ONECOUNT_OMNI_2D,t1,t2, $
                          OUT_ONEDAT=out_oneDat, $
                          QUIET=quiet
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF ~KEYWORD_SET(name) THEN BEGIN
      name               = 'oneCount_OMNI_2d'

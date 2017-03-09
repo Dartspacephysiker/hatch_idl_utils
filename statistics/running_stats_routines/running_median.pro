@@ -89,7 +89,7 @@ FUNCTION RUNNING_MEDIAN,x,y,binWidth, $
                         PRINT_STATS_FOR_THESE_RANGES=print_stats_ranges, $
                         LUN=lun
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   status                     = RUNNING_STATS_SETUP(x,y,binWidth, $
                                                    BIN_CENTERS=bin_centers, $

@@ -12,7 +12,7 @@
 ;A future version may want to fit to R_B
 ;; PRO KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL,pot,A,F,pders
 
-;;   COMPILE_OPT idl2
+;;   COMPILE_OPT IDL2,STRICTARRSUBS
   
 ;;   electron_charge        = DOUBLE(1.6e-19)
 
@@ -60,7 +60,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL,T_m,dens_m,pot,R_B, $
    OUT_POTBAR=potBar, $
    POT_IN_JOULES=pot_in_joules
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
   
   eCharge                = DOUBLE(1.6e-19)
 

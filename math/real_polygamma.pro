@@ -19,7 +19,7 @@
 FUNCTION REAL_POLYGAMMA,x,polygamma_index, $
                         STEPSIZE=h
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF ~KEYWORD_SET(h) THEN h  = DOUBLE(1e-8)
 

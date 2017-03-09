@@ -10,7 +10,7 @@ FUNCTION MOMENTERRORS_2D,dat2, $
                          HEATFLUX_COVAR_CALC=heatFlux_covar_calc
                          ;; CONV_TO_CM=conv_to_cm
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF dat2.valid EQ 0 THEN BEGIN
      PRINT,'Invalid Data'

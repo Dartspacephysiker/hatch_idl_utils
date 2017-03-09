@@ -5,7 +5,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__D_EFLUX_D_POT,kappa,T_m,dens_m,pot,R_B, $
    OUT_POTBAR=potBar, $
    POT_IN_JOULES=pot_in_joules
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
   
   toJ                    = 1.6e-19 ;eV to J
 

@@ -4,7 +4,7 @@ FUNCTION ROUND_TO_NTH_DECIMAL_PLACE,nums,decimal_place, $
                                     DOUBLE=double, $
                                     LEAVE_AS_INTEGER=leave_as_integer
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF ~KEYWORD_SET(decimal_place) THEN BEGIN
      decimal_place = 0

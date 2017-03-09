@@ -19,7 +19,7 @@ FUNCTION LATLONG_PAIR_AREA,lon1, lat1, $
                            lon2, lat2, $
                            RADIUS_METERS=radius_meters
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   height  = GEO_DIST(lon1, lat1, $
                      lon1, lat2, $

@@ -20,7 +20,7 @@ PRO GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,nums,decimal_place, $
                                        OUT_BADRATES=badRates
                                           ;; NAN=nan
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF SIZE(nums,/TYPE) NE 5 THEN BEGIN
      PRINT,'Nums not of type double! Out ...'

@@ -46,7 +46,7 @@ FUNCTION CALC_2D_SOLID_ANGLE_B,dat2, $
                                ARANGE=ar, $
                                BINS=bins
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF dat2.valid EQ 0 THEN BEGIN
      PRINT,'Invalid Data'

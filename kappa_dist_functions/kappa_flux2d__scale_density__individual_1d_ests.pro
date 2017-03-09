@@ -23,7 +23,7 @@ FUNCTION KAPPA_FLUX2D__SCALE_DENSITY__INDIVIDUAL_1D_ESTS,X,Y,P, $
    KAPPA_1D_FITPARAMS=kappa1Dparams, $
    DENS_1D_ESTS=dens_1D_ests
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ;;Structure of each is [energies,angles]
   ;; energies         = X

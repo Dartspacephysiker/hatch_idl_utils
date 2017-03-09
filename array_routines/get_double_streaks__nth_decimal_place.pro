@@ -30,7 +30,7 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
    NO_SORT=no_sort, $
    OUTLUN=outLun
 
-  COMPILE_OPT IDL2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF SIZE(nums,/TYPE) NE 5 THEN BEGIN
      PRINT,'Nums not of type double! Out ...'

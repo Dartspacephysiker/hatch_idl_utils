@@ -1,7 +1,7 @@
 ;;2017/01/07 Ripped off Erik Rosolowaky's BICO function
 FUNCTION NCHOOSEK,n,k
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   ON_ERROR,2
 

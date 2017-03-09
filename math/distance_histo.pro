@@ -10,7 +10,7 @@ PRO DISTANCE_HISTO,imgArr, $
                    EXAMPLE=example, $
                    WAYCHEAP_EXAMPLE=wayCheap
 
-  COMPILE_OPT idl2
+  COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF (N_ELEMENTS(SIZE(imgArr,/DIMENSIONS)) NE 2) THEN BEGIN
      IF ~KEYWORD_SET(example) THEN BEGIN
