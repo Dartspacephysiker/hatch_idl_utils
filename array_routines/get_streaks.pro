@@ -56,16 +56,16 @@ PRO GET_STREAKS,input, $
         ;; WHERECHECK,single_ii,keep_ii
 
         
-        IF nKeep GT 0 THEN BEGIN
-           start_i                        = start_i[keep_ii]
-           stop_i                         = stop_i[keep_ii]
-        ENDIF
-
         IF nSingle GT 0 THEN BEGIN
            single_i                       = start_i[single_ii]
         ENDIF ELSE BEGIN
            single_i                       = -1
         ENDELSE
+
+        IF nKeep GT 0 THEN BEGIN
+           start_i                        = start_i[keep_ii]
+           stop_i                         = stop_i[keep_ii]
+        ENDIF
 
      END
   ENDCASE

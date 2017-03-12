@@ -67,7 +67,7 @@ FUNCTION MOMENTERRORS_2D,dat2, $
   energy   = dat.energy[ebins_i]
   denergy  = dat.denergy[ebins_i]
   theta    = REFORM(dat.theta[0,abins_i])
-  dtheta   = REFORM((dat.dtheta[0,abins_i]))
+  dtheta   = N_ELEMENTS(SIZE(dat.dtheta,/DIMENSIONS)) EQ 2 ?  REFORM((dat.dtheta[0,abins_i])) : dat.dtheta[abins_i]
   ;; mass     = dat.mass * 1.6e-22
   ;; Const    = 1.6e-12
 
