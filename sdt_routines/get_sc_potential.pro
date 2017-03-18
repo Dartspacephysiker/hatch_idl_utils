@@ -3,7 +3,9 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
                      FROM_FA_POTENTIAL=from_fa_potential, $
                      CHASTON_STYLE=Chaston_style, $
                      REPAIR=repair, $
-                     ORBIT=orbit
+                     ORBIT=orbit, $
+                     SAVE_FILE=save_file
+
 
   ;;See if we can get it from FA_POTENTIAL before going to the trouble
   SPAWN,'ps ux | grep sdt',result
@@ -30,7 +32,7 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
 
   ENDELSE
   
-  IF KEYWORD_SET(from_file) THEN BEGIN
+  IF KEYWORD_SET(from_file) OR KEYWORD_SET(save_file) THEN BEGIN
      ;;Lifted from DOWNGOING_IONS__V1
      out_sc_pot_dir           = '/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/just_potential/'
      newellStuff_pref_sc_pot  = 'Newell_et_al_identification_of_electron_spectra--just_sc_pot--Orbit_'
@@ -45,7 +47,7 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
         out_newell_file_sc_pot  = newellStuff_pref_sc_pot + STRCOMPRESS(orbit,/REMOVE_ALL) + $
                                   '_' + STRCOMPRESS(jjj,/REMOVE_ALL) + '.sav'
 
-        IF FILE_TEST(out_sc_pot_dir+out_newell_file_sc_pot) THEN BEGIN
+        IF FILE_TEST(out_sc_pot_dir+out_newell_file_sc_pot) AND KEYWORD_SET(from_file) THEN BEGIN
 
            PRINT,"Restoring S/C pot file: " + out_newell_file_sc_pot
            RESTORE,out_sc_pot_dir+out_newell_file_sc_pot
@@ -149,6 +151,11 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
                   notch:spacecraft_potential.notch}
         
         IF ARG_PRESENT(data) THEN data = sc_pot
+
+        IF KEYWORD_SET(save_file) THEN BEGIN
+           PRINT,"Saving updated pot to " + out_newell_file_sc_pot
+           SAVE,sc_pot,FILENAME=out_sc_pot_dir+out_newell_file_sc_pot
+        ENDIF
 
         RETURN
 
