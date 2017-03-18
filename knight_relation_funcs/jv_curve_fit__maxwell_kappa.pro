@@ -15,7 +15,7 @@
 ; P[2]:   n,         Plasma density (cm^-3)
 ; P[3]: R_B,         Bfield_ratio, as in |B_msphere|/|B_isphere|
 ; mass is presumed to come from SDT, in eV/c^2 (with c in km/s)
-
+;Returns Jpar (microA/m^2)
 FUNCTION JV_CURVE_FIT__MAXWELL_KAPPA,X,P, $
    IN_POTBAR=in_potBar, $
    OUT_POTBAR=potBar, $
@@ -27,21 +27,29 @@ FUNCTION JV_CURVE_FIT__MAXWELL_KAPPA,X,P, $
   COMPILE_OPT IDL2,STRICTARRSUBS
 
   ;;X is pot
-  pot = X
+  pot    = X
 
-  kappa = DOUBLE(P[0])
-  T     = DOUBLE(P[1]
-  n     = DOUBLE(P[2])
-  R_B   = DOUBLE(P[3])
+  kappa  = DOUBLE(P[0])
+  T_m    = DOUBLE(P[1])
+  dens_m = DOUBLE(P[2])
+  R_B    = DOUBLE(P[3])
 
   CASE 1 OF
      KEYWORD_SET(is_Maxwellian_fit): BEGIN
-        
+        Jpar = KNIGHT_RELATION__DORS_KLETZING_4(T_m,dens_m,pot,R_B, $
+                                                IN_POTBAR=in_potBar, $
+                                                OUT_POTBAR=potBar, $
+                                                NO_MULT_BY_CHARGE=no_mult_by_charge, $
+                                                MASS=mass)
      END
      ELSE: BEGIN
-
+        Jpar = KNIGHT_RELATION__DORS_KLETZING_11(kappa,T_m,dens_m,pot,R_B, $
+                                                 IN_POTBAR=in_potBar, $
+                                                 OUT_POTBAR=potBar, $
+                                                 NO_MULT_BY_CHARGE=no_mult_by_charge, $
+                                                 MASS=mass)
      END
   ENDCASE
 
-  RETURN,jDens
+  RETURN,Jpar*1D6
 END

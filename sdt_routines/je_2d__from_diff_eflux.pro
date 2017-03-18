@@ -8,6 +8,7 @@ FUNCTION JE_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                 BINS=bins, $
                                 SC_POT=sc_pot, $
                                 EEB_OR_EES=eeb_or_ees, $
+                                JJE=JJe, $
                                 QUIET=quiet
 
   COMPILE_OPT IDL2,STRICTARRSUBS
@@ -38,6 +39,7 @@ FUNCTION JE_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                          EBINS=ebins, $
                          ANGLE=an, $
                          ARANGE=ar, $
+                         JJE=JJe, $
                          BINS=bins)
      
   ENDFOR
