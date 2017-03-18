@@ -1,7 +1,7 @@
 ;;2015/09/17
 FUNCTION VALUE_CLOSEST2,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
                         SUCCESS=success, $
-                        EXTREME_I=extreme_i, $
+                        EXTREME_II=extreme_ii, $
                         ONLY_HAVE_EXTREME=onlyExtreme, $
                         QUIET=quiet
 
@@ -9,8 +9,8 @@ FUNCTION VALUE_CLOSEST2,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
 
   inds = VALUE_LOCATE(vector,values)
   
-  check = WHERE(inds GT -1 AND inds LT (N_ELEMENTS(vector)-1),nCheck,COMPLEMENT=extreme_i)
-  
+  check = WHERE(inds GT -1 AND inds LT (N_ELEMENTS(vector)-1),nCheck,COMPLEMENT=extreme_ii)
+
   CASE 1 OF
      KEYWORD_SET(only_GE): BEGIN
         CASE nCheck OF

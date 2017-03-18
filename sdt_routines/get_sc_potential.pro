@@ -5,6 +5,31 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
                      REPAIR=repair, $
                      ORBIT=orbit
 
+  ;;See if we can get it from FA_POTENTIAL before going to the trouble
+  SPAWN,'ps ux | grep sdt',result
+  IF (WHERE(STRMATCH(result,'*FastDecom*')))[0] NE -1 THEN BEGIN
+
+     IF ~(KEYWORD_SET(Chaston_style) OR KEYWORD_SET(from_file)) THEN BEGIN
+        PRINT,"Hey there, Charmer. Looks like you haven't asked for anything in specific, and SDT is available. Let's do it."
+        WAIT,1
+        from_fa_potential = 1B
+     ENDIF ELSE BEGIN
+        PRINT,"Why? Use SDT, of course."
+        STOP
+     ENDELSE
+
+  ENDIF ELSE BEGIN
+
+     IF KEYWORD_SET(from_fa_potential) THEN BEGIN
+
+        PRINT,"Can't use FA_POTENTIAL, 'cause SDT is apparently not turned out. At any rate, you're an idiot."
+        WAIT,2
+        from_fa_potential = 0B
+
+     ENDIF 
+
+  ENDELSE
+  
   IF KEYWORD_SET(from_file) THEN BEGIN
      ;;Lifted from DOWNGOING_IONS__V1
      out_sc_pot_dir           = '/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/just_potential/'

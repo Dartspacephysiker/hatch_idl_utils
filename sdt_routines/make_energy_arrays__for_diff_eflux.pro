@@ -14,9 +14,16 @@ FUNCTION MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX,diff_eFlux, $
 
      multFac    = STRMATCH(eeb_or_ees,'ee*',/FOLD_CASE) ? -1. : 1.
 
-     sc_pot_min_i = VALUE_CLOSEST2(sc_pot.x,diff_eFlux.time,EXTREME_I=extreme_i)
+     sc_pot_min_i = VALUE_CLOSEST2(sc_pot.x,diff_eFlux.time,EXTREME_II=extreme_ii)
 
-     IF extreme_i[0] NE -1 THEN STOP
+     IF extreme_ii[0] NE -1 THEN BEGIN
+
+        IF (WHERE( $
+           ABS(sc_pot.x[sc_pot_min_i[extreme_ii]] - diff_eFlux.time[extreme_ii]) $
+           GT 1d-4))[0] NE -1 THEN BEGIN
+           STOP
+        ENDIF
+     ENDIF
 
      checkIt = WHERE((multFac*sc_pot.y[sc_pot_min_i] - out_en_arr[0,*]) GT 0.,nCheckIt)
 
