@@ -153,8 +153,13 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
         IF ARG_PRESENT(data) THEN data = sc_pot
 
         IF KEYWORD_SET(save_file) THEN BEGIN
-           PRINT,"Saving updated pot to " + out_newell_file_sc_pot
-           SAVE,sc_pot,FILENAME=out_sc_pot_dir+out_newell_file_sc_pot
+           IF FILE_TEST(out_sc_pot_dir+out_newell_file_sc_pot) THEN BEGIN
+              PRINT,"Wait! You don't have sc_pot for the whole orbit, stupid."
+              STOP
+           ENDIF ELSE BEGIN
+              PRINT,"Saving updated pot to " + out_newell_file_sc_pot
+              SAVE,sc_pot,FILENAME=out_sc_pot_dir+out_newell_file_sc_pot
+           ENDELSE
         ENDIF
 
         RETURN
