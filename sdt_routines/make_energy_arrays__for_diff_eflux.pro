@@ -20,7 +20,7 @@ FUNCTION MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX,diff_eFlux, $
 
         IF (WHERE( $
            ABS(sc_pot.x[sc_pot_min_i[extreme_ii]] - diff_eFlux.time[extreme_ii]) $
-           GT 2d-4))[0] NE -1 THEN BEGIN
+           GT 3d-4))[0] NE -1 THEN BEGIN
            STOP
         ENDIF
      ENDIF

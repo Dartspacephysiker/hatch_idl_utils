@@ -2,6 +2,7 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
    lc_angleRange, $
    i_angle,i_angle_up, $
    north_south, $
+   OUT_LCW=lcw, $
    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
    CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
    OUT_E_ANGLE=e_angle, $
