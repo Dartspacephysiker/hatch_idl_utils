@@ -11,7 +11,8 @@
 ; This function returns s^3/cm^3-km^3
 
 FUNCTION MAXWELL_FLUX__FUNC,X,P,DP, $
-   UNITS=units
+                            UNITS=units, $
+                            MASS=mass
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -20,7 +21,8 @@ FUNCTION MAXWELL_FLUX__FUNC,X,P,DP, $
   ;; speedOfLight           = DOUBLE(29979245800.) ;cm / s
   speedOfLight           = DOUBLE(299792.458) ;km / s
 
-  electron_mass          = DOUBLE(5.1099891e5)/speedOfLight^2   ;eV/c^2
+  electron_mass          = KEYWORD_SET(mass) ? DOUBLE(mass) : $
+                           DOUBLE(5.1099891e5)/speedOfLight^2 ;eV/c^2
 
   
   IF N_ELEMENTS(P) LT 4 THEN BEGIN

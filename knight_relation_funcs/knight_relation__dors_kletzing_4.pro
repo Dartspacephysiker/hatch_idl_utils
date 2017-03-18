@@ -13,7 +13,8 @@
 FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
                                           IN_POTBAR=in_potBar, $
                                           OUT_POTBAR=potBar, $
-                                          NO_MULT_BY_CHARGE=no_mult_by_charge
+                                          NO_MULT_BY_CHARGE=no_mult_by_charge, $
+                                          MASS=mass
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -28,8 +29,14 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
   IF mRat EQ 1 THEN mRatS = 1.00001D
 
   ;;a few constants
-  speedOfLight           = DOUBLE(299792458)                  ;m/s
-  electron_mass          = DOUBLE(5.1099891e5)/speedOfLight^2 ;eV/c^2
+  IF KEYWORD_SET(mass) THEN BEGIN
+     ;;Assume this is in eV/c^2 (with c in km/s instead of m/s)
+     ;; speedOfLight        = 299792.458D ;km / s
+     inMass              = mass / 1D6 ;(convert c^2 from m^2/s^2 to km^2/s^2)
+  ENDIF ELSE BEGIN
+     speedOfLight        = 299792458D ;m / s
+     inMass              = 5.1099891D5/speedOfLight^2 ;eV/c^2
+  ENDELSE
   
   eCharge                = DOUBLE(1.6e-19) ;Coulombs
 
@@ -49,7 +56,7 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
   ;;Equation segments
   ;; JVinv                  = (-1.D) * eCharge * n
   JVinv                  = (1.D) * eCharge * n
-  JV1                    = SQRT( T_m / ( 2.D * !PI * electron_mass ) )
+  JV1                    = SQRT( T_m / ( 2.D * !PI * inMass ) )
   ;; JV2sub                 = (-1.D) * potBar / ( mRat - 1.D + helpMeNotBeZero )
   JV2sub                 = (-1.D) * potBar / ( mRatS - 1.D )
   JV2                    = mRat * (1.D - (1.D - 1.D/mRat) * EXP(JV2sub) )

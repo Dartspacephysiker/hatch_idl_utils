@@ -10,7 +10,8 @@
 
 ; This function returns s^3/cm^3-km^3
 PRO MAXWELL_FLUX,X,A,F,pder, $
-                 UNITS=units
+                 UNITS=units, $
+                 MASS=mass
 
   COMPILE_OPT IDL2,STRICTARRSUBS
   
@@ -19,7 +20,8 @@ PRO MAXWELL_FLUX,X,A,F,pder, $
 
   energy            = X
   speedOfLight      = DOUBLE(299792.458) ;km / s
-  electron_mass     = DOUBLE(5.1099891e5)/speedOfLight^2   ;eV/c^2
+  inMass            = KEYWORD_SET(mass) ? DOUBLE(mass) : $
+                      DOUBLE(5.1099891e5)/speedOfLight^2 ;eV/c^2
 
   IF N_ELEMENTS(units) EQ 0 THEN BEGIN
      units               = 'eFlux'
@@ -38,7 +40,8 @@ PRO MAXWELL_FLUX,X,A,F,pder, $
   kappa             = DOUBLE(A[2])
   n                 = DOUBLE(A[3])
   bulkAngle         = N_ELEMENTS(A) GT 4 ? DOUBLE(A[4])*!PI / 180.0 : 0
-  inMass            = 5.6856602e-06 ;mass in eV/(km/s)^2
+  ;; inMass            = 5.6856602e-06 ;mass in eV/(km/s)^2
+  ;; inMass            = TEMPORARY(electron_mass)
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Chunks of the function
@@ -47,7 +50,7 @@ PRO MAXWELL_FLUX,X,A,F,pder, $
   ;; Finv                   = n * ( electron_mass / 2.D ) ^ (1.5D) ;* DOUBLE(1e15)
 
   ;;Converts to eFlux units
-  Finv               = n * ( electron_mass / 2.D ) ^ (1.5D) 
+  Finv               = n * ( inMass / 2.D ) ^ (1.5D) 
 
   CASE STRUPCASE(units) OF
      'EFLUX': BEGIN

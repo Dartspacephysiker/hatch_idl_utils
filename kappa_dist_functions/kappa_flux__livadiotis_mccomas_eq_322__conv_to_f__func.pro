@@ -11,7 +11,8 @@
 ; This function returns s^3/cm^3-km^3
 
 FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
-   UNITS=units
+   UNITS=units, $
+   MASS=mass
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -20,7 +21,8 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
   ;; speedOfLight           = DOUBLE(29979245800.) ;cm / s
   speedOfLight           = DOUBLE(299792.458) ;km / s
 
-  electron_mass          = DOUBLE(5.1099891e5)/speedOfLight^2   ;eV/c^2
+  inMass                 = KEYWORD_SET(mass) ? DOUBLE(mass) $
+                           : DOUBLE(5.1099891e5)/speedOfLight^2 ;eV/c^2
 
   
   IF N_ELEMENTS(P) LT 4 THEN BEGIN
@@ -40,8 +42,9 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
   kappa                  = DOUBLE(P[2])
   n                      = DOUBLE(P[3])
   bulkAngle              = DOUBLE(P[4])*!PI / 180.0
-  inMass                 = 5.6856602e-06             ;mass in eV/(km/s)^2
-  m                      = TEMPORARY(electron_mass)
+  ;; inMass                 = 5.6856602e-06             ;mass in eV/(km/s)^2
+  ;; m                      = TEMPORARY(electron_mass)
+  ;; inMass                 = TEMPORARY(electron_mass)
 
   kappaS = DOUBLE(kappa)
   IF kappa LE 1.5 THEN BEGIN
@@ -59,13 +62,13 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
   ;;Chunks of the function
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
 
-  Finv            = n * ( m / 2.D ) ^ (1.5D) ;* DOUBLE(1e15)
+  Finv            = n * ( inMass / 2.D ) ^ (1.5D) ;* DOUBLE(1e15)
 
   CASE STRUPCASE(units) OF
      'EFLUX': BEGIN
         ;;Converts to differential energy flux units, eV/(cm^2-s-sr-eV)
         
-        ;; Finv            = n * ( m / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+        ;; Finv            = n * ( inMass / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
         Finv     *= DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
      END
      'FLUX': BEGIN

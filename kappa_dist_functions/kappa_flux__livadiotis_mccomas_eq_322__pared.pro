@@ -9,7 +9,9 @@
 ; A[4]: bulkAngle, Angle between bulk velocity, u_b, and velocity in direction for which we're interested in the distribution
 
 ; This function returns s^3/cm^3-km^3
-PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder,UNITS=units
+PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder, $
+   UNITS=units, $
+   MASS=mass
 
   COMPILE_OPT IDL2,STRICTARRSUBS
   
@@ -17,8 +19,9 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder,UNITS=units
   ;; electron_mass  = DOUBLE(5.685e-16)   ;eV/(cm/s)^2
 
   energy            = X
-  speedOfLight      = DOUBLE(299792.458) ;km / s
-  electron_mass     = DOUBLE(5.1099891e5)/speedOfLight^2   ;eV/c^2
+  speedOfLight      = 299792.458D ;km / s
+  electron_mass     = KEYWORD_SET(mass) ? DOUBLE(mass) : $
+                      5.1099891D5/speedOfLight^2 ;eV/c^2
 
   IF N_ELEMENTS(units) EQ 0 THEN BEGIN
      units               = 'eFlux'

@@ -23,7 +23,9 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY,X,Y,P, $
    GFUNC=gFunc, $
    BULK_E_ANISOTROPY=bFunc, $
    BULK_E_ANGLE=bulk_e_angle, $
-   IS_MAXWELLIAN_FIT=is_maxwellian_fit
+   IS_MAXWELLIAN_FIT=is_maxwellian_fit, $
+   UNITS=units, $
+   MASS=mass
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -81,7 +83,9 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY,X,Y,P, $
            tempP    = P
            tempP[0] = tempP[0]*bFunc[i]
 
-           MAXWELL_FLUX,tempEn,tempP,angleSlice
+           MAXWELL_FLUX,tempEn,tempP,angleSlice, $
+                        UNITS=units, $
+                        MASS=mass
 
            Zmodel[*,i]  = angleSlice * gFunc[*,i] ; Bingham and Cairns [2000]
            
@@ -102,7 +106,9 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY,X,Y,P, $
            ;;       MEAN(Y[*,i]), $
            ;;       bulk_e_angle[i]
 
-           KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,tempEn,tempP,angleSlice
+           KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,tempEn,tempP,angleSlice, $
+              UNITS=units, $
+              MASS=mass
 
            ;; Zmodel[*,i]  = angleSlice                          ; No horseshoe nothin.
            
