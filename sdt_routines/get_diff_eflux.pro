@@ -29,7 +29,9 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         PRINT,'Restoring ' + diff_eFlux_file + '...'
         realFile = FILE_TEST(loadDir+diff_eFlux_file) ? loadDir+diff_eFlux_file : diff_eFlux_file
         RESTORE,realFile
-        got_restored = (N_ELEMENTS(dat_eFlux) GT 0) OR (N_ELEMENTS(diff_eFlux) GT 0)
+        ;; got_restored = (N_ELEMENTS(dat_eFlux) GT 0) OR (N_ELEMENTS(diff_eFlux) GT 0)
+        got_restored = (SIZE(dat_eFlux,/TYPE) EQ 8) OR (SIZE(diff_eFlux,/TYPE) EQ 8)
+        IF diff_eFlux EQ 0 THEN diff_eFlux = !NULL
      ENDIF ELSE BEGIN
         PRINT,"Couldn't find " + diff_eFlux_file + "!!!"
         PRINT,'Attempting to get and save for you ...'

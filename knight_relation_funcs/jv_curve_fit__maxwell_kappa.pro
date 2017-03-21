@@ -19,6 +19,8 @@
 FUNCTION JV_CURVE_FIT__MAXWELL_KAPPA,X,P, $
    IN_POTBAR=in_potBar, $
    OUT_POTBAR=potBar, $
+   IN_TEMPERATURES=in_temperatures, $
+   IN_DENSITIES=in_densities, $
    NO_MULT_BY_CHARGE=no_mult_by_charge, $
    IS_MAXWELLIAN_FIT=is_maxwellian_fit, $
    UNITS=units, $
@@ -33,6 +35,14 @@ FUNCTION JV_CURVE_FIT__MAXWELL_KAPPA,X,P, $
   T_m    = DOUBLE(P[1])
   dens_m = DOUBLE(P[2])
   R_B    = DOUBLE(P[3])
+
+  IF KEYWORD_SET(in_temperatures) THEN BEGIN
+     T_m = in_temperatures
+  ENDIF
+
+  IF KEYWORD_SET(in_densities) THEN BEGIN
+     dens_m = in_densities
+  ENDIF
 
   CASE 1 OF
      KEYWORD_SET(is_Maxwellian_fit): BEGIN

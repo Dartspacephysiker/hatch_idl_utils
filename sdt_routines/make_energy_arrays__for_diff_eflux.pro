@@ -18,9 +18,15 @@ FUNCTION MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX,diff_eFlux, $
 
      IF extreme_ii[0] NE -1 THEN BEGIN
 
+        IF (WHERE(sc_pot_min_i[extreme_ii] EQ -1))[0] NE -1 THEN BEGIN
+           sc_pot_min_i[WHERE(sc_pot_min_i[extreme_ii] EQ -1)] = 0
+        ENDIF
+        
+        diffMax = STRMATCH(STRLOWCASE(eeb_or_ees),'*eb') ? 8d-4 : 1d-3
+
         IF (WHERE( $
            ABS(sc_pot.x[sc_pot_min_i[extreme_ii]] - diff_eFlux.time[extreme_ii]) $
-           GT 3d-4))[0] NE -1 THEN BEGIN
+           GT diffMax))[0] NE -1 THEN BEGIN
            STOP
         ENDIF
      ENDIF

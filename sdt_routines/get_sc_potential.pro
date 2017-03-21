@@ -1,6 +1,7 @@
 PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
                      FROM_FILE=from_file, $
                      FROM_FA_POTENTIAL=from_fa_potential, $
+                     ALL=all, $
                      CHASTON_STYLE=Chaston_style, $
                      REPAIR=repair, $
                      ORBIT=orbit, $
@@ -139,7 +140,7 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
   CASE 1 OF
      KEYWORD_SET(from_fa_potential): BEGIN
 
-        spacecraft_potential = GET_FA_POTENTIAL(t1,t2,REPAIR=repair,STORE=~ARG_PRESENT(data))
+        spacecraft_potential = GET_FA_POTENTIAL(t1,t2,REPAIR=repair,STORE=~ARG_PRESENT(data),ALL=all)
 
         IF ~spacecraft_potential.valid THEN BEGIN
            data = -1
@@ -152,14 +153,14 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
         
         IF ARG_PRESENT(data) THEN data = sc_pot
 
-        IF KEYWORD_SET(save_file) THEN BEGIN
-           IF FILE_TEST(out_sc_pot_dir+out_newell_file_sc_pot) THEN BEGIN
-              PRINT,"Wait! You don't have sc_pot for the whole orbit, stupid."
-              STOP
-           ENDIF ELSE BEGIN
+        IF KEYWORD_SET(save_file) AND KEYWORD_SET(all) THEN BEGIN
+           ;; IF FILE_TEST(out_sc_pot_dir+out_newell_file_sc_pot) THEN BEGIN
+           ;;    PRINT,"Wait! You don't have sc_pot for the whole orbit, stupid."
+           ;;    STOP
+           ;; ENDIF ELSE BEGIN
               PRINT,"Saving updated pot to " + out_newell_file_sc_pot
               SAVE,sc_pot,FILENAME=out_sc_pot_dir+out_newell_file_sc_pot
-           ENDELSE
+           ;; ENDELSE
         ENDIF
 
         RETURN
