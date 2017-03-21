@@ -52,7 +52,9 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
                                       BKG=bkg, $
                                       MISSING=missing, $
                                       FLOOR=floor, $
-                                      RETRACE=retrace
+                                      RETRACE=retrace, $
+                                      OUT_AVGFACTORARR=avgFactorArr, $
+                                      OUT_NORMARR=normArr
 
   COMPILE_OPT IDL2,STRICTARRSUBS
   
@@ -83,6 +85,9 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   nvar   = diff_eFlux.nenergy
   nmax   = nvar
 
+  avgFactorArr = LONARR(max)
+  normArr      = LONARR(max)
+
   IF NOT KEYWORD_SET(units) THEN BEGIN
      units  = diff_eFlux.units_name
      ;; units = 'Counts'
@@ -90,8 +95,11 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   IF NOT KEYWORD_SET(missing) THEN missing = !VALUES.F_NaN
 
   last_time = diff_eFlux.time[0]
+
+  ;; avgFactorArr = !NULL
+  ;; normArr  = !NULL
   ;;	Collect the data - Main Loop
-  n = 0
+  ;; n = 0
   FOR k=0,max-1 DO BEGIN
 
      dat = MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k)
@@ -131,6 +139,8 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      IF NOT KEYWORD_SET(bins) THEN ind = INDGEN(dat.nbins) ELSE ind = WHERE(bins,count)
      IF units EQ 'Counts' THEN norm = 1 ELSE norm = count
 
+
+     ;;Skip the ones with a big gap
      ;; IF ABS((diff_eFlux.time[k]+diff_eFlux.end_time[k])/2.-last_time) GE gap_time THEN BEGIN
      IF ABS((dat.time+dat.end_time)/2.-last_time) GE gap_time THEN BEGIN
         IF k GE 2 THEN dbadtime = time[k-1] - time[k-2] else dbadtime = gap_time/2.
@@ -147,9 +157,14 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
            ddata[k,*] = missing
            var[k,*]   = missing
            dvar[k,*]  = missing
-           n=n+1
+           k++
         endif
      endif
+
+     ;; avgFactorArr = [avgFactorArr,count]
+     ;; normArr  = [normArr,norm]
+     avgFactorArr[k] = count
+     normArr[k]      = norm
 
      IF KEYWORD_SET(bkg  ) THEN dat = SUB3D(dat,bkg)
      IF KEYWORD_SET(units) THEN dat = CONV_UNITS(dat,units)
@@ -191,7 +206,6 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      ENDIF
      last_time = time[k]
 
-     n++
   ENDFOR
 
   ;;	Store the data
@@ -235,7 +249,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
 
   ex_time = SYSTIME(1) - ex_start
   MESSAGE,STRING(ex_time)+' seconds execution time.',/cont,/info
-  PRINT,'Number of data points = ',n
+  PRINT,'Number of data points = ',k
 
   RETURN,dataStr
 
