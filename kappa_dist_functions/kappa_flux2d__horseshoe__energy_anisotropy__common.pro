@@ -49,7 +49,7 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
   ;; unsortA   = VALUE_CLOSEST2((Y[0,*])[sortKEA],Y[0,*])
 
   smallAngle = MIN(ABS(MEAN(Y,DIMENSION=1)),fa_i)
-  k_ea_ii   = sortKEA[VALUE_CLOSEST2(K_EA__angles[sortKEA],REFORM(Y[0,*]))]
+  k_ea_ii   = sortKEA[VALUE_CLOSEST2(K_EA__angles[sortKEA],REFORM(Y[0,*]),/CONSTRAINED)]
 
   ;; k_ea_ii      = INDGEN(N_ELEMENTS(k_ea__angles))
 

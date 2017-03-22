@@ -3,13 +3,14 @@ FUNCTION VALUE_CLOSEST2,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
                         SUCCESS=success, $
                         EXTREME_II=extreme_ii, $
                         ONLY_HAVE_EXTREME=onlyExtreme, $
+                        CONSTRAINED=constrained, $
                         QUIET=quiet
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
   inds = VALUE_LOCATE(vector,values)
   
-  check = WHERE(inds GT -1 AND inds LT (N_ELEMENTS(vector)-1),nCheck,COMPLEMENT=extreme_ii)
+  check = WHERE(inds GT -1 AND inds LT (N_ELEMENTS(vector)-1),nCheck,COMPLEMENT=extreme_ii,NCOMPLEMENT=nExtreme)
 
   CASE 1 OF
      KEYWORD_SET(only_GE): BEGIN
@@ -69,6 +70,9 @@ FUNCTION VALUE_CLOSEST2,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
      END
   ENDCASE
 
+  IF KEYWORD_SET(constrained) AND nExtreme GT 0 THEN BEGIN
+     inds = inds > 0 < (N_ELEMENTS(vector)-1)
+  ENDIF
 
   RETURN,inds
 END
