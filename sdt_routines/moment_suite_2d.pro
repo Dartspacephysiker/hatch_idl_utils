@@ -21,8 +21,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                     OUT_ERR_J_=jErr, $
                     OUT_ERR_JE=jeErr, $
                     OUT_ERR_T=TErr, $
-                    OUT_ERR_CHARE=charEErr, $
-                    OUT_ERR_CURRENT=curErr
+                    OUT_ERR_CURRENT=curErr, $
+                    OUT_ERR_CHARE=charEErr
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -114,17 +114,35 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
   ENDIF
 
-  IF KEYWORD_SET(map_to_100km) THEN BEGIN
-     GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orbit,j.x, $
-                                      OUT_TSORTED_I=tSort_i, $
-                                      OUT_ALT=alt, $
-                                      OUT_MLT=mlt, $
-                                      OUT_ILAT=ilat, $
-                                      OUT_MAPRATIO=mapRatio, $
-                                      OUT_NEVENTS=nEvents, $
-                                      LOGLUN=logLun
-     IF N_ELEMENTS(tSort_i) GT 0 THEN STOP
+  GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orbit,j.x, $
+                                   OUT_TSORTED_I=tSort_i, $
+                                   OUT_ALT=alt, $
+                                   OUT_MLT=mlt, $
+                                   OUT_ILAT=ilat, $
+                                   OUT_MAPRATIO=mapRatio, $
+                                   OUT_NEVENTS=nEvents, $
+                                   LOGLUN=logLun
+  IF N_ELEMENTS(tSort_i) GT 0 THEN STOP
 
+  north_south     = ABS(ilat)/ilat
+
+  flip            = WHERE(north_south LT 0,nFlip)
+  IF nFlip GT 0 THEN BEGIN
+     j.y[flip]   *= (-1.)
+     je.y[flip]  *= (-1.)
+  ENDIF
+
+  ;; CASE N_ELEMENTS(WHERE(north_south LT 0,/NULL)) OF
+  ;;    N_ELEMENTS(north_south): BEGIN
+  ;;    END
+  ;;    0: BEGIN
+  ;;    END
+  ;;    ELSE: BEGIN
+  ;;       STOP
+  ;;    END
+  ;; ENDCASE
+
+  IF KEYWORD_SET(map_to_100km) THEN BEGIN
      j.y         *= mapRatio
      je.y        *= mapRatio
 
