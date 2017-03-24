@@ -5,6 +5,7 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
                      CHASTON_STYLE=Chaston_style, $
                      REPAIR=repair, $
                      ORBIT=orbit, $
+                     FILENAME=filename, $
                      SAVE_FILE=save_file
 
 
@@ -18,7 +19,7 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
         from_fa_potential = 1B
      ENDIF ELSE BEGIN
         PRINT,"Why? Use SDT, of course."
-        STOP
+        ;; STOP
      ENDELSE
 
   ENDIF ELSE BEGIN
@@ -36,22 +37,23 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
   IF KEYWORD_SET(from_file) OR KEYWORD_SET(save_file) THEN BEGIN
      ;;Lifted from DOWNGOING_IONS__V1
      out_sc_pot_dir           = '/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/just_potential/'
-     newellStuff_pref_sc_pot  = 'Newell_et_al_identification_of_electron_spectra--just_sc_pot--Orbit_'
+     pref_sc_pot  = 'Newell_et_al_identification_of_electron_spectra--just_sc_pot--Orbit_'
 
      jjj    = 0
      done   = 0B
-     t1Good = ~KEYWORD_SET(t1)  ;don't worry about checking if t1 and t2 are good if we already have them
+     t1Good = ~KEYWORD_SET(t1)  ;don't worry about checking whether t1 and t2 are good if we already have them
      t2Good = ~KEYWORD_SET(t2)
      
      WHILE ~done DO BEGIN
 
-        out_newell_file_sc_pot  = newellStuff_pref_sc_pot + STRCOMPRESS(orbit,/REMOVE_ALL) + $
-                                  '_' + STRCOMPRESS(jjj,/REMOVE_ALL) + '.sav'
+        outFile_sc_pot  = KEYWORD_SET(filename) ? fileName : $
+                          pref_sc_pot + STRCOMPRESS(orbit,/REMOVE_ALL) + $
+                          '_' + STRCOMPRESS(jjj,/REMOVE_ALL) + '.sav'
 
-        IF FILE_TEST(out_sc_pot_dir+out_newell_file_sc_pot) AND KEYWORD_SET(from_file) THEN BEGIN
+        IF FILE_TEST(out_sc_pot_dir+outFile_sc_pot) AND KEYWORD_SET(from_file) THEN BEGIN
 
-           PRINT,"Restoring S/C pot file: " + out_newell_file_sc_pot
-           RESTORE,out_sc_pot_dir+out_newell_file_sc_pot
+           PRINT,"Restoring S/C pot file: " + outFile_sc_pot
+           RESTORE,out_sc_pot_dir+outFile_sc_pot
 
            IF N_ELEMENTS(sc_pot) EQ 0 THEN BEGIN
 
@@ -66,7 +68,8 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
 
               ;;Check--are we within time boundaries?
               IF KEYWORD_SET(t1) AND ~t1Good THEN BEGIN
-                 IF sc_pot.x[0] LE t1 THEN BEGIN
+                 IF (ABS(sc_pot.x[0] - t1) LT 1.0) THEN BEGIN
+                 ;; IF sc_pot.x[0] LE t1 THEN BEGIN
                     t1Good = 1B
                  ENDIF
               ENDIF ELSE BEGIN
@@ -74,7 +77,8 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
               ENDELSE
 
               IF KEYWORD_SET(t2) AND ~t2Good THEN BEGIN
-                 IF sc_pot.x[-1] GE t2 THEN BEGIN
+                 ;; IF sc_pot.x[-1] GE t2 THEN BEGIN
+                 IF (ABS(sc_pot.x[-1] - t2) LT 1.0) THEN BEGIN
                     t2Good = 1B
                  ENDIF
               ENDIF ELSE BEGIN
@@ -153,13 +157,14 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
         
         IF ARG_PRESENT(data) THEN data = sc_pot
 
-        IF KEYWORD_SET(save_file) AND KEYWORD_SET(all) THEN BEGIN
-           ;; IF FILE_TEST(out_sc_pot_dir+out_newell_file_sc_pot) THEN BEGIN
+        ;; IF KEYWORD_SET(save_file) AND KEYWORD_SET(all) THEN BEGIN
+        IF KEYWORD_SET(save_file) THEN BEGIN
+           ;; IF FILE_TEST(out_sc_pot_dir+outFile_sc_pot) THEN BEGIN
            ;;    PRINT,"Wait! You don't have sc_pot for the whole orbit, stupid."
            ;;    STOP
            ;; ENDIF ELSE BEGIN
-              PRINT,"Saving updated pot to " + out_newell_file_sc_pot
-              SAVE,sc_pot,FILENAME=out_sc_pot_dir+out_newell_file_sc_pot
+              PRINT,"Saving updated pot to " + outFile_sc_pot
+              SAVE,sc_pot,FILENAME=out_sc_pot_dir+outFile_sc_pot
            ;; ENDELSE
         ENDIF
 
