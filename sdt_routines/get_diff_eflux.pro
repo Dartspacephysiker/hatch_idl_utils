@@ -124,12 +124,12 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
   ENDIF
   
   IF KEYWORD_SET(save_diff_eFlux_to_file) OR KEYWORD_SET(couldntfindLoad) THEN BEGIN
-     IF (~KEYWORD_SET(couldntfindload) OR (N_ELEMENTS(diff_eFlux_file) GT 0)) THEN BEGIN
+     IF (N_ELEMENTS(diff_eFlux_file) GT 0) AND ~got_restored THEN BEGIN
         save_diff_eFlux_to_file = diff_eFlux_file
         PRINT,"Saving diff_eFlux to file: " + save_diff_eFlux_to_file
         SAVE,diff_eFlux,FILENAME=loadDir + save_diff_eFlux_to_file
      ENDIF ELSE BEGIN
-        PRINT,"Sorry, no save for you"
+        ;; PRINT,"Sorry, no save for you"
      ENDELSE
   ENDIF
 

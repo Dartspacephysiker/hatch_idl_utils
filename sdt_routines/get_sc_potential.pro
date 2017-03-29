@@ -144,7 +144,8 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
   CASE 1 OF
      KEYWORD_SET(from_fa_potential): BEGIN
 
-        spacecraft_potential = GET_FA_POTENTIAL(t1,t2,REPAIR=repair,STORE=~ARG_PRESENT(data),ALL=all)
+        spacecraft_potential = GET_FA_POTENTIAL(t1,t2,REPAIR=repair, $;STORE=~ARG_PRESENT(data), $
+                                                ALL=all)
 
         IF ~spacecraft_potential.valid THEN BEGIN
            data = -1
@@ -155,7 +156,11 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
                   y:spacecraft_potential.comp1, $
                   notch:spacecraft_potential.notch}
         
-        IF ARG_PRESENT(data) THEN data = sc_pot
+        IF ARG_PRESENT(data) THEN data = sc_pot ELSE BEGIN
+           STORE_DATA,'sc_pot',DATA=sc_pot ;note this is actually the negative of the s/c potential
+           PRINT,'Spacecraft potential stored as ''sc_pot'''
+        ENDELSE
+
 
         ;; IF KEYWORD_SET(save_file) AND KEYWORD_SET(all) THEN BEGIN
         IF KEYWORD_SET(save_file) THEN BEGIN
@@ -199,9 +204,9 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
 
         pot[index_max+1:nV8-1] = pot[j_range[index_max]]
         sc_pot        = {x:v8.x,y:pot}
-        STORE_DATA,'S_Pot',DATA=sc_pot ;note this is actually the negative of the s/c potential
+        STORE_DATA,'sc_pot',DATA=sc_pot ;note this is actually the negative of the s/c potential
 
-        PRINT,'Spacecraft potential stored as ''S_Pot'''
+        PRINT,'Spacecraft potential stored as ''sc_pot'''
         IF ARG_PRESENT(data) THEN data = sc_pot
 
         RETURN

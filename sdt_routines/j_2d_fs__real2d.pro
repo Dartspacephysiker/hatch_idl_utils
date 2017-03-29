@@ -39,7 +39,7 @@ if dat.valid eq 0 then begin
 endif
 
 if dat.nbins eq 32 or dat.project_name ne 'FAST' then begin
-	return, j_2d_b(dat,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
+	return, j_2d_b__real2d(dat,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
 endif
 
 ind1=findgen(32)*2
@@ -105,8 +105,8 @@ dat2 = 		{data_name:		dat.data_name, 			$
 
 ;	Note that the EBINS, ARANGE, and BINS keywords below may not work properly.
 
-j1=j_2d_b(dat1,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
-j2=j_2d_b(dat2,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
+j1=j_2d_b__real2d(dat1,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
+j2=j_2d_b__real2d(dat2,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
 
 ;print,'j1=',j1
 ;print,'j2=',j2
