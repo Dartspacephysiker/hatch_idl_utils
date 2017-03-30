@@ -32,11 +32,17 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   
 ;  Correct for spacecraft potential
 ;  the following needs modifications to be consistent with FAST
+
+  ;;Get charge
   charge=1.                     ; charge of species
   value=0 & str_element,dat,'charge',value
   if value le 0 or value ge 0 then value=value else value=0
   if value ne 0 then charge=dat.charge		
   if ((value eq 0) and (dat.mass lt 0.00010438871)) then charge=-1. ; this line works for Wind which does not have dat.charge
+
+; The following rotates the measurement in angle to partly account 
+;	for s/c potential deflection of low energy electrons
+  ;;Now try for potential
   value=0 & str_element,dat,'sc_pot',value
   if value le 0 or value ge 0 then value=value else value=0
   sc_pot = value*1.2 + 1.
@@ -57,40 +63,38 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   endif
   if value ne 0 then pot=sc_pot
 
-; The following rotates the measurement in angle to partly account 
-;	for s/c potential deflection of low energy electrons
 
 
   ;;Do we need to get pot?
-  val = !NULL
-  STR_ELEMENT,dat,'sc_pot',val;,/ADD_REPLACE
-  IF val EQ !NULL THEN BEGIN
+  ;; val = !NULL
+  ;; STR_ELEMENT,dat,'sc_pot',val;,/ADD_REPLACE
+  ;; IF val EQ !NULL THEN BEGIN
 
-     GET_DATA,'sc_pot',DATA=sc_pot
+  ;;    GET_DATA,'sc_pot',DATA=sc_pot
 
-     IF SIZE(sc_pot,/TYPE) EQ 8 THEN BEGIN
+  ;;    IF SIZE(sc_pot,/TYPE) EQ 8 THEN BEGIN
         
-        check = VALUE_CLOSEST2(sc_pot.x,dat.time,/CONSTRAINED)
+  ;;       check = VALUE_CLOSEST2(sc_pot.x,dat.time,/CONSTRAINED)
 
-        IF ABS(sc_pot.x[check]-dat.time) LT 5.0 THEN BEGIN
+  ;;       IF ABS(sc_pot.x[check]-dat.time) LT 5.0 THEN BEGIN
 
-           STR_ELEMENT,dat,'sc_pot',sc_pot.y[check],/ADD_REPLACE
+  ;;          STR_ELEMENT,dat,'sc_pot',sc_pot.y[check],/ADD_REPLACE
 
-        ENDIF ELSE BEGIN
+  ;;       ENDIF ELSE BEGIN
 
-           PRINT,"Badness ..."
-           STR_ELEMENT,dat,'sc_pot',0.,/ADD_REPLACE
+  ;;          PRINT,"Badness ..."
+  ;;          STR_ELEMENT,dat,'sc_pot',0.,/ADD_REPLACE
 
-        ENDELSE
+  ;;       ENDELSE
 
-     ENDIF ELSE BEGIN
+  ;;    ENDIF ELSE BEGIN
 
-        PRINT,"Couldn't get sc_pot ..."
-        STR_ELEMENT,dat,'sc_pot',0.,/ADD_REPLACE
+  ;;       PRINT,"Couldn't get sc_pot ..."
+  ;;       STR_ELEMENT,dat,'sc_pot',0.,/ADD_REPLACE
 
-     ENDELSE
+  ;;    ENDELSE
 
-  ENDIF
+  ;; ENDIF
   
   if dat.data_name ne 'HSPAD' and dat.energy(0)-dat.denergy(0) lt dat.sc_pot then begin
      tmpmin=min(abs(dat.energy(*,0)-sc_pot),ind1)
@@ -199,21 +203,28 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   ;; units are #/cm^2-sec
   ;; fluxz   = j_2d_new(dat2,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
   ;; density = n_2d_new(dat2,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
-  fluxz   = Const_j  * TOTAL(data*denergy*energy*domega_zz)
-  efluxz  = Const_je * TOTAL(data*denergy*energy^2*domega_zz)
-  density = Const_n  * TOTAL(denergy*(energy^(0.5))*data*domega)
 
+  ;;Par comps
+  fluxz   = Const_j  * TOTAL(data*denergy  *energy        *domega_zz)
+  efluxz  = Const_je * TOTAL(data*denergy  *energy^2      *domega_zz)
+  density = Const_n  * TOTAL(data*denergy  *(energy^(0.5))*domega   )
+  effluxz = Const_je * TOTAL(data*denergy^2*energy^3      *domega_zz)
+
+  ;;Perp comps
+  fluxx   = Const_j  * TOTAL(data*denergy  *energy  *domega*sin(theta))
+  efluxx  = Const_je * TOTAL(data*denergy  *energy^2*domega*sin(theta))
+  effluxx = Const_je * TOTAL(data*denergy^2*energy^3*domega*sin(theta))
+
+  ;;Vel comps
   vel     = fluxz/density
+  velx    = fluxx/density
+
 
   ;;See just how much improvement we get for all those fancy field-aligned beam corrections
-  testfluxz   = Const_j  * TOTAL(data*denergy*energy*domega*cos(theta))
-  testefluxz  = Const_je * TOTAL(data*denergy*energy^2*domega*cos(theta))
-  PRINT,(fluxz-testfluxz)/fluxz
-  PRINT,(efluxz-testefluxz)/efluxz
-
-  fluxx   = Const_j  * TOTAL(data*denergy*energy*domega*sin(theta))
-  efluxx  = Const_je * TOTAL(data*denergy*energy^2*domega*sin(theta))
-  velx    = fluxx/density
+  ;; testfluxz   = Const_j  * TOTAL(data*denergy*energy*domega*cos(theta))
+  ;; testefluxz  = Const_je * TOTAL(data*denergy*energy^2*domega*cos(theta))
+  ;; PRINT,(fluxz-testfluxz)/fluxz
+  ;; PRINT,(efluxz-testefluxz)/efluxz
 
   ;; Pressure is in units of eV/cm**3
   p2dxx = Const_p * TOTAL(data*denergy*energy^1.5*domega*(sin(theta))^2)/2.
@@ -236,15 +247,17 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
 
   T  = [press(0),press(1),press(2),TOTAL(press)/3.D]/density
 
-  moments = {n  : density, $
-             j : fluxz, $
-             je : efluxz, $
-             p  : press, $
-             T  : T, $
-             v  : vel*1.D-5, $
+  moments = {n   : density  , $
+             j   : fluxz    , $
+             je  : efluxz   , $
+             jje : effluxz  , $
+             p   : press    , $
+             T   : T        , $
+             v   : vel*1.D-5, $
              charE : efluxz/fluxz*6.242D*1.0D11, $
              perp  : {j     : fluxx, $
                       je    : efluxx, $
+                      jje   : effluxx, $
                       v     : velx*1.D-5, $
                       charE : efluxx/fluxx*6.242D*1.0D11}}
 

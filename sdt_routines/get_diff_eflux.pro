@@ -11,6 +11,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    OUT_DIFF_EFLUX=diff_eflux, $
                    SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
                    DIFF_EFLUX_FILE=diff_eFlux_file, $
+                   SC_POT=sc_pot, $
                    LOAD_DAT_FROM_FILE=loadFile, $
                    LOAD_DIR=loadDir
                    
@@ -46,23 +47,39 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
   IF ~KEYWORD_SET(name__diff_eFlux) THEN BEGIN
      CASE 1 OF
         KEYWORD_SET(fit_each_angle): BEGIN
-           name__diff_eFlux                   = 'diff_eFlux__fit_each_angle'
+           name__diff_eFlux  = 'diff_eFlux__fit_each_angle'
         END
         ELSE: BEGIN
-           name__diff_eFlux                   = 'diff_eFlux'
+           name__diff_eFlux  = 'diff_eFlux'
         END
      ENDCASE
   ENDIF
-  name__diff_eFluxSDT                         = 'diff_eFluxSDT'
+  name__diff_eFluxSDT        = 'diff_eFluxSDT'
 
-  routine                                     = 'get_fa_'+eeb_or_ees+'_ts'
+  routine                    = 'get_fa_'+eeb_or_ees+'_ts'
 
   IF KEYWORD_SET(calc_geom_factors) THEN PRINT, "Calculating geometry factors for " + $
      routine + ' ...'
   IF ~got_restored THEN BEGIN
-     dat_eFlux                                   = CALL_FUNCTION(routine,t1,t2, $
-                                                                 CALIB=calc_geom_factors)
-                             
+     t1Tmp                   = t1
+     t2Tmp                   = t2
+
+     dat_eFlux               = CALL_FUNCTION(routine,t1Tmp,t2Tmp, $
+                                             CALIB=calc_geom_factors)
+
+     tmpT                    = (dat_eFlux[*].time+dat_eFlux[*].end_time)/2.D
+     nHere                   = N_ELEMENTS(tmpT)
+     keep                    = WHERE(tmpT GE t1 AND tmpT LE t2,nKeep)
+     
+     IF nKeep NE nHere THEN BEGIN
+
+        IF nKeep EQ 0 THEN STOP
+        
+        PRINT,FORMAT='("Dropping ",I0,A0)',nHere-nKeep," stinker" + ((nHere-nKeep) GT 1 ? 's' : '')
+        dat_eFlux            = dat_eFlux[keep]
+
+     ENDIF
+
      ;;Turn it into the tangly mess of arrays
      DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
                              ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
@@ -73,11 +90,11 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
      
      IF KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
 
-        diff_eFlux                               =  {x:        TRANSPOSE(diff_eFlux.x), $
-                                                     y:        TRANSPOSE(diff_eFlux.y), $
-                                                     angles:   diff_eFlux.angles, $
-                                                     time:     diff_eFlux.time, $
-                                                     shiftVals:shiftVals}
+        diff_eFlux           =  {x:        TRANSPOSE(diff_eFlux.x), $
+                                 y:        TRANSPOSE(diff_eFlux.y), $
+                                 angles:   diff_eFlux.angles, $
+                                 time:     diff_eFlux.time, $
+                                 shiftVals:shiftVals}
         
      ENDIF ELSE BEGIN
 
@@ -120,6 +137,11 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
 
      ENDELSE
+
+     ;;Add potential, if we got it
+     IF SIZE(sc_pot,/TYPE) EQ 8 THEN BEGIN
+        ADD_SC_POT_TO_DIFF_EFLUX,diff_eFlux,sc_pot
+     ENDIF
 
   ENDIF
   

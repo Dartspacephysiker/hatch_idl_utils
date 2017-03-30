@@ -16,15 +16,17 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
 
   max         = N_ELEMENTS(diff_eFlux.data_name)
   time        = (diff_eFlux.time+diff_eFlux.end_time)/2.
-  templar     = {n  : 0.0D, $
-                 j : 0.0D, $
-                 je : 0.0D, $
-                 p  : REPLICATE(0.0D,6), $
-                 T  : REPLICATE(0.0D,4), $
-                 v  : 0.D, $
+  templar     = {n   : 0.0D, $
+                 j   : 0.0D, $
+                 je  : 0.0D, $
+                 jje : 0.0D, $
+                 p   : REPLICATE(0.0D,6), $
+                 T   : REPLICATE(0.0D,4), $
+                 v   : 0.D, $
                  charE : 0.D, $
                  perp  : {j     : 0.D, $
                           je    : 0.D, $
+                          jje   : 0.D, $
                           v     : 0.D, $
                           charE : 0.D}}
 
@@ -43,7 +45,7 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
 
   FOR k=0,max-1 DO BEGIN
 
-     tmpStruct      = MOMENTS_2D_NEW(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k), $
+     tmpStruct      = MOMENTS_2D_NEW(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k,HAS_SC_POT=(SIZE(sc_pot,/TYPE) EQ 8)), $
                                      ENERGY=N_ELEMENTS(en) GT 0 ? en[*,k] : !NULL , $
                                      ERANGE=er, $
                                      EBINS=ebins, $
@@ -54,12 +56,14 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
      moments.y[k].n           = tmpStruct.n
      moments.y[k].j           = tmpStruct.j
      moments.y[k].je          = tmpStruct.je
+     moments.y[k].jje         = tmpStruct.jje
      moments.y[k].p           = tmpStruct.p
      moments.y[k].T           = tmpStruct.T
      moments.y[k].v           = tmpStruct.v
      moments.y[k].charE       = tmpStruct.charE
      moments.y[k].perp.j      = tmpStruct.perp.j
      moments.y[k].perp.je     = tmpStruct.perp.je
+     moments.y[k].perp.jje    = tmpStruct.perp.jje
      moments.y[k].perp.v      = tmpStruct.perp.v
      moments.y[k].perp.charE  = tmpStruct.perp.charE
      

@@ -59,24 +59,29 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
      PRINT,"Getting ephem data for " + STRCOMPRESS(N_ELEMENTS(timeArr),/REMOVE_ALL) + ' times ...'
   ENDELSE
 
-  GET_FA_ORBIT,(N_ELEMENTS(tSort_i) GT 0 ? times : timeArr),/TIME_ARRAY,/ALL
-  get_data,'ALT',DATA=alt
-  get_data,'MLT',DATA=mlt
-  get_data,'ILAT',DATA=ilat
-  GET_DATA,'B_model',DATA=bMod
-  GET_DATA,'BFOOT',DATA=bFoot
+  GET_FA_ORBIT,(N_ELEMENTS(tSort_i) GT 0 ? times : timeArr),/TIME_ARRAY,/ALL,/NO_STORE,STRUC=struc
+  ;; GET_DATA,'ALT',DATA=alt
+  ;; GET_DATA,'MLT',DATA=mlt
+  ;; GET_DATA,'ILAT',DATA=ilat
+  ;; GET_DATA,'B_model',DATA=bMod
+  ;; GET_DATA,'BFOOT',DATA=bFoot
+  alt = struc.alt
+  mlt = struc.mlt
+  ilat = struc.ilat
+  ;; bMod = struc.bMod
+  ;; bFoot = struc.bFoot
 
-  IF N_ELEMENTS(alt.y) NE nEvents THEN STOP
-  alt       = (TEMPORARY(alt)).y
-  mlt       = (TEMPORARY(mlt)).y
-  ilat      = (TEMPORARY(ilat)).y
+  IF N_ELEMENTS(struc.alt) NE nEvents THEN STOP
+  ;; alt       = (TEMPORARY(alt)).y
+  ;; mlt       = (TEMPORARY(mlt)).y
+  ;; ilat      = (TEMPORARY(ilat)).y
 
-  mag1      = (bMod.y[*,0]*bMod.y[*,0]+ $
-               bMod.y[*,1]*bMod.y[*,1]+ $
-               bMod.y[*,2]*bMod.y[*,2])^0.5
-  mag2      = (bFoot.y[*,0]*bFoot.y[*,0]+ $
-               bFoot.y[*,1]*bFoot.y[*,1]+ $
-               bFoot.y[*,2]*bFoot.y[*,2])^0.5
+  mag1      = (struc.B_model[*,0]*struc.B_model[*,0]+ $
+               struc.B_model[*,1]*struc.B_model[*,1]+ $
+               struc.B_model[*,2]*struc.B_model[*,2])^0.5
+  mag2      = (struc.bFoot[*,0]*struc.bFoot[*,0]+ $
+               struc.bFoot[*,1]*struc.bFoot[*,1]+ $
+               struc.bFoot[*,2]*struc.bFoot[*,2])^0.5
   mapRatio  = TEMPORARY(mag2)/TEMPORARY(mag1)
 
      
