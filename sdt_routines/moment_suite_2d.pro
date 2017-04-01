@@ -11,6 +11,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                     NEW_MOMENT_ROUTINE=new_moment_routine, $
                     QUIET=quiet, $
                     OUT_STRUCT=struct, $
+                    OUTTIME=time, $
                     OUT_N=n, $
                     OUT_J_=j, $
                     OUT_JE=je, $
@@ -18,10 +19,10 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                     OUT_CHARE=charE, $
                     OUT_CURRENT=cur, $
                     OUT_JJE_COVAR=jje_coVar, $
-                    OUT_J_=jPerp, $
-                    OUT_JE=jePerp, $
-                    OUT_CHARE=charEPerp, $
-                    OUT_CURRENT=curPerp, $
+                    OUT_PERPJ_=jPerp, $
+                    OUT_PERPJE=jePerp, $
+                    OUT_PERPCHARE=charEPerp, $
+                    OUT_PERPCURRENT=curPerp, $
                     OUT_PERPJJE_COVAR=jjePerp_coVar, $
                     OUT_ERRORS=errors, $
                     OUT_ERR_N=nErr, $
@@ -33,7 +34,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                     OUT_ERR_PERPJ_=jPerpErr, $
                     OUT_ERR_PERPJE=jePerpErr, $
                     OUT_ERR_PERPCURRENT=curPerpErr, $
-                    OUT_ERR_CHARE=charEPerpErr
+                    OUT_ERR_PERPCHARE=charEPerpErr
 
 
   COMPILE_OPT IDL2,STRICTARRSUBS

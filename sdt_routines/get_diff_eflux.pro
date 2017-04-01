@@ -1,6 +1,7 @@
 PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    EEB_OR_EES=eeb_or_ees, $
                    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                   SC_POT=sc_pot, $
                    NAME__DIFF_EFLUX=name__diff_eFlux, $
                    CALC_GEOM_FACTORS=calc_geom_factors, $
                    UNITS=units, $          
@@ -11,7 +12,6 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    OUT_DIFF_EFLUX=diff_eflux, $
                    SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
                    DIFF_EFLUX_FILE=diff_eFlux_file, $
-                   SC_POT=sc_pot, $
                    LOAD_DAT_FROM_FILE=loadFile, $
                    LOAD_DIR=loadDir
                    

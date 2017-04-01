@@ -2,6 +2,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
                                   ;; LOAD_DAT_FROM_FILE=loadFile, $
                                   EEB_OR_EES=eeb_or_ees, $
                                   SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                                  SC_POT=sc_pot, $
                                   IN_PROTOSTRUCT=in_protoStruct, $
                                   SDT_NAME=name, $
                                   ANGLE=angle, $
@@ -196,6 +197,10 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
            ENDIF
         ENDIF
      ENDELSE
+
+     IF SIZE(sc_pot,/TYPE) EQ 8 THEN BEGIN
+        ADD_SC_POT_TO_DIFF_EFLUX,dEF_oneCount,sc_pot
+     ENDIF
 
   ENDIF
   

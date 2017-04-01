@@ -73,7 +73,7 @@ FUNCTION MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX,diff_eFlux, $
      ;;Don't use multFac! Keep it raw for MOMENTS_2D_NEW
      ;; STR_ELEMENT,diff_eFlux,'sc_pot',multFac*sc_pot.y[sc_pot_min_i[checkIt]],/ADD_REPLACE
      IF ~dEflux_has_sc_pot THEN BEGIN
-        STOP
+        ;; STOP
         ADD_SC_POT_TO_DIFF_EFLUX,diff_eFlux,sc_pot
         ;; STR_ELEMENT,diff_eFlux,'sc_pot',sc_potTmp,/ADD_REPLACE
      ENDIF

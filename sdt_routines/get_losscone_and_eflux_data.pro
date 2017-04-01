@@ -5,6 +5,8 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 EEB_OR_EES=eeb_or_ees, $
                                 DIFF_EFLUX=diff_eFlux, $
                                 SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                                DEF__INCLUDE_SC_POT=dEF__include_sc_pot, $                                 
+                                SC_POT=sc_pot, $
                                 OUT_ORB=orb, $
                                 OUT_ANGLERANGE=e_angle, $
                                 ;; ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
@@ -57,7 +59,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
   ENDIF
 
   ;;get_orbit data
-  GET_FA_ORBIT,t1,t2            ;,/all
+  GET_FA_ORBIT,[t1,t2],/TIME_ARRAY,/NO_STORE,STRUC=struc
   
   GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2,lc_angleRange, $
                                           i_angle,i_angle_up, $
@@ -67,13 +69,31 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                           ANGLESTR=angleStr, $
                                           /JUST_ONE
   
-  GET_DATA,'ORBIT',DATA=orbit
-  orb                  = orbit.y[0]
+  ;; GET_DATA,'ORBIT',DATA=orbit
+  orb = struc.orbit[0]
 
   ;; IF ARG_PRESENT(diff_eFlux) OR KEYWORD_SET(save_these) THEN BEGIN
   IF N_ELEMENTS(diff_eFlux) EQ 0 THEN BEGIN
+
+     IF (KEYWORD_SET(dEF__include_sc_pot) OR N_ELEMENTS(dEF__include_sc_pot) EQ 0) AND $
+     N_ELEMENTS(sc_pot) EQ 0 THEN BEGIN
+        ;; GET_SC_POTENTIAL,T1=diff_eFlux.time[0],T2=diff_eFlux.time[-1], $
+        GET_SC_POTENTIAL,T1=t1,T2=t2, $
+                         DATA=sc_pot, $
+                         FROM_FA_POTENTIAL=pot__from_fa_potential, $
+                         ALL=pot__all, $
+                         /REPAIR, $
+                         CHASTON_STYLE=pot__Chaston_style, $
+                         FILENAME=pot__fName, $
+                         FROM_FILE=pot__from_file, $
+                         ORBIT=struc.orbit[0], $
+                         SAVE_FILE=pot__save_file
+        
+     ENDIF
+
      GET_DIFF_EFLUX,T1=t1,T2=t2, $
                     EEB_OR_EES=eeb_or_ees, $
+                    SC_POT=sc_pot, $
                     ;; ANGLE=e_angle, $
                     NAME__DIFF_EFLUX=name__diff_eFlux, $
                     /CALC_GEOM_FACTORS, $
@@ -85,7 +105,6 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                     DIFF_EFLUX_FILE=loadFile, $
                     LOAD_DAT_FROM_FILE=loadFile, $
                     LOAD_DIR=loadDir
-
 
 
      IF KEYWORD_SET(old_mode) THEN BEGIN
