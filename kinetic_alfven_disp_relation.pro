@@ -101,8 +101,8 @@ FUNCTION KINETIC_ALFVEN_DISP_RELATION, $
 
   FOR k=0,N_ELEMENTS(v_Alfven)-1 DO BEGIN
 
-     PRINT,FORMAT='(A0,T20,": ",F0.3," (",A0,")")',"v_Alfven",v_Alfven[0],"km/s"
-     PRINT,FORMAT='(A0,T20,": ",F0.3," (",A0,")")',"rho_ion",ion_gyror[0]/1000.D,"km"
+     PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"v_Alfven",v_Alfven[0],"km/s"
+     PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"rho_ion",ion_gyror[0]/1000.D,"km"
 
 
   ENDFOR
@@ -110,30 +110,36 @@ FUNCTION KINETIC_ALFVEN_DISP_RELATION, $
 
   ;;printers
   IF ~KEYWORD_SET(solve_dens) THEN BEGIN
-     PRINT,FORMAT='(A0,T20,": ",F0.3," (",A0,")")',"lambda_e",e_inert_len[0]/1000.D,"km"
-     PRINT,FORMAT='(A0,T20,": ",F0.3," (",A0,")")',"omega_pl",omegaP[0],"rad/s"
-     PRINT,FORMAT='(A0,T20,": ",F0.3," (",A0,")")',"density ",omegaP[0],"cm^-3"
+     PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"lambda_e",e_inert_len[0]/1000.D,"km"
+     PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"omega_pl",omegaP[0],"rad/s"
+     PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"(f_pl)",omegaP[0]/2.D/!PI/1000.,"kHz"
+     PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"density ",n[0],"cm^-3"
   ENDIF
 
-  IF ~KEYWORD_SET(solve_par) THEN BEGIN
-     PRINT,FORMAT='(A0,T20,": ",F0.3," (",A0,")")',"lambda_par",l_par/1000.D,"km"
-     PRINT,FORMAT='(A0,T20,": ",G0.3," (",A0,")")',"k_par"     ,k_par*1000.,"rad/km"
+  IF ~KEYWORD_SET(solve_l_par) THEN BEGIN
+     PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"lambda_par",l_par/1000.D,"km"
+     PRINT,FORMAT='(A0,T20,": ",G0.3,T35,A0)',"k_par"     ,k_par*1000.,"rad/km"
   ENDIF
 
-  IF ~KEYWORD_SET(solve_perp) THEN BEGIN
-     PRINT,FORMAT='(A0,T20,": ",F0.3," (",A0,")")',"lambda_perp",l_perp/1000.D,"km"
-     PRINT,FORMAT='(A0,T20,": ",G0.3," (",A0,")")',"k_perp"     ,k_perp*1000.,"rad/km"
+  IF ~KEYWORD_SET(solve_l_perp) THEN BEGIN
+     PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"lambda_perp",l_perp/1000.D,"km"
+     PRINT,FORMAT='(A0,T20,": ",G0.3,T35,A0)',"k_perp"     ,k_perp*1000.,"rad/km"
   ENDIF
 
   CASE 1 OF
      solve_l_par: BEGIN
 
-        sqrtNumerator = 1.D + (kPerp*e_inert_len)^2.D
-        sqrtDenom     = 1.D + (kPerp*ion_gyror)^2.D
+        sqrtNumerator = 1.D + (k_perp*e_inert_len)^2.D
+        sqrtDenom     = 1.D + (k_perp*ion_gyror)^2.D
 
-        kPar          = omegaP / (v_Alfven * 1000.D) * SQRT(sqrtNumerator/sqrtDenom)
+        k_par         = omegaP / (v_Alfven * 1000.D) * SQRT(sqrtNumerator/sqrtDenom)
+        l_par         = 2.D * !PI / k_par
 
-        RETURN,kPar
+        PRINT,"****SOLN****"
+        PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"lambda_par",l_par/1000.D,"km"
+        PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"k_par"     ,k_par*1000.D,"rad/km"
+
+        RETURN,k_par
 
      END
      solve_l_perp: BEGIN
@@ -142,8 +148,8 @@ FUNCTION KINETIC_ALFVEN_DISP_RELATION, $
         k_perp        = SQRT( ( k_par * ( v_Alfven * 1000.D ) / omega )^2.D - 1.D) / e_inert_len
 
         PRINT,"****SOLN****"
-        PRINT,FORMAT='(A0,T20,": ",F0.3," (",A0,")")',"lambda_perp",l_perp/1000.D,"km"
-        PRINT,FORMAT='(A0,T20,": ",F0.3," (",A0,")")',"k_perp"     ,k_perp*1000.D,"rad/km"
+        PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"lambda_perp",l_perp/1000.D,"km"
+        PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"k_perp"     ,k_perp*1000.D,"rad/km"
 
 
         RETURN,l_perp
@@ -159,9 +165,9 @@ FUNCTION KINETIC_ALFVEN_DISP_RELATION, $
 
 
         PRINT,"****SOLN****"
-        PRINT,FORMAT='(A0,T20,": ",G0.4," (",A0,")")',"lambda_e",e_inert_len[0]/1000.D,"km"
-        PRINT,FORMAT='(A0,T20,": ",G0.4," (",A0,")")',"f_plas",omegaP[0]/(2.D * !PI)/1D6,"MHz"
-        PRINT,FORMAT='(A0,T20,": ",F0.3," (",A0,")")',"density ",n,"cm^-3"
+        PRINT,FORMAT='(A0,T20,": ",G0.4,T35,A0)',"lambda_e",e_inert_len[0]/1000.D,"km"
+        PRINT,FORMAT='(A0,T20,": ",G0.4,T35,A0)',"f_plas",omegaP[0]/(2.D * !PI)/1D6,"MHz"
+        PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"density ",n,"cm^-3"
 
      END
   ENDCASE
