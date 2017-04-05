@@ -138,6 +138,8 @@ FUNCTION KINETIC_ALFVEN_DISP_RELATION, $
         PRINT,"****SOLN****"
         PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"lambda_par",l_par/1000.D,"km"
         PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"k_par"     ,k_par*1000.D,"rad/km"
+        PRINT,''
+        PRINT,FORMAT='(A0,T20,": ",G0.4,T35,A0)',"k_perp*lambda_e",k_perp*e_inert_len[0],""
 
         RETURN,k_par
 
@@ -150,6 +152,8 @@ FUNCTION KINETIC_ALFVEN_DISP_RELATION, $
         PRINT,"****SOLN****"
         PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"lambda_perp",l_perp/1000.D,"km"
         PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"k_perp"     ,k_perp*1000.D,"rad/km"
+        PRINT,''
+        PRINT,FORMAT='(A0,T20,": ",G0.4,T35,A0)',"k_perp*lambda_e",k_perp*e_inert_len[0],""
 
 
         RETURN,l_perp
@@ -168,9 +172,11 @@ FUNCTION KINETIC_ALFVEN_DISP_RELATION, $
         PRINT,FORMAT='(A0,T20,": ",G0.4,T35,A0)',"lambda_e",e_inert_len[0]/1000.D,"km"
         PRINT,FORMAT='(A0,T20,": ",G0.4,T35,A0)',"f_plas",omegaP[0]/(2.D * !PI)/1D6,"MHz"
         PRINT,FORMAT='(A0,T20,": ",F0.3,T35,A0)',"density ",n,"cm^-3"
+        PRINT,''
+        PRINT,FORMAT='(A0,T20,": ",G0.4,T35,A0)',"k_perp*lambda_e",k_perp*e_inert_len[0],""
+  
 
      END
   ENDCASE
-
 
 END
