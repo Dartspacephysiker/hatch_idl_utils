@@ -1,6 +1,6 @@
 FUNCTION EXPONENTLABEL, axis, index, number
 
-  e_notation = 1
+  e_notation = 0
 
                                 ; A special case.
   IF number EQ 0 THEN RETURN, '0' 
