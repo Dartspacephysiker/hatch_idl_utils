@@ -86,42 +86,70 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
   ENDIF ELSE BEGIN
      vel                 = velocityStr
   ENDELSE
-
   speed                  = SQRT(vel.y[*,0]^2+vel.y[*,1]^2+vel.y[*,2]^2)*1000.0
 
-  old_pos                = 0.
-  position               = MAKE_ARRAY(N_ELEMENTS(magz.x),/DOUBLE)
-  speed_mag_point        = MAKE_ARRAY(N_ELEMENTS(magz.x),/DOUBLE)
-  FOR j=0L,N_ELEMENTS(magz.x)-2 DO BEGIN
-     speed_point_ind     = MIN(ABS(vel.x-magz.x[j]),ind)
+  ;;*BEGIN INSERTION
+  GET_DATA,'ILAT',DATA=ilat
+  sign_dILAT              = (ilat.y[1:-1]-ilat.y[0:-2])
+  sign_dILAT              = ABS(sign_dILAT)/sign_dILAT
+  sign_dILAT              = [sign_dILAT[0],sign_dILAT]
 
-     speed_mag_point[j]  = speed[ind]
-     samplingperiod      = magz.x[j+1] - magz.x[j]
+  ;;My way
+  mag_dt                  = magz.x[1:-1]-magz.x[0:-2]
+  speed_mag               = speed[VALUE_CLOSEST2(vel.x,magz.x[1:-1])]
+  position2               = TOTAL([0,speed_mag*mag_dt],/CUMULATIVE)
 
-     position[j]         = old_pos + speed_mag_point[j]*samplingperiod
-     old_pos             = position[j]
-  ENDFOR
+  ;;Pick up inds from mag
+  junk                    = MIN(ABS(magz.x-time1),minMagFullInd)
+  junk                    = MIN(ABS(magz.x-time2),maxMagFullInd)
+  magRedInds              = [minMagFullInd:maxMagFullInd]
+  ;;Calculate the current from mag
+  ;; deltaBY                 = DERIV(position2,magz.y)*sign_dILAT ;Take stock of hemi
+  deltaBY                 = DERIV(position2,SMOOTH(magz.y,100,/EDGE_TRUNCATE))*sign_dILAT ;Take stock of hemi
+  ;;in number flux units
+  jtemp                   = 1.0D-3*(deltaBY)/1.26D-6*(-1.) ;Spaceward currents positive
+
+
+  ;;*END INSERTION
+
+  ;; speed                  = SQRT(vel.y[*,0]^2+vel.y[*,1]^2+vel.y[*,2]^2)*1000.0
+
+  ;; old_pos                = 0.
+  ;; position               = MAKE_ARRAY(N_ELEMENTS(magz.x),/DOUBLE)
+  ;; speed_mag_point        = MAKE_ARRAY(N_ELEMENTS(magz.x),/DOUBLE)
+  ;; FOR j=0L,N_ELEMENTS(magz.x)-2 DO BEGIN
+  ;;    speed_point_ind     = MIN(ABS(vel.x-magz.x[j]),ind)
+
+  ;;    speed_mag_point[j]  = speed[ind]
+  ;;    samplingperiod      = magz.x[j+1] - magz.x[j]
+
+  ;;    position[j]         = old_pos + speed_mag_point[j]*samplingperiod
+  ;;    old_pos             = position[j]
+  ;; ENDFOR
 
 
   ;;Calculate the current from mag
-  deltaBX                = DERIV(position,SMOOTH(magz.y,100))
-  jMag                   = {x:magz.x, $
-                            y:1.0e-3*(deltaBx)/1.26e-6, $
+  ;; deltaBX                = DERIV(position,SMOOTH(magz.y,100))
+  ;; deltaBX                = DERIV(position2,magz.y)
+  jMag                   = {x:magz.x[magRedInds], $
+                            ;; y:1.0D-3*(deltaBx)/1.26D-6, $
+                            y:1.0D-3*(deltaBy[magRedInds])/1.26D-6, $
                             units:CGGREEK('mu')+'A/m!U2!N'}
   ;; jtemp               = 1.0e-3*(deltaBx)/1.26e-6
 
   IF ~KEYWORD_SET(quiet) THEN PRINT,'Storing magnetometer-derived current as ' + jMagName + ' ...'
   STORE_DATA,jMagName,DATA={x:magz.x,y:jMag}
 
-  sign_jtemp             = ABS(deltaBx)/deltaBx
+  ;; sign_jtemp             = ABS(deltaBx)/deltaBx
+  ;; sign_jtemp             = ABS(deltaBy)/deltaBy
 
   ;;In number flux units
   IF ARG_PRESENT(inferred_e_numFlux) THEN BEGIN
      IF N_ELEMENTS(e_numFluxName) EQ 0 THEN BEGIN
         e_numFluxName    = 'mag_inferred_eNumFlux'
      ENDIF
-     inferred_e_numFlux  = {x:magz.x, $
-                            y:1.0e-3*(deltaBx)/1.26e-6  * (DOUBLE(1. / 1.6e-9)), $
+     inferred_e_numFlux  = {x:magz.x[magRedInds], $
+                            y:1.0D-3*(deltaBy[magRedInds])/1.26D-6  * (DOUBLE(1. / 1.6D-9)), $
                             units:"cm!U-2!Ns!U-1!N"}
 
      IF ~KEYWORD_SET(quiet) THEN PRINT,'Storing magnetometer-inferred e- number flux as ' + e_numFluxName + ' ...'

@@ -42,7 +42,8 @@ FUNCTION MAXWELL_FLUX__FUNC,X,P,DP, $
   kappa                  = DOUBLE(P[2])
   n                      = DOUBLE(P[3])
   bulkAngle              = DOUBLE(P[4])*!PI / 180.0
-  inMass                 = 5.6856602e-06             ;mass in eV/(km/s)^2
+  ;; inMass                 = 5.6856602e-06             ;mass in eV/(km/s)^2
+  inMass                 = electron_mass                ;mass in eV/(km/s)^2
   m                      = TEMPORARY(electron_mass)
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

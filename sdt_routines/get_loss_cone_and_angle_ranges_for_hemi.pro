@@ -5,6 +5,7 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
    OUT_LCW=lcw, $
    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
    CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
+   UPGOING=upgoing, $
    OUT_E_ANGLE=e_angle, $
    ANGLESTR=angleStr, $
    JUST_ONE=just_one
@@ -49,20 +50,53 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
   
   FOR i=0,N_ELEMENTS(north_south)-1 DO BEGIN
      IF north_south[i] EQ -1 THEN BEGIN
-        lc_angleRange     = [[lc_angleRange],[180.-lcw,180+lcw]] ; for Southern Hemis.
-        
-        ;; i_angle  = [270.0,90.0]	
-        ;; eliminate ram from data
-        i_angle     = [[i_angle],[180.0,360.0]]
-        i_angle_up  = [[i_angle_up],[270.0,360.0]]
+
+        CASE 1 OF
+           KEYWORD_SET(upgoing): BEGIN
+
+              lc_angleRange     = [[lc_angleRange],[360.-lcw,lcw]] ;	for Northern Hemis.
+              ;; i_angle  = [90.,270.0]
+              ;; eliminate ram from data
+              i_angle     = [[i_angle],[0.0,180.0]]
+              i_angle_up  = [[i_angle_up],[90.0,180.0]]
+
+           END
+           ELSE: BEGIN
+
+              lc_angleRange     = [[lc_angleRange],[180.-lcw,180+lcw]] ; for Southern Hemis.
+              
+              ;; i_angle  = [270.0,90.0]	
+              ;; eliminate ram from data
+              i_angle     = [[i_angle],[180.0,360.0]]
+              i_angle_up  = [[i_angle_up],[270.0,360.0]]
+
+           END
+        ENDCASE
         
      ENDIF ELSE BEGIN
-        lc_angleRange     = [[lc_angleRange],[360.-lcw,lcw]] ;	for Northern Hemis.
-        ;; i_angle  = [90.,270.0]
-        ;; eliminate ram from data
-        i_angle     = [[i_angle],[0.0,180.0]]
-        i_angle_up  = [[i_angle_up],[90.0,180.0]]
-        
+
+        CASE 1 OF
+           KEYWORD_SET(upgoing): BEGIN
+
+              lc_angleRange     = [[lc_angleRange],[180.-lcw,180+lcw]] ; for Southern Hemis.
+              
+              ;; i_angle  = [270.0,90.0]	
+              ;; eliminate ram from data
+              i_angle     = [[i_angle],[180.0,360.0]]
+              i_angle_up  = [[i_angle_up],[270.0,360.0]]
+
+           END
+           ELSE: BEGIN
+
+              lc_angleRange     = [[lc_angleRange],[360.-lcw,lcw]] ;	for Northern Hemis.
+              ;; i_angle  = [90.,270.0]
+              ;; eliminate ram from data
+              i_angle     = [[i_angle],[0.0,180.0]]
+              i_angle_up  = [[i_angle_up],[90.0,180.0]]
+              
+           END
+        ENDCASE
+
      ENDELSE
   ENDFOR
 

@@ -4,6 +4,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 LOAD_DIR=loadDir, $
                                 EEB_OR_EES=eeb_or_ees, $
                                 DIFF_EFLUX=diff_eFlux, $
+                                UPGOING=upgoing, $
                                 SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                                 DEF__INCLUDE_SC_POT=dEF__include_sc_pot, $                                 
                                 SC_POT=sc_pot, $
@@ -65,6 +66,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                           i_angle,i_angle_up, $
                                           north_south, $
                                           CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
+                                          UPGOING=upgoing, $
                                           OUT_E_ANGLE=e_angle, $
                                           ANGLESTR=angleStr, $
                                           /JUST_ONE

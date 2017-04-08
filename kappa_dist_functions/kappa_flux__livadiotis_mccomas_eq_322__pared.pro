@@ -40,7 +40,7 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder, $
   kappa             = DOUBLE(A[2])
   n                 = DOUBLE(A[3])
   bulkAngle         = N_ELEMENTS(A) GT 4 ? DOUBLE(A[4])*!PI / 180.0 : 0
-  inMass            = 5.6856602e-06 ;mass in eV/(km/s)^2
+  inMass            = electron_mass ;5.6856602e-06 ;mass in eV/(km/s)^2
 
   ;; inMass         = N_ELEMENTS(A) GT 5 ? DOUBLE(A[5])             : 5.6856602e-06 ;mass in eV/(km/s)^2
   ;; inDT           = DOUBLE(A[4])

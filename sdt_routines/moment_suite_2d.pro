@@ -34,7 +34,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                     OUT_ERR_PERPJ_=jPerpErr, $
                     OUT_ERR_PERPJE=jePerpErr, $
                     OUT_ERR_PERPCURRENT=curPerpErr, $
-                    OUT_ERR_PERPCHARE=charEPerpErr
+                    OUT_ERR_PERPCHARE=charEPerpErr, $
+                    OUT_MAPRATIO=mapRatio
 
 
   COMPILE_OPT IDL2,STRICTARRSUBS
