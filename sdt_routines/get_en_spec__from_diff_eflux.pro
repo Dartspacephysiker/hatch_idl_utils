@@ -48,11 +48,12 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
                                       GAP_TIME=gap_time, $ 
                                       NO_DATA=no_data, $
                                       UNITS=units,  $
-                                      NAME=name, $
                                       BKG=bkg, $
                                       MISSING=missing, $
                                       FLOOR=floor, $
                                       RETRACE=retrace, $
+                                      STORE=store, $
+                                      NAME=name, $
                                       OUT_AVGFACTORARR=avgFactorArr, $
                                       OUT_NORMARR=normArr
 
@@ -208,11 +209,6 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
 
   ENDFOR
 
-  ;;	Store the data
-  ;; IF count NE nbins THEN ytitle = ytitle+'_'+STRTRIM(count,2)
-  ;; IF ~KEYWORD_SET(name) THEN name = ytitle else ytitle = name
-  ;; ytitle = ytitle+' ('+units+')'
-
   IF NOT KEYWORD_SET(retrace) THEN BEGIN
 ;	If you want to plot the retrace, set the retrace flag to 1.
      data  = data[0:k-1,0:nmax-1]
@@ -246,6 +242,47 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   endif
 
   datastr = {x:time,y:data,v:var,yerr:ddata,verr:dvar}
+
+  IF KEYWORD_SET(store) THEN BEGIN
+     
+     IF (diff_eflux.mass GT 5.7D-06) THEN BEGIN
+
+        navn =  'Ion'
+
+        lims = [4,8]
+        edg  = [4,2.4D4]
+
+     ENDIF ELSE BEGIN
+
+        navn = 'Electron'
+
+        lims = [5,9]
+        edg  = [4,3D4]
+
+     ENDELSE
+     ;;	Store the data
+     ;; IF count NE nbins THEN ytitle = ytitle+'_'+STRTRIM(count,2)
+     ;; IF ~KEYWORD_SET(name) THEN name = ytitle else ytitle = name
+     ;; ytitle = ytitle+' ('+units+')'
+     STORE_DATA,name,DATA=datastr
+
+     OPTIONS,name,'spec',1	
+     ZLIM,name, $
+          10.^(MIN(ALOG10(dataStr.y[WHERE(FINITE(dataStr.y))])) > lims[0] ), $
+          10.^(MAX(ALOG10(dataStr.y[WHERE(FINITE(dataStr.y))])) < lims[1]), $
+          1
+
+     YLIM,name,edg[0],edg[1],1
+     ;; OPTIONS,name,'ytitle',navn+'!C!CEnergy (eV)'
+     OPTIONS,name,'ytitle',name+' (eV)'
+     OPTIONS,name,'ztitle','Log eV!C/cm!U2!N-s-sr-eV'
+     OPTIONS,name,'x_no_interp',1
+     OPTIONS,name,'y_no_interp',1
+     OPTIONS,name,'panel_size',2
+     OPTIONS,name,'ztickformat','exponentlabel'
+
+  ENDIF
+
 
   ex_time = SYSTIME(1) - ex_start
   MESSAGE,STRING(ex_time)+' seconds execution time.',/cont,/info
