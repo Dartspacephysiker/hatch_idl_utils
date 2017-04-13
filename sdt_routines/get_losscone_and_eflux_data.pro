@@ -10,6 +10,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 SC_POT=sc_pot, $
                                 OUT_ORB=orb, $
                                 OUT_ANGLERANGE=e_angle, $
+                                OUT_NORTHSOUTH=north_south, $
                                 ;; ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                                 FIT_EACH_ANGLE=fit_each_angle, $
                                 CUSTOM_E_ANGLERANGE=custom_e_angleRange, $

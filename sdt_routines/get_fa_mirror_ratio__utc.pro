@@ -89,13 +89,6 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
   ;; parMod[2]     = By
   ;; parMod[3]     = Bz
 
-  parMod        = MAKE_ARRAY(10,/DOUBLE)
-  parMod[0]     = swdat.P
-  parMod[1]     = swDat.dst
-  parMod[2]     = swDat.IMF[1]
-  parMod[3]     = swDat.IMF[2]
-
-
   CONVERT_TIME_STRING_TO_YMDHMS_ARRAYS, $
      t1Str, $
      OUT_YEARARR=yearArr, $
@@ -122,6 +115,13 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
   CASE 1 OF
      KEYWORD_SET(start_at_equator): BEGIN
         ;;GSE to GSW
+
+        parMod        = MAKE_ARRAY(10,/DOUBLE)
+        parMod[0]     = swdat.P
+        parMod[1]     = swDat.dst
+        parMod[2]     = swDat.IMF[1]
+        parMod[3]     = swDat.IMF[2]
+
         GEOPACK_CONV_COORD_08,downTail_GSE[0],downTail_GSE[1],downTail_GSE[2], $
                               downTail_GSM_x,downTail_GSM_y,downTail_GSM_z, $
                               /FROM_GSE,/TO_GSW,EPOCH=time_epoch[0]
@@ -140,12 +140,50 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
      ELSE: BEGIN
         ;;GEO to GEI
 
+        IF nIter GT 1 THEN BEGIN
+
+           FAST_GSM_arr         = MAKE_ARRAY(nIter,3,VALUE=0.)
+           ionos_GSM_arr        = MAKE_ARRAY(nIter,3,VALUE=0.)
+           downTail_GSM_arr     = MAKE_ARRAY(nIter,3,VALUE=0.)
+
+           parMod               = MAKE_ARRAY(nIter,10,/DOUBLE)
+           parMod[*,0]          = swdat.P
+           parMod[*,1]          = swDat.dst
+           parMod[*,2]          = swDat.IMF[*,1]
+           parMod[*,3]          = swDat.IMF[*,2]
+
+           FAST_B_arr           = MAKE_ARRAY(nIter,3,VALUE=0.)
+           downTail_B_arr       = MAKE_ARRAY(nIter,3,VALUE=0.)
+           ionos_B_arr          = MAKE_ARRAY(nIter,3,VALUE=0.)
+
+           FAST_B_IGRF_ARR      = MAKE_ARRAY(nIter,3,VALUE=0.)
+           downTail_B_IGRF_arr  = MAKE_ARRAY(nIter,3,VALUE=0.)
+           ionos_B_IGRF_arr     = MAKE_ARRAY(nIter,3,VALUE=0.)
+
+        ENDIF ELSE BEGIN
+
+           FAST_GSM_arr         = MAKE_ARRAY(3,VALUE=0.)
+           ionos_GSM_arr        = MAKE_ARRAY(3,VALUE=0.)
+           downTail_GSM_arr     = MAKE_ARRAY(3,VALUE=0.)
+
+           FAST_B_arr           = MAKE_ARRAY(3,VALUE=0.)
+           downTail_B_arr       = MAKE_ARRAY(3,VALUE=0.)
+           ionos_B_arr          = MAKE_ARRAY(3,VALUE=0.)
+
+           FAST_B_IGRF_ARR      = MAKE_ARRAY(3,VALUE=0.)
+           downTail_B_IGRF_arr  = MAKE_ARRAY(3,VALUE=0.)
+           ionos_B_IGRF_arr     = MAKE_ARRAY(3,VALUE=0.)
+
+           parMod               = MAKE_ARRAY(10,/DOUBLE)
+           parMod[0]            = swdat.P
+           parMod[1]            = swDat.dst
+           parMod[2]            = swDat.IMF[1]
+           parMod[3]            = swDat.IMF[2]
+
+        ENDELSE
+
         nIter = N_ELEMENTS(struc.alt)
         struc.fa_pos /= 6370.D
-
-        FAST_GSM_arr     = nIter GT 1 ? MAKE_ARRAY(nIter,3,VALUE=0.) : MAKE_ARRAY(3,VALUE=0.)
-        ionos_GSM_arr    = nIter GT 1 ? MAKE_ARRAY(nIter,3,VALUE=0.) : MAKE_ARRAY(3,VALUE=0.)
-        downTail_GSM_arr = nIter GT 1 ? MAKE_ARRAY(nIter,3,VALUE=0.) : MAKE_ARRAY(3,VALUE=0.)
 
         FAST_RE_arr             = MAKE_ARRAY(nIter,VALUE=0.)
         downTail_RE_arr         = MAKE_ARRAY(nIter,VALUE=0.)
@@ -154,14 +192,6 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
         FAST_km_arr             = MAKE_ARRAY(nIter,VALUE=0.)
         downTail_km_arr         = MAKE_ARRAY(nIter,VALUE=0.)
         ionos_km_arr            = MAKE_ARRAY(nIter,VALUE=0.)
-
-        FAST_B_arr              = nIter GT 1 ? MAKE_ARRAY(nIter,3,VALUE=0.) : MAKE_ARRAY(3,VALUE=0.)
-        downTail_B_arr          = nIter GT 1 ? MAKE_ARRAY(nIter,3,VALUE=0.) : MAKE_ARRAY(3,VALUE=0.)
-        ionos_B_arr             = nIter GT 1 ? MAKE_ARRAY(nIter,3,VALUE=0.) : MAKE_ARRAY(3,VALUE=0.)
-
-        FAST_B_IGRF_ARR         = nIter GT 1 ? MAKE_ARRAY(nIter,3,VALUE=0.) : MAKE_ARRAY(3,VALUE=0.)
-        downTail_B_IGRF_arr     = nIter GT 1 ? MAKE_ARRAY(nIter,3,VALUE=0.) : MAKE_ARRAY(3,VALUE=0.)
-        ionos_B_IGRF_arr        = nIter GT 1 ? MAKE_ARRAY(nIter,3,VALUE=0.) : MAKE_ARRAY(3,VALUE=0.)
 
         FAST_BMag_Arr           = MAKE_ARRAY(nIter,VALUE=0.)
         downTail_BMag_arr       = MAKE_ARRAY(nIter,VALUE=0.)
