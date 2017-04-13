@@ -28,6 +28,10 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
                           je    : 0.D, $
                           jje   : 0.D, $
                           v     : 0.D, $
+                          charE : 0.D}, $
+                 all   : {j     : 0.D, $
+                           je   : 0.D, $
+                          speed : 0.D, $
                           charE : 0.D}}
 
   moments           = {x:TEMPORARY(time),y:REPLICATE(templar,max)}
@@ -66,7 +70,13 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
      moments.y[k].perp.jje    = tmpStruct.perp.jje
      moments.y[k].perp.v      = tmpStruct.perp.v
      moments.y[k].perp.charE  = tmpStruct.perp.charE
+     moments.y[k].all.j       = tmpStruct.all.j
+     moments.y[k].all.je      = tmpStruct.all.je
+     ;; moments.y[k].perp.jje    = tmpStruct.perp.jje
+     moments.y[k].all.speed   = tmpStruct.all.speed
+     moments.y[k].all.charE   = tmpStruct.all.charE
      
+
   ENDFOR
   
   ex_time     = SYSTIME(1) - ex_start

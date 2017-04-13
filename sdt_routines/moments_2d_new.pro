@@ -204,6 +204,10 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   ;; fluxz   = j_2d_new(dat2,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
   ;; density = n_2d_new(dat2,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
 
+  ;;just flux
+  flux    = Const_j  * TOTAL(data*denergy  *energy        *domega   )
+  eflux   = Const_je * TOTAL(data*denergy  *energy^2      *domega   )
+
   ;;Par comps
   fluxz   = Const_j  * TOTAL(data*denergy  *energy        *domega_zz)
   efluxz  = Const_je * TOTAL(data*denergy  *energy^2      *domega_zz)
@@ -216,9 +220,9 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   effluxx = Const_je * TOTAL(data*denergy^2*energy^3*domega*sin(theta))
 
   ;;Vel comps
-  vel     = fluxz/density
+  speed   = flux /density
+  velz    = fluxz/density
   velx    = fluxx/density
-
 
   ;;See just how much improvement we get for all those fancy field-aligned beam corrections
   ;; testfluxz   = Const_j  * TOTAL(data*denergy*energy*domega*cos(theta))
@@ -235,8 +239,8 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   p2dyz = 0.
   p2dxx = mass*(p2dxx)
   p2dyy = mass*(p2dyy)
-  p2dzz = mass*(p2dzz-vel*fluxz/1.e10)
-  p2dzz = mass*(p2dzz-vel*fluxz/1.e10)
+  p2dzz = mass*(p2dzz-velz*fluxz/1.e10)
+  p2dzz = mass*(p2dzz-velz*fluxz/1.e10)
 
   press = [p2dxx,p2dyy,p2dzz,p2dxy,p2dxz,p2dyz]
 
@@ -247,19 +251,23 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
 
   T  = [press(0),press(1),press(2),TOTAL(press)/3.D]/density
 
-  moments = {n   : density  , $
-             j   : fluxz    , $
-             je  : efluxz   , $
-             jje : effluxz  , $
-             p   : press    , $
-             T   : T        , $
-             v   : vel*1.D-5, $
+  moments = {n     : density  , $
+             j     : fluxz    , $
+             je    : efluxz   , $
+             jje   : effluxz  , $
+             p     : press    , $
+             T     : T        , $
+             v     : velz*1.D-5, $
              charE : efluxz/fluxz*6.242D*1.0D11, $
              perp  : {j     : fluxx, $
                       je    : efluxx, $
                       jje   : effluxx, $
                       v     : velx*1.D-5, $
-                      charE : efluxx/fluxx*6.242D*1.0D11}}
+                      charE : efluxx/fluxx*6.242D*1.0D11}, $
+             all   : {speed : speed, $
+                      j     : flux, $
+                      je    : eflux, $
+                      charE : eflux/flux*6.242D*1.0D11}}
 
   RETURN,moments
   

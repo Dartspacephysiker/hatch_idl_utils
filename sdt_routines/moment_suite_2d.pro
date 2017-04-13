@@ -1,4 +1,84 @@
 ;2017/03/21
+PRO FLIPCURRENTS,j,jPerp,je,jePerp,jerr,jeErr,jPerpErr,jePerpErr,flip,nFlip,mapRatio, $
+                 IONS=ions, $
+                 ERROR_ESTIMATES=error_estimates, $
+                 MAP_TO_100KM=map_to_100km, $
+                 OUT_CURRENT=cur, $
+                 OUT_CURERR=curErr, $
+                 OUT_CURPERP_=curPerp, $
+                 OUT_CURPERPERR=curPerpErr
+
+
+  IF nFlip GT 0 THEN BEGIN
+     CASE SIZE(j,/TYPE) OF
+        8: BEGIN
+           j.y[flip]   *= (-1.)
+           je.y[flip]  *= (-1.)
+        END
+        ELSE: BEGIN
+           j[flip]   *= (-1.)
+           je[flip]  *= (-1.)
+        END
+     ENDCASE
+  ENDIF
+
+  ;; CASE N_ELEMENTS(WHERE(north_south LT 0,/NULL)) OF
+  ;;    N_ELEMENTS(north_south): BEGIN
+  ;;    END
+  ;;    0: BEGIN
+  ;;    END
+  ;;    ELSE: BEGIN
+  ;;       STOP
+  ;;    END
+  ;; ENDCASE
+
+  IF KEYWORD_SET(map_to_100km) THEN BEGIN
+
+     CASE SIZE(j,/TYPE) OF
+        8: BEGIN
+           j.y  *= mapRatio
+           je.y *= mapRatio
+        END
+        ELSE: BEGIN
+           j    *= mapRatio
+           je   *= mapRatio
+        END
+     ENDCASE
+
+     IF KEYWORD_SET(error_estimates) THEN BEGIN
+        jerr   *= mapRatio
+        jeErr  *= mapRatio
+     ENDIF
+
+  ENDIF
+
+  ;;Get current (flip sign of current for electrons)
+  CASE SIZE(j,/TYPE) OF
+     8: BEGIN
+
+        cur = j.y  * 1.6D-9 * (ions ? 1. : (-1.))
+
+        IF KEYWORD_SET(error_estimates) THEN BEGIN
+           ;;Don't flip sign, children
+           curErr      = jerr  * 1.6D-9 ;* (ions ? 1. : (-1.))
+        ENDIF
+
+     END
+     ELSE: BEGIN
+
+        cur     = j  * 1.6D-9 * (ions ? 1. : (-1.))
+        curPerp = N_ELEMENTS(jPerp) GT 0 ? (jPerp * 1.6D-9 * (ions ? 1. : (-1.))) : cur*0.0D
+
+        IF KEYWORD_SET(error_estimates) THEN BEGIN
+           ;;Don't flip sign, children
+           curErr      = jerr     * 1.6D-9 ;* (ions ? 1. : (-1.))
+           curPerpErr  = N_ELEMENTS(jPerpErr) GT 0 ? (jPerpErr * 1.6D-9) : curErr*0.0D ;* (ions ? 1. : (-1.))
+        ENDIF
+
+     END
+  ENDCASE
+
+END
 PRO MOMENT_SUITE_2D,diff_eFlux, $
                     ENERGY=energy, $
                     ARANGE__DENS=aRange__dens, $
@@ -81,6 +161,11 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
         jePerp  = moms.y[*].perp.je
         jjePerp = moms.y[*].perp.jje
 
+        jAll    = moms.y[*].all.j
+        jeAll   = moms.y[*].all.je
+        charEAll= moms.y[*].all.charE
+        speedAll= moms.y[*].all.speed
+
         IF specialC THEN BEGIN
            momsC = MOMENTS_2D_NEW__FROM_DIFF_EFLUX(diff_eFlux, $
                                                    ENERGY=energy, $
@@ -96,7 +181,6 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
            jPerpC     = momsC.y[*].perp.j
            jePerpC    = momsC.y[*].perp.je
            jjePerpC   = momsC.y[*].perp.jje
-
 
         ENDIF ELSE BEGIN
            jC         = j 
@@ -116,13 +200,34 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
         IF specialN THEN BEGIN
 
-           n = (MOMENTS_2D_NEW__FROM_DIFF_EFLUX(diff_eFlux, $
+           momsSC = MOMENTS_2D_NEW__FROM_DIFF_EFLUX(diff_eFlux, $
                                                    ENERGY=energy, $
                                                    ANGLE=aRange__dens, $
                                                    SC_POT=sc_pot, $
                                                    EEB_OR_EES=eeb_or_ees, $
-                                                   QUIET=quiet)).y[*].n
+                                                   QUIET=quiet)
 
+           nSC    = momsSC.y[*].n
+           TSC    = momsSC.y[*].T
+
+           jSC         = momsSC.y[*].j
+           jeSC        = momsSC.y[*].je
+           jjeSC       = momsSC.y[*].jje
+
+           jPerpSC     = momsSC.y[*].perp.j
+           jePerpSC    = momsSC.y[*].perp.je
+           jjePerpSC   = momsSC.y[*].perp.jje
+
+           jje_coVarSC = jjeSC-jeSC*jSC
+           charESC     = CHAR_ENERGY(jSC,jeSC)
+        
+           jjePerp_coVarSC = jjePerpSC-jePerpSC*jPerpSC
+           charEPerpSC     = CHAR_ENERGY(jPerpSC,jePerpSC)
+
+           jAllSC     = momsSC.y[*].all.j
+           jeAllSC    = momsSC.y[*].all.je
+           charEAllSC = momsSC.y[*].all.charE
+           speedAllSC = momsSC.y[*].all.speed
 
         ENDIF
 
@@ -132,7 +237,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
         n              = (N_2D__FROM_DIFF_EFLUX(diff_eFlux, $
                                                ENERGY=energy, $
-                                               ANGLE=specialN ? aRange__dens : aRange__moments, $
+                                               ANGLE=aRange__moments, $
                                                SC_POT=sc_pot, $
                                                EEB_OR_EES=eeb_or_ees, $
                                                QUIET=quiet)).y
@@ -199,10 +304,55 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
         ;; jjePerp_coVar  = 0.D
         charEPerpErr   = 0.D
         curPerpErr     = 0.D
+
+        jAll           = 0.D
+        jeAll          = 0.D
+        charEAll       = 0.D
+        speedAll       = 0.D
+        
+        IF specialN THEN BEGIN
+
+           nSC         = (N_2D__FROM_DIFF_EFLUX(diff_eFlux, $
+                                                ENERGY=energy, $
+                                                ANGLE=aRange__dens, $
+                                                SC_POT=sc_pot, $
+                                                EEB_OR_EES=eeb_or_ees, $
+                                                QUIET=quiet)).y
+
+           jSC         = (J_2D__FROM_DIFF_EFLUX(diff_eFlux, $
+                                                ENERGY=energy, $
+                                                ANGLE=aRange__dens, $
+                                                SC_POT=sc_pot, $
+                                                EEB_OR_EES=eeb_or_ees, $
+                                                QUIET=quiet)).y
+
+           jeSC        = (JE_2D__FROM_DIFF_EFLUX(diff_eFlux, $
+                                                 ENERGY=energy, $
+                                                 ANGLE=aRange__dens, $
+                                                 SC_POT=sc_pot, $
+                                                 EEB_OR_EES=eeb_or_ees, $
+                                                 QUIET=quiet)).y
+
+
+           TSC         = (T_2D__FROM_DIFF_EFLUX(diff_eFlux, $
+                                                ENERGY=energy, $
+                                                ANGLE=aRange__dens, $
+                                                SC_POT=sc_pot, $
+                                                EEB_OR_EES=eeb_or_ees, $
+                                                QUIET=quiet)).y
+
+
+           charESC     = CHAR_ENERGY(TEMPORARY(jSC),TEMPORARY(jeSC))
+
+
+           jAllSC      = 0.D
+           jeAllSC     = 0.D
+           charEAllSC  = 0.D
+           speedAllSC  = 0.D
+
+        ENDIF
      END
   ENDCASE
-
-
 
   IF KEYWORD_SET(error_estimates) THEN BEGIN
 
@@ -245,25 +395,34 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
      IF specialN THEN BEGIN
 
-        errorsN      = MOMENTERRORS_2D__FROM_DIFF_EFLUX(diff_eFlux, $
-                                                       ENERGY=energy, $
-                                                       ANGLE=aRange__dens, $
-                                                       SC_POT=sc_pot, $
-                                                       EEB_OR_EES=eeb_or_ees, $
-                                                       /PRESSURE_COVAR_CALC, $
-                                                       /HEATFLUX_COVAR_CALC, $
-                                                       QUIET=quiet)
+        errorsSC      = MOMENTERRORS_2D__FROM_DIFF_EFLUX(diff_eFlux, $
+                                                         ENERGY=energy, $
+                                                         ANGLE=aRange__dens, $
+                                                         SC_POT=sc_pot, $
+                                                         EEB_OR_EES=eeb_or_ees, $
+                                                         /PRESSURE_COVAR_CALC, $
+                                                         /HEATFLUX_COVAR_CALC, $
+                                                         QUIET=quiet)
 
         ;;NOTE, this uses the wrong j, je, and T! They correspond to aRange__moments, not aRange__dens!
         ;;I'm not updating it because they won't affect nErr. They WOULD affect other the calculated uncertainty
         ;; of other moments, of course.
-        ERROR_CALC_2D,diff_eFlux,errorsN, $
-                      N_=n, $
-                      JF=j, $
-                      JEF=je, $
-                      T_=T, $
-                      JJE_COVAR=jje_coVar, $ ;; , $
-                      NERR=nerr
+        ERROR_CALC_2D,diff_eFlux,errorsSC, $
+                      N_=nSC, $
+                      JF=jSC, $
+                      JEF=jeSC, $
+                      T_=TSC, $
+                      JJE_COVAR=jje_coVarSC, $ ;; , $
+                      NERR=nerrSC, $
+                      JERR=jerrSC, $
+                      JEERR=jeErrSC, $
+                      CHAREERR=charEErrSC, $
+                      TERR=TerrSC, $
+                      PERP_ERRORS=perpErrsSC
+
+        jPerpErrSC     = perpErrsSC.j
+        jePerpErrSC    = perpErrsSC.je
+        charEPerpErrSC = perpErrsSC.charE
 
      ENDIF
 
@@ -284,85 +443,80 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
   north_south     = ABS(ilat)/ilat
 
   flip            = WHERE(north_south LT 0,nFlip)
-  IF nFlip GT 0 THEN BEGIN
-     CASE SIZE(j,/TYPE) OF
-        8: BEGIN
-           j.y[flip]   *= (-1.)
-           je.y[flip]  *= (-1.)
-        END
-        ELSE: BEGIN
-           j[flip]   *= (-1.)
-           je[flip]  *= (-1.)
-        END
-     ENDCASE
+
+  FLIPCURRENTS,j,jPerp,je,jePerp,jerr,jeErr,jPerpErr,jePerpErr,flip,nFlip,mapRatio, $
+               IONS=ions, $
+               ERROR_ESTIMATES=error_estimates, $
+               MAP_TO_100KM=map_to_100km, $
+               OUT_CURRENT=cur, $
+               OUT_CURERR=curErr, $
+               OUT_CURPERP_=curPerp, $
+               OUT_CURPERPERR=curPerpErr
+
+  IF specialN THEN BEGIN
+
+     FLIPCURRENTS,jSC,jPerpSC,jeSC,jePerpSC,jerrSC,jeErrSC,jPerpErrSC,jePerpErrSC,flip,nFlip,mapRatio, $
+                  IONS=ions, $
+                  ERROR_ESTIMATES=error_estimates, $
+                  MAP_TO_100KM=map_to_100km, $
+                  OUT_CURRENT=curSC, $
+                  OUT_CURERR=curErrSC, $
+                  OUT_CURPERP_=curPerpSC, $
+                  OUT_CURPERPERR=curPerpErrSC
+
+     all  = {j          : TEMPORARY(jAllSC), $
+             je         : TEMPORARY(jeAllSC     ) , $
+             charE      : TEMPORARY(charEAllSC  ), $
+             speed      : TEMPORARY(speedAllSC)}
+             ;; jjePerp_coVar  : TEMPORARY(jjePerp_coVar)}
+
+     perp = {j              : jPerpSC, $
+             jePerp         : TEMPORARY(jePerpSC     ) , $
+             charEPerp      : TEMPORARY(charEPerpSC  ) , $
+             curPerp        : TEMPORARY(curPerpSC    ) , $
+             jjePerp_coVar  : TEMPORARY(jjePerp_coVarSC) , $
+             jPerpErr       : TEMPORARY(jPerpErrSC   ) , $
+             jePerpErr      : TEMPORARY(jePerpErrSC  ) , $
+             curPerpErr     : TEMPORARY(curPerpErrSC ) , $
+             charEPerpErr   : TEMPORARY(charEPerpErrSC)}
+
+     source = {n              : TEMPORARY(nSC      ), $
+               j              : TEMPORARY(jSC      ), $
+               je             : TEMPORARY(jeSC     ), $
+               T              : TEMPORARY(TSC      ), $
+               charE          : TEMPORARY(charESC  ), $
+               cur            : TEMPORARY(curSC    ), $
+               jje_coVar      : TEMPORARY(jje_coVarSC), $
+               errors         : TEMPORARY(errorsSC ), $
+               nErr           : TEMPORARY(nErrSC   ), $
+               jErr           : TEMPORARY(jErrSC   ), $
+               jeErr          : TEMPORARY(jeErrSC  ), $
+               TErr           : TEMPORARY(TErrSC   ), $
+               curErr         : TEMPORARY(curErrSC ), $
+               charEErr       : TEMPORARY(charEErrSC), $
+               perp           : TEMPORARY(perp), $
+               all            : TEMPORARY(all)}
+
   ENDIF
 
-  ;; CASE N_ELEMENTS(WHERE(north_south LT 0,/NULL)) OF
-  ;;    N_ELEMENTS(north_south): BEGIN
-  ;;    END
-  ;;    0: BEGIN
-  ;;    END
-  ;;    ELSE: BEGIN
-  ;;       STOP
-  ;;    END
-  ;; ENDCASE
-
-  IF KEYWORD_SET(map_to_100km) THEN BEGIN
-
-     CASE SIZE(j,/TYPE) OF
-        8: BEGIN
-           j.y  *= mapRatio
-           je.y *= mapRatio
-        END
-        ELSE: BEGIN
-           j    *= mapRatio
-           je   *= mapRatio
-        END
-     ENDCASE
-
-     IF KEYWORD_SET(error_estimates) THEN BEGIN
-        jerr   *= mapRatio
-        jeErr  *= mapRatio
-     ENDIF
-
-  ENDIF
-
-  ;;Get current (flip sign of current for electrons)
-  CASE SIZE(j,/TYPE) OF
-     8: BEGIN
-
-        cur = j.y  * 1.6D-9 * (ions ? 1. : (-1.))
-
-        IF KEYWORD_SET(error_estimates) THEN BEGIN
-           ;;Don't flip sign, children
-           curErr      = jerr  * 1.6D-9 ;* (ions ? 1. : (-1.))
-        ENDIF
-
-     END
-     ELSE: BEGIN
-
-        cur     = j  * 1.6D-9 * (ions ? 1. : (-1.))
-        curPerp = jPerp * 1.6D-9 * (ions ? 1. : (-1.))
-
-        IF KEYWORD_SET(error_estimates) THEN BEGIN
-           ;;Don't flip sign, children
-           curErr      = jerr     * 1.6D-9 ;* (ions ? 1. : (-1.))
-           curPerpErr  = jPerpErr * 1.6D-9 ;* (ions ? 1. : (-1.))
-        ENDIF
-
-     END
-  ENDCASE
   
   IF ARG_PRESENT(struct) THEN BEGIN
-     perp = {j : jPerp, $
-             jePerp         : TEMPORARY(jePerp       ) , $
-             charEPerp      : TEMPORARY(charEPerp    ) , $
-             curPerp        : TEMPORARY(curPerp      ) , $
-             jjePerp_coVar  : TEMPORARY(jjePerp_coVar) , $
-             jPerpErr       : TEMPORARY(jPerpErr     ) , $
-             jePerpErr      : TEMPORARY(jePerpErr    ) , $
-             curPerpErr     : TEMPORARY(curPerpErr   ) , $
-             charEPerpErr   : TEMPORARY(charEPerpErr )}
+
+     all  = {j          : TEMPORARY(jAll), $
+             je         : TEMPORARY(jeAll       ) , $
+             charE      : TEMPORARY(charEAll    ), $
+             speed      : TEMPORARY(speedAll)}
+             ;; jjePerp_coVar  : TEMPORARY(jjePerp_coVar)}
+
+     perp = {j          : TEMPORARY(jPerp), $
+             je         : TEMPORARY(jePerp       ) , $
+             charE      : TEMPORARY(charEPerp    ) , $
+             cur        : TEMPORARY(curPerp      ) , $
+             jje_coVar  : TEMPORARY(jjePerp_coVar) , $
+             jErr       : TEMPORARY(jPerpErr     ) , $
+             jeErr      : TEMPORARY(jePerpErr    ) , $
+             curErr     : TEMPORARY(curPerpErr   ) , $
+             charEErr   : TEMPORARY(charEPerpErr )}
 
      struct = {time           : TEMPORARY(time     ), $
                n              : TEMPORARY(n        ), $
@@ -379,8 +533,15 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                TErr           : TEMPORARY(TErr     ), $
                curErr         : TEMPORARY(curErr   ), $
                charEErr       : TEMPORARY(charEErr ), $
-               perp           : perp}
+               perp           : TEMPORARY(perp), $
+               all            : TEMPORARY(all)}
      
+     IF N_ELEMENTS(source) GT 0 THEN BEGIN
+
+        STR_ELEMENT,struct,'source',TEMPORARY(source),/ADD_REPLACE
+
+     ENDIF
+
   ENDIF
 
 END

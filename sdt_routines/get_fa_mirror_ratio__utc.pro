@@ -140,6 +140,9 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
      ELSE: BEGIN
         ;;GEO to GEI
 
+        nIter = N_ELEMENTS(struc.alt)
+        struc.fa_pos /= 6370.D
+
         IF nIter GT 1 THEN BEGIN
 
            FAST_GSM_arr         = MAKE_ARRAY(nIter,3,VALUE=0.)
@@ -149,8 +152,8 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
            parMod               = MAKE_ARRAY(nIter,10,/DOUBLE)
            parMod[*,0]          = swdat.P
            parMod[*,1]          = swDat.dst
-           parMod[*,2]          = swDat.IMF[*,1]
-           parMod[*,3]          = swDat.IMF[*,2]
+           parMod[*,2]          = swDat.IMF[1,*]
+           parMod[*,3]          = swDat.IMF[2,*]
 
            FAST_B_arr           = MAKE_ARRAY(nIter,3,VALUE=0.)
            downTail_B_arr       = MAKE_ARRAY(nIter,3,VALUE=0.)
@@ -181,9 +184,6 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
            parMod[3]            = swDat.IMF[2]
 
         ENDELSE
-
-        nIter = N_ELEMENTS(struc.alt)
-        struc.fa_pos /= 6370.D
 
         FAST_RE_arr             = MAKE_ARRAY(nIter,VALUE=0.)
         downTail_RE_arr         = MAKE_ARRAY(nIter,VALUE=0.)
