@@ -1,6 +1,7 @@
 ;2017/03/21
 PRO MOMENT_SUITE_2D,diff_eFlux, $
                     ENERGY=energy, $
+                    ARANGE__DENS=aRange__dens, $
                     ARANGE__MOMENTS=aRange__moments, $
                     ARANGE__CHARE=aRange__charE, $
                     SC_POT=sc_pot, $
@@ -44,13 +45,20 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
   ;;check--is charE getting special treatment?
   specialC       = KEYWORD_SET(aRange__charE)
+  specialN       = KEYWORD_SET(aRange__dens )
   IF specialC THEN BEGIN
      
      ;;If aRange__charE is the same as aRange__moments, don't calculate charE quantities separately
      specialC    = KEYWORD_SET(aRange__moments) ? ~ARRAY_EQUAL(aRange__moments,aRange__charE) : 1
 
   ENDIF
-  
+
+  IF specialN THEN BEGIN
+     
+     ;;If aRange__dens is the same as aRange__moments, don't calculate charE quantities separately
+     specialN    = KEYWORD_SET(aRange__dens) ? ~ARRAY_EQUAL(aRange__dens,aRange__charE) : 1
+
+  ENDIF  
   CASE 1 OF
      KEYWORD_SET(new_moment_routine): BEGIN
 
@@ -106,13 +114,25 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
         jjePerp_coVar = jjePerpC-jePerpC*jPerpC
         charEPerp     = CHAR_ENERGY(TEMPORARY(jPerpC),TEMPORARY(jePerpC))
 
+        IF specialN THEN BEGIN
+
+           n = (MOMENTS_2D_NEW__FROM_DIFF_EFLUX(diff_eFlux, $
+                                                   ENERGY=energy, $
+                                                   ANGLE=aRange__dens, $
+                                                   SC_POT=sc_pot, $
+                                                   EEB_OR_EES=eeb_or_ees, $
+                                                   QUIET=quiet)).y[*].n
+
+
+        ENDIF
+
         time          = moms.x
      END
      ELSE: BEGIN
 
         n              = (N_2D__FROM_DIFF_EFLUX(diff_eFlux, $
                                                ENERGY=energy, $
-                                               ANGLE=aRange__moments, $
+                                               ANGLE=specialN ? aRange__dens : aRange__moments, $
                                                SC_POT=sc_pot, $
                                                EEB_OR_EES=eeb_or_ees, $
                                                QUIET=quiet)).y
@@ -222,6 +242,30 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
      jPerpErr     = perpErrs.j
      jePerpErr    = perpErrs.je
      charEPerpErr = perpErrs.charE
+
+     IF specialN THEN BEGIN
+
+        errorsN      = MOMENTERRORS_2D__FROM_DIFF_EFLUX(diff_eFlux, $
+                                                       ENERGY=energy, $
+                                                       ANGLE=aRange__dens, $
+                                                       SC_POT=sc_pot, $
+                                                       EEB_OR_EES=eeb_or_ees, $
+                                                       /PRESSURE_COVAR_CALC, $
+                                                       /HEATFLUX_COVAR_CALC, $
+                                                       QUIET=quiet)
+
+        ;;NOTE, this uses the wrong j, je, and T! They correspond to aRange__moments, not aRange__dens!
+        ;;I'm not updating it because they won't affect nErr. They WOULD affect other the calculated uncertainty
+        ;; of other moments, of course.
+        ERROR_CALC_2D,diff_eFlux,errorsN, $
+                      N_=n, $
+                      JF=j, $
+                      JEF=je, $
+                      T_=T, $
+                      JJE_COVAR=jje_coVar, $ ;; , $
+                      NERR=nerr
+
+     ENDIF
 
      ;; ERROR_CALC_2D,diff_eFlux,errors,j,je,n,T,jerr,jeErr,nerr,Terr
 

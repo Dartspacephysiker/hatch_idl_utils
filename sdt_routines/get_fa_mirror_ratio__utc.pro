@@ -33,8 +33,8 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
               gaveStr = 1
            END
            ELSE: BEGIN
-              t1      = TEMPORARY(tee1)
               t1Str   = TIME_TO_STR(tee1,/MS)
+              t1      = TEMPORARY(tee1)
            END
         ENDCASE
 
@@ -53,8 +53,8 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
               gaveStr = 1
            END
            ELSE: BEGIN
-              t1      = TEMPORARY(tee1)
               t1Str   = TIME_TO_STR(tee1,/MS)
+              t1      = TEMPORARY(tee1)
            END
         ENDCASE
 
@@ -66,8 +66,8 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
            END
            0:
            ELSE: BEGIN
-              t2      = TEMPORARY(tee2)
               t2Str   = TIME_TO_STR(tee2,/MS)
+              t2      = TEMPORARY(tee2)
            END
         ENDCASE
 
