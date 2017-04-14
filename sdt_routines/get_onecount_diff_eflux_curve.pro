@@ -6,7 +6,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
                                   IN_PROTOSTRUCT=in_protoStruct, $
                                   SDT_NAME=name, $
                                   ANGLE=angle, $
-                                  ESPECUNITS=eSpecUnits, $
+                                  ;; ESPECUNITS=eSpecUnits, $
                                   ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                                   FIT_EACH_ANGLE=fit_each_angle, $
                                   TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct, $

@@ -4,7 +4,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    SC_POT=sc_pot, $
                    NAME__DIFF_EFLUX=name__diff_eFlux, $
                    CALC_GEOM_FACTORS=calc_geom_factors, $
-                   UNITS=units, $          
+                   ;; UNITS=units, $          
                    ;; ANGLE=angle, $
                    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                    FIT_EACH_ANGLE=fit_each_angle, $

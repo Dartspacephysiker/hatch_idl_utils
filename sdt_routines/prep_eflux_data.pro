@@ -44,8 +44,6 @@ FUNCTION PREP_EFLUX_DATA, $
      RETURN,0
   ENDIF
 
-  IF NOT KEYWORD_SET(units) THEN STR_ELEMENT,limits,'units',VALUE=units
-
   data3d                      = tempdat
 
   IF KEYWORD_SET(retrace) THEN BEGIN
@@ -88,8 +86,6 @@ FUNCTION PREP_EFLUX_DATA, $
   IF NDIMEN(geom) LT thetaDim THEN BEGIN
      geom = REPLICATE(1.,N_ELEMENTS(theta[*,0]))#geom
   ENDIF
-
-  ;; IF not KEYWORD_SET(vel) THEN STR_ELEMENT,limits,'velocity',VALUE=vel
 
   IF KEYWORD_SET(vel) THEN BEGIN
      xdat                     = VELOCITY(data3d.energy,data3d.mass)

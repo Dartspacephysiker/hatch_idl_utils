@@ -15,7 +15,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 FIT_EACH_ANGLE=fit_each_angle, $
                                 CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
                                 ANGLESTR=angleStr, $
-                                ESPECUNITS=eSpecUnits, $
+                                ;; ESPECUNITS=eSpecUnits, $
                                 ;; ELECTRON_ENERGY_LIMS=energy_electrons, $
                                 SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
                                 _EXTRA=e
@@ -55,10 +55,10 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
      timeRangeStr      = TIME_TO_STR(t1,/MSEC,/CONV_TO_UNDERSCORE) + '-' + TIME_TO_STR(t2,/MSEC,/CONV_TO_UNDERSCORE)
   ENDELSE
 
-  IF N_ELEMENTS(eSpecUnits) EQ 0 THEN BEGIN
-     ;; eSpecUnits     = 'DF'
-     eSpecUnits        = 'eflux'
-  ENDIF
+  ;; IF N_ELEMENTS(eSpecUnits) EQ 0 THEN BEGIN
+  ;;    ;; eSpecUnits     = 'DF'
+  ;;    eSpecUnits        = 'eflux'
+  ;; ENDIF
 
   ;;get_orbit data
   GET_FA_ORBIT,[t1,t2],/TIME_ARRAY,/NO_STORE,STRUC=struc
@@ -100,7 +100,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                     ;; ANGLE=e_angle, $
                     NAME__DIFF_EFLUX=name__diff_eFlux, $
                     /CALC_GEOM_FACTORS, $
-                    UNITS=eSpecUnits, $          
+                    ;; UNITS=eSpecUnits, $          
                     FIT_EACH_ANGLE=fit_each_angle, $
                     SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                     OUT_DIFF_EFLUX=diff_eflux, $
