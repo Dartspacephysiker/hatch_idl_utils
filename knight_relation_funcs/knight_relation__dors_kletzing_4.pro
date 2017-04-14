@@ -38,7 +38,7 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
      inMass              = 5.1099891D5/speedOfLight^2 ;eV/c^2
   ENDELSE
   
-  eCharge                = DOUBLE(1.6e-19) ;Coulombs
+  eCharge                = DOUBLE(1.6D-19) ;Coulombs
 
   ;;Convert input params
   n                      = DOUBLE(Dens_m * 1000000.D) ;dens_m in m^-3

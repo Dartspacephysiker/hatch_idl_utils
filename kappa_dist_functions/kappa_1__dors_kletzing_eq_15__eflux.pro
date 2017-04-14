@@ -4,7 +4,8 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
    OUT_POTBAR=potBar, $
    OUT_P_OVER_K_TH=pot_over_K_th, $
    POT_IN_JOULES=pot_in_joules, $
-   PLOT_TERMS=plot_terms
+   PLOT_TERMS=plot_terms, $
+   MASS=mass
 
   COMPILE_OPT IDL2,STRICTARRSUBS
   
@@ -14,7 +15,18 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
   eCharge                = DOUBLE(1.6e-19)
 
   speedOfLight           = DOUBLE(299792458.) ;m / s
-  electron_mass          = DOUBLE(5.109989e5) / speedOfLight^2.D ;eV/c^2 (where c is in m/s)
+
+  ;;a few constants
+  IF KEYWORD_SET(mass) THEN BEGIN
+     ;;Assume this is in eV/c^2 (with c in km/s instead of m/s)
+     ;; speedOfLight        = 299792.458D ;km / s
+     inMass              = mass / 1D6 ;(convert c^2 from m^2/s^2 to km^2/s^2)
+  ENDIF ELSE BEGIN
+     speedOfLight        = 299792458D ;m / s
+     inMass              = 5.1099891D5/speedOfLight^2 ;eV/c^2
+  ENDELSE
+
+  ;; electron_mass          = DOUBLE(5.109989e5) / speedOfLight^2.D ;eV/c^2 (where c is in m/s)
 
   n                      = DOUBLE(Dens_m * 1000000.D)  ;dens_m in m^-3
   IF KEYWORD_SET(in_potBar) THEN BEGIN
@@ -49,7 +61,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
   ENDIF
 
   ;;Have to translate T to the most probable speed, w, which is how Dors and Kletzing cast it
-  w_sq   = 2.D * T_m / electron_mass * ( (kappaS - 1.5D) / kappaS )
+  w_sq   = 2.D * T_m / inMass * ( (kappaS - 1.5D) / kappaS )
   
   ;; PI  = 1.D + potBar / ( (kappaS - 1.5D + helpMeNotBeZero) * ( R_B - 1.D ) )
   PItmp  = potBar / ( (kappaS - 1.5D ) * ( R_BS - 1.D ) )
@@ -80,7 +92,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
 
   ;; ;;The old way, with helpMeNotBeZero
-  ;; Finv                   = n * electron_mass * toJ * (w_sq)^(1.5D) / 4.D / SQRT(!PI) * kappaS^(2.D) * A_k * R_B / ( ( kappaS - 1.D ) * ( kappaS - 2.D + helpMeNotBeZero) )
+  ;; Finv                   = n * inMass * toJ * (w_sq)^(1.5D) / 4.D / SQRT(!PI) * kappaS^(2.D) * A_k * R_B / ( ( kappaS - 1.D ) * ( kappaS - 2.D + helpMeNotBeZero) )
   ;; FK1                    = 2.D + (kappaS - 2.D + helpMeNotBeZero) / (kappaS - 1.5D + helpMeNotBeZero ) * potBar
   ;; FK2                    = ( ( kappaS - 2.D ) / ( kappaS - 1.D ) + potBar * ( kappaS - 2.D ) / ( kappaS - 1.5D + helpMeNotBeZero ) ) * ( kappaS / ( (kappaS - 1.D) * (R_B - 1.D) ) + 1.D )
   ;; FK3                    = 1.D + ( 1.D + kappaS / ( R_B - 1.D + helpMeNotBeZero ) ) / ( kappaS - 1.D )
@@ -107,10 +119,9 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
   ENDIF
      
 
-
   IF KEYWORD_SET(old_way) THEN BEGIN
      ;;The other old way, before shifting kappa - 2.D inside
-     Finv  = n * electron_mass * toJ * w_sq^(1.5D) / 4.D / SQRT(!PI) $
+     Finv  = n * inMass * toJ * w_sq^(1.5D) / 4.D / SQRT(!PI) $
              * kappa^(2.D) * A_k * R_B $
              / ( ( kappa - 1.D ) * ( kappaS - 2.D ) )
      ;;First chunk
@@ -127,7 +138,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
      
   ENDIF ELSE BEGIN
 
-     Finv  = n * electron_mass * toJ * w_sq^(1.5D) / 4.D / SQRT(!PI) $
+     Finv  = n * inMass * toJ * w_sq^(1.5D) / 4.D / SQRT(!PI) $
              * kappa^(2.D) * A_k * R_B / ( kappa - 1.D )
 
      ;;First chunk

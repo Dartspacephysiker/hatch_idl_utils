@@ -58,14 +58,26 @@
 FUNCTION KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL,T_m,dens_m,pot,R_B, $
    IN_POTBAR=in_potBar, $
    OUT_POTBAR=potBar, $
-   POT_IN_JOULES=pot_in_joules
+   POT_IN_JOULES=pot_in_joules, $
+   MASS=mass
 
   COMPILE_OPT IDL2,STRICTARRSUBS
   
   eCharge                = DOUBLE(1.6e-19)
 
-  speedOfLight           = DOUBLE(299792458.) ;m / s
-  electron_mass          = DOUBLE(5.109989e5) / speedOfLight^2.D ;eV/c^2 (where c is in m/s)
+  ;;a few constants
+  IF KEYWORD_SET(mass) THEN BEGIN
+     ;;Assume this is in eV/c^2 (with c in km/s instead of m/s)
+     ;; speedOfLight        = 299792.458D ;km / s
+     inMass              = mass / 1D6 ;(convert c^2 from m^2/s^2 to km^2/s^2)
+  ENDIF ELSE BEGIN
+     speedOfLight        = 299792458D                 ;m / s
+     inMass              = 5.1099891D5/speedOfLight^2 ;eV/c^2
+  ENDELSE
+
+
+  ;; speedOfLight           = DOUBLE(299792458.) ;m / s
+  ;; electron_mass          = DOUBLE(5.109989e5) / speedOfLight^2.D ;eV/c^2 (where c is in m/s)
 
   n                      = DOUBLE(dens_m * 1000000.D)  ;dens_m in m^-3
   IF KEYWORD_SET(pot) THEN BEGIN
@@ -83,7 +95,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL,T_m,dens_m,pot,R_B, $
 
   ;;Have to translate T to the most probable speed, w, which is how Dors and Kletzing cast it
   ;; w_sq  = 
-  toJ                    = 1.6e-19 ;eV to J
+  toJ                    = 1.6D-19 ;eV to J
 
   R_BS    = R_B
   IF R_B LE 1.0 THEN BEGIN
@@ -96,7 +108,7 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL,T_m,dens_m,pot,R_B, $
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
 
   ;;DONE
-  Finv                   = n * toJ * (T_m)^(1.5D) / SQRT(2.D * !PI * electron_mass) * R_B
+  Finv                   = n * toJ * (T_m)^(1.5D) / SQRT(2.D * !PI * inMass) * R_B
 
   ;;First chunk
   FK1                    = 2.D + potBar
