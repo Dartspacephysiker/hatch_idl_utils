@@ -1,22 +1,22 @@
-PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
-                                  ;; LOAD_DAT_FROM_FILE=loadFile, $
-                                  EEB_OR_EES=eeb_or_ees, $
-                                  SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
-                                  SC_POT=sc_pot, $
-                                  IN_PROTOSTRUCT=in_protoStruct, $
-                                  SDT_NAME=name, $
-                                  ANGLE=angle, $
-                                  ;; ESPECUNITS=eSpecUnits, $
-                                  ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
-                                  FIT_EACH_ANGLE=fit_each_angle, $
-                                  TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct, $
-                                  OUT_ONEDAT=out_oneDat, $
-                                  DEF_ONECOUNT=dEF_oneCount, $
-                                  SAVE_DEF_ONECOUNT_TO_FILE=save_dEF_oneCount_to_file, $
-                                  DIFF_EFLUX_FILE=diff_eFlux_file, $
-                                  LOAD_DAT_FROM_FILE=loadFile, $
-                                  LOAD_DIR=loadDir, $
-                                  QUIET=quiet
+PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
+                            ;; LOAD_DAT_FROM_FILE=loadFile, $
+                            EEB_OR_EES=eeb_or_ees, $
+                            SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                            SC_POT=sc_pot, $
+                            IN_PROTOSTRUCT=in_protoStruct, $
+                            SDT_NAME=name, $
+                            ANGLE=angle, $
+                            ;; ESPECUNITS=eSpecUnits, $
+                            ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
+                            FIT_EACH_ANGLE=fit_each_angle, $
+                            TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct, $
+                            OUT_ONEDAT=out_oneDat, $
+                            DEF_ONECOUNT=dEF_oneCount, $
+                            SAVE_DEF_ONECOUNT_TO_FILE=save_dEF_oneCount_to_file, $
+                            DIFF_EFLUX_FILE=diff_eFlux_file, $
+                            LOAD_DAT_FROM_FILE=loadFile, $
+                            LOAD_DIR=loadDir, $
+                            QUIET=quiet
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -60,7 +60,9 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
   IF ~got_restored THEN BEGIN
 
      IF KEYWORD_SET(in_protoStruct) THEN BEGIN
-        dat = MAKE_ARRAY_OF_SDT_STRUCTS_FROM_PREPPED_EFLUX(in_protoStruct)
+        dat = MAKE_ARRAY_OF_SDT_STRUCTS_FROM_PREPPED_EFLUX( $
+              in_protoStruct, $
+              HAS_SC_POT=TAG_EXIST(in_protoStruct,'sc_pot'))
      ENDIF ELSE BEGIN
         dat                                            = CALL_FUNCTION(routine,t1,t2,CALIB=calib)
         
@@ -81,14 +83,16 @@ PRO GET_ONECOUNT_DIFF_EFLUX_CURVE,t1,t2, $
 
         CASE 1 OF
            (KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0)): BEGIN
-              tempCount = PREP_EFLUX_DATA(tempDat, $
-                                          UNITS=eSpecUnits, $          
-                                          RETRACE=retrace, $
-                                          VEL=vel, $
-                                          ANGLE=an, $
-                                          ARANGE=ar, $
-                                          BINS=bins, $
-                                          NO_SORT=no_sort)
+              tempCount = PREP_EFLUX_DATA( $
+                          tempDat, $
+                          UNITS=eSpecUnits, $          
+                          RETRACE=retrace, $
+                          VEL=vel, $
+                          ANGLE=an, $
+                          ARANGE=ar, $
+                          BINS=bins, $
+                          NO_SORT=no_sort);; , $
+                          ;; SC_POTVAL=TAG_EXIST(tempDat,'sc_pot') ? tempDat.sc_pot : !NULL)
            END
            KEYWORD_SET(try_synthetic_SDT_struct): BEGIN
               SPEC2D,tempDat,UNITS=eSpecUnits,ANGLE=angle, $

@@ -35,7 +35,8 @@ FUNCTION PREP_EFLUX_DATA, $
    ANGLE=an, $
    ARANGE=ar, $
    BINS=bins,     $
-   NO_SORT=no_sort
+   NO_SORT=no_sort, $
+   SC_POTVAL=sc_potVal
   
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -280,6 +281,10 @@ FUNCTION PREP_EFLUX_DATA, $
                            en_index:data3d.en_index, $
                            npts:data3d.npts, $
                            index:data3d.index}
+
+  IF N_ELEMENTS(sc_potVal) GT 0 THEN BEGIN
+     STR_ELEMENT,out_fastStr,'sc_pot',sc_potVal,/ADD_REPLACE
+  ENDIF
 
   RETURN,out_fastStr
 END

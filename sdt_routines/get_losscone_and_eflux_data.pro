@@ -6,7 +6,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 DIFF_EFLUX=diff_eFlux, $
                                 UPGOING=upgoing, $
                                 SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
-                                DEF__INCLUDE_SC_POT=dEF__include_sc_pot, $                                 
+                                DEF__INCLUDE_SC_POT=dEF__include_sc_pot, $
                                 SC_POT=sc_pot, $
                                 OUT_ORB=orb, $
                                 OUT_ANGLERANGE=e_angle, $
