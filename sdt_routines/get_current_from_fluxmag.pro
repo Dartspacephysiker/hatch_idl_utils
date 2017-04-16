@@ -5,6 +5,7 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
                              SDTNAME__JMAG=jMagName, $
                              INFERRED_E_NUMFLUX=inferred_e_numFlux, $
                              SDTNAME__INFERRED_E_NUMFLUX=e_numFluxName, $
+                                  STRANGEWAY_DECIMATE=strangeWay_decimate, $
                              QUIET=quiet
   
   COMPILE_OPT IDL2,STRICTARRSUBS
@@ -109,7 +110,6 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
   ;;in number flux units
   jtemp                   = 1.0D-3*(deltaBY)/1.26D-6*(-1.) ;Spaceward currents positive
 
-
   ;;*END INSERTION
 
   ;; speed                  = SQRT(vel.y[*,0]^2+vel.y[*,1]^2+vel.y[*,2]^2)*1000.0
@@ -140,6 +140,12 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
   IF ~KEYWORD_SET(quiet) THEN PRINT,'Storing magnetometer-derived current as ' + jMagName + ' ...'
   STORE_DATA,jMagName,DATA={x:magz.x,y:jMag}
 
+  IF KEYWORD_SET(strangeway_decimate) THEN BEGIN
+     this = STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS(jmag,/NO_SEPARATE_DC_AC)
+     jMag = {x:this.x, $
+             y:this.y, $
+             units:jMag.units}
+  ENDIF
   ;; sign_jtemp             = ABS(deltaBx)/deltaBx
   ;; sign_jtemp             = ABS(deltaBy)/deltaBy
 
@@ -148,8 +154,8 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
      IF N_ELEMENTS(e_numFluxName) EQ 0 THEN BEGIN
         e_numFluxName    = 'mag_inferred_eNumFlux'
      ENDIF
-     inferred_e_numFlux  = {x:magz.x[magRedInds], $
-                            y:1.0D-3*(deltaBy[magRedInds])/1.26D-6  * (DOUBLE(1. / 1.6D-9)), $
+     inferred_e_numFlux  = {x:jMag.x, $
+                            y:jMag.y * (DOUBLE(1. / 1.6D-9)), $
                             units:"cm!U-2!Ns!U-1!N"}
 
      IF ~KEYWORD_SET(quiet) THEN PRINT,'Storing magnetometer-inferred e- number flux as ' + e_numFluxName + ' ...'

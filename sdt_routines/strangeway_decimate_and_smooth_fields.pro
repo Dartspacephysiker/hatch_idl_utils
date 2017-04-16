@@ -210,6 +210,7 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
                        tmp   = {x:tmp.x[0:nCurrent-1], $
                                 y:tmp.y[0:nCurrent-1]}
 
+                       earlyBreak = 1
                        ;; IF KEYWORD_SET(interp_4Hz_to_1s) THEN earlyBreak = 1
 
                     END
@@ -240,7 +241,7 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
 
                  IF KEYWORD_SET(interp_4Hz_to_1s) AND ( curSampRate EQ 4 ) THEN BREAK
 
-                 ;; IF KEYWORD_SET(earlyBreak) THEN BREAK
+                 IF KEYWORD_SET(earlyBreak) THEN BREAK
 
               ENDWHILE
 
