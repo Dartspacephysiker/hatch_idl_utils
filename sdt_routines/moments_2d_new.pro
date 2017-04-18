@@ -1,11 +1,12 @@
 ;2017/03/29
 FUNCTION MOMENTS_2D_NEW,dat2, $
-                    ENERGY=en, $
-                    ERANGE=er, $
-                    EBINS=ebins, $
-                    ANGLE=an, $
-                    ARANGE=ar, $
-                    BINS=bins
+                        ENERGY=en, $
+                        ERANGE=er, $
+                        EBINS=ebins, $
+                        ANGLE=an, $
+                        ARANGE=ar, $
+                        BINS=bins, $
+                        WANTANGLESTUFF=wantAngleStuff
 
   ;; COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -197,8 +198,9 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
 
   ;; ENDELSE
   
-  solid_angle_corr=4.*!pi/total(domega[0,*]) ; this should be correct in the structure
-  if (solid_angle_corr lt .99 or solid_angle_corr gt 1.01) and max(theta) gt 1.2 then print,'Error in dat.domega.  Solid angle = ', solid_angle_corr   
+  ;;This already happens in OMEGA_2D
+  ;; solid_angle_corr=4.*!pi/total(domega[0,*]) ; this should be correct in the structure
+  ;; if (solid_angle_corr lt .99 or solid_angle_corr gt 1.01) and max(theta) gt 1.2 then print,'Error in dat.domega.  Solid angle = ', solid_angle_corr   
 
   ;; units are #/cm^2-sec
   ;; fluxz   = j_2d_new(dat2,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
@@ -208,6 +210,58 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   flux    = Const_j  * TOTAL(data*denergy  *energy        *domega   )
   eflux   = Const_je * TOTAL(data*denergy  *energy^2      *domega   )
 
+  ;;If you want angle stuff
+  ;; wantAngleStuff = 0
+  ;; wantAngleStuff = ABS(dat.time - 854789221.20D) LT 0.4 ;str_to_time('1997-02-01/09:27:01.2')
+
+  wantAngleStuff = 0
+  ;; theseTimes     = '1997-02-01/'+[['09:26:14.0','09:26:44.0'], $
+  ;;                                 ['09:26:51.0','09:27:05.4']]
+  ;; theseTimes     = REFORM(STR_TO_TIME(thesetimes),SIZE(theseTimes,/DIM))
+  ;; FOR k=0,N_ELEMENTS(theseTimes[0,*])-1 DO BEGIN
+  ;;    wantAngleStuff = ( (dat.time GE theseTimes[0,k]) AND (dat.time LE theseTimes[1,k]) ) OR wantAngleStuff
+  ;; ENDFOR
+
+  IF wantAngleStuff THEN BEGIN
+
+     buffer      = 1
+     window      = WINDOW(DIMENSIONS=[800,600], $
+                          BUFFER=buffer)
+     IF buffer THEN BEGIN
+
+        SET_PLOT_DIR,plotDir,/FOR_SDT,ADD_SUFF='/charE_angle_resolved/'
+        pName       = TIME_TO_STR(dat2.time,/MSEC)
+        pName       = (STRSPLIT(pName,'/',/EXTRACT))[1]
+        pName       = pName.Replace(':','_')
+        pName       = 'charE_angleResolved-' + pName.Replace('.','__') + '-' + (STRSPLIT(dat.data_name,' ',/EXTRACT))[0] + '.eps'
+
+     ENDIF
+     
+     domega_all  = OMEGA_2D_B(dat2, $
+                              ENERGY=en, $
+                              ERANGE=er, $
+                              EBINS=ebins, $
+                              ANGLE=[-180,180])
+
+     charEAngleResolved = Const_je*TOTAL(dat.data*denergy*energy^2*domega_all,1) / (Const_j*TOTAL(dat.data*denergy*energy*domega_all,1))*6.242*1.0e11
+
+     pAngle = theta[0,*]*180/!PI
+     sortie = SORT(pAngle)
+     pAngle = pAngle[sortie]
+     charEAngleResolved = charEAngleResolved[sortie]
+     ;; charEAngleResolved = Const_je*TOTAL(data*denergy*energy^2*domega,1) / (Const_j*TOTAL(data*denergy*energy*domega,1))*6.242*1.0e11
+     plot = PLOT(pAngle,charEAngleResolved,XTITLE='$\theta$ (deg)',YTITLE='Avg. energy (eV)',TITLE=TIME_TO_STR(dat.time),/CURRENT)
+     splot = PLOT(pAngle,SMOOTH(charEAngleResolved,5),COLOR='red',/OVERPLOT)
+
+     IF buffer THEN BEGIN
+        PRINT,'Saving ' + pName + ' ...'
+        window.Save,plotDir+pName
+        window.Close
+        window = !NULL
+     ENDIF
+     
+  ENDIF
+  
   ;;Par comps
   fluxz   = Const_j  * TOTAL(data*denergy  *energy        *domega_zz)
   efluxz  = Const_je * TOTAL(data*denergy  *energy^2      *domega_zz)
@@ -231,7 +285,7 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   ;; PRINT,(efluxz-testefluxz)/efluxz
 
   ;; Pressure is in units of eV/cm**3
-  p2dxx = Const_p * TOTAL(data*denergy*energy^1.5*domega*(sin(theta))^2)/2.
+  p2dxx = Const_p * TOTAL(data*denergy*energy^1.5*domega*(sin(theta))^2)/2. ;  Const_p  = (mass)^(-2.5)*(2.)^1.5
   p2dyy = p2dxx
   p2dzz = Const_p * TOTAL(data*denergy*energy^1.5*domega*(cos(theta))^2)
   p2dxy = 0.
@@ -239,7 +293,6 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   p2dyz = 0.
   p2dxx = mass*(p2dxx)
   p2dyy = mass*(p2dyy)
-  p2dzz = mass*(p2dzz-velz*fluxz/1.e10)
   p2dzz = mass*(p2dzz-velz*fluxz/1.e10)
 
   press = [p2dxx,p2dyy,p2dzz,p2dxy,p2dxz,p2dyz]

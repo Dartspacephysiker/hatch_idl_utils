@@ -178,8 +178,11 @@ endif
 ; a potential of about 2V less than the plasma (talk to McFadden or
 ; Scudder).
 
+if na eq 1 and ndimen(dat.theta) eq 1 then solid_angle_corr=4.*!pi/total(domega) else $
 solid_angle_corr=4.*!pi/total(domega[0,*])	; this should be correct in the structure
 if (solid_angle_corr lt .99 or solid_angle_corr gt 1.01) and max(theta) gt 1.2 then print,'Error in dat.domega.  Solid angle = ', solid_angle_corr   
+
+domega *= bins2
 
 RETURN,domega
 

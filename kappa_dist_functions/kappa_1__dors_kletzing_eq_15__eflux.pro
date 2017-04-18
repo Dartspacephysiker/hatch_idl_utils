@@ -69,12 +69,12 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
   PI1    = PI^((-1.D)*kappa+1.D)
   PI2    = PI^((-1.D)*kappa+2.D)
   ;;Binomial approx
-  IF (WHERE(PItmp LE 0.01D))[0] NE -1 THEN BEGIN
-     ;; PI[WHERE(PItmp LE 0.01D)] = 1.D + (1.0D - kappa ) * PItmp[WHERE(PItmp LE 0.01D)] 
-     ind = WHERE(PItmp LE 0.01D)
-     PI1[ind] = 1.D + ( 1.D - kappa ) * PItmp[ind]
-     PI2[ind] = 1.D + ( 2.D - kappa ) * PItmp[ind]
-  ENDIF
+  ;; IF (WHERE(PItmp LE 0.01D))[0] NE -1 THEN BEGIN
+  ;;    ;; PI[WHERE(PItmp LE 0.01D)] = 1.D + (1.0D - kappa ) * PItmp[WHERE(PItmp LE 0.01D)] 
+  ;;    ind = WHERE(PItmp LE 0.01D)
+  ;;    PI1[ind] = 1.D + ( 1.D - kappa ) * PItmp[ind]
+  ;;    PI2[ind] = 1.D + ( 2.D - kappa ) * PItmp[ind]
+  ;; ENDIF
 
   one_m_one_over_R_B     = (1.D - 1.D/R_B)
   CASE 1 OF
@@ -107,17 +107,6 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
         potThresh = 1.0
      END
   ENDCASE
-  danger                 = WHERE(potBar LT potThresh,nDanger)
-  IF nDanger GT 0 THEN BEGIN
-     ;; PRINT,nDanger, ' dangerous eFluxes'
-     FDanger = KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL(T_m,dens_m,pot,R_B, $
-                                                            IN_POTBAR=in_potBar, $
-                                                            OUT_POTBAR=potBar, $
-                                                            POT_IN_JOULES=pot_in_joules)
-     FDanger *= A_k * ( ( kappa - 1.5D ) / ( kappa - 1.D ) )^(1.5D)
-     IF nDanger EQ N_ELEMENTS(potBar) THEN RETURN,FDanger
-  ENDIF
-     
 
   IF KEYWORD_SET(old_way) THEN BEGIN
      ;;The other old way, before shifting kappa - 2.D inside
@@ -310,7 +299,18 @@ FUNCTION KAPPA_1__DORS_KLETZING_EQ_15__EFLUX,kappa,T_m,dens_m,pot,R_B, $
   ENDIF
 
   ;;Replace with low-pot vals if dangerous
-  IF nDanger GT 0 THEN F[danger] = FDanger[danger]
+  ;; danger                 = WHERE(potBar LT potThresh,nDanger)
+  ;; IF nDanger GT 0 THEN BEGIN
+  ;;    ;; PRINT,nDanger, ' dangerous eFluxes'
+  ;;    FDanger = KAPPA_1__DORS_KLETZING_EQ_14__EFLUX__MAXWELL(T_m,dens_m,pot,R_B, $
+  ;;                                                           IN_POTBAR=in_potBar, $
+  ;;                                                           OUT_POTBAR=potBar, $
+  ;;                                                           POT_IN_JOULES=pot_in_joules)
+  ;;    FDanger *= A_k * ( ( kappa - 1.5D ) / ( kappa - 1.D ) )^(1.5D)
+  ;;    IF nDanger EQ N_ELEMENTS(potBar) THEN RETURN,FDanger
+  ;; ENDIF
+
+  ;; IF nDanger GT 0 THEN F[danger] = FDanger[danger]
 
   RETURN,F
 

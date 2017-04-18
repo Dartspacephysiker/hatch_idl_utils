@@ -194,12 +194,12 @@ FUNCTION OMEGA_ZZ_2D_B,dat2, $
 
   if ndimen(bins2) ne 2 then bins2=ebins2#bins2
 
-  data = dat.data*bins2
-  energy = dat.energy
-  denergy = dat.denergy
+  ;; data = dat.data*bins2
+  ;; energy = dat.energy
+  ;; denergy = dat.denergy
   theta = dat.theta/!radeg
   dtheta = dat.dtheta/!radeg
-  mass = dat.mass     
+  ;; mass = dat.mass     
   value=0 & str_element,dat,'domega',value
   if n_elements(value) ne 1 then domega = dat.domega
 
@@ -248,6 +248,12 @@ FUNCTION OMEGA_ZZ_2D_B,dat2, $
      endfor
      if (nna eq 0) then for a=1,na-1 do domega(a,*)=domega(0,*)
   endif else domega=domega*cos(theta)
+
+  ;; if na eq 1 and ndimen(dat.theta) eq 1 then solid_angle_corr=4.*!pi/total(domega) else $
+  ;;    solid_angle_corr=4.*!pi/total(domega[0,*])	; this should be correct in the structure
+  ;; if (solid_angle_corr lt .99 or solid_angle_corr gt 1.01) and max(theta) gt 1.2 then print,'Error in dat.domega.  Solid angle = ', solid_angle_corr   
+
+  domega *= bins2
 
   RETURN,domega
 
