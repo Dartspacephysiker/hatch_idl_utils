@@ -1,7 +1,6 @@
 ;2017/04/13
 FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                                   TIME_ARRAY=time_array, $
-                                  ADD_DENTON_ET_AL_2006_MODEL_COEFFS=add_Denton2006, $
                                   START_AT_EQUATOR=start_at_equator, $
                                   DOWNTAIL_GSE=downTail_GSE, $
                                   TO_EQUATOR=to_equator, $
