@@ -1,6 +1,7 @@
 ;2017/04/13
 FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                                   TIME_ARRAY=time_array, $
+                                  ADD_DENTON_ET_AL_2006_MODEL_COEFFS=add_Denton2006, $
                                   START_AT_EQUATOR=start_at_equator, $
                                   DOWNTAIL_GSE=downTail_GSE, $
                                   TO_EQUATOR=to_equator, $
@@ -200,7 +201,6 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
   ;;    (WHERE(ABS(tmpSWDat.IMF[2,*]) GT 10))[0]               EQ -1 $
   ;; THEN BEGIN
 
-  IOPGen = 0
   IF ~tmpSWDat.valid THEN BEGIN
 
      ;; IOPT_89 = ROUND(swDat.Kp) + 1
@@ -591,6 +591,7 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
 
            ENDIF
 
+           ;;Calculate external contribution
            CASE 1 OF
               KEYWORD_SET(T89): BEGIN
 
@@ -678,6 +679,7 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
               END
            ENDCASE
 
+           ;;Calculate internal contribution
            GEOPACK_IGRF_GSW_08,downTail_GSM_x,downTail_GSM_y,downTail_GSM_z, $
                                downTail_Bx_IGRF,downTail_By_IGRF,downTail_Bz_IGRF, $
                                EPOCH=time_epoch[k]
@@ -703,7 +705,7 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                                                 T96=T96, $
                                                 T01=T01, $
                                                 TS04=TS04, $
-                                                IGRF=IGRF, $
+                                                /IGRF, $
                                                 TILT=thisTilt, $ ;should be in degrees
                                                 EPOCH=time_epoch[k], $
                                                 DSMAX=dsMax, $
@@ -734,9 +736,13 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
            downTail_B_IGRF     = [downTail_Bx_IGRF,downTail_By_IGRF,downTail_Bz_IGRF]
            ionos_B_IGRF        = [ionos_Bx_IGRF,ionos_By_IGRF,ionos_Bz_IGRF]
 
-           FAST_BMag           = SQRT(TOTAL(FAST_B^2))
-           downTail_BMag       = SQRT(TOTAL(downTail_B^2))
-           ionos_BMag          = SQRT(TOTAL(ionos_B^2))
+           ;; FAST_BMag           = SQRT(TOTAL(FAST_B^2))
+           ;; downTail_BMag       = SQRT(TOTAL(downTail_B^2))
+           ;; ionos_BMag          = SQRT(TOTAL(ionos_B^2))
+
+           FAST_BMag           = SQRT(TOTAL((FAST_B + FAST_B_IGRF)^2))
+           downTail_BMag       = SQRT(TOTAL((downTail_B + downTail_B_IGRF)^2))
+           ionos_BMag          = SQRT(TOTAL((ionos_B + ionos_B_IGRF)^2))
 
            FAST_B_IGRFMag      = SQRT(TOTAL(FAST_B_IGRF^2))
            downTail_B_IGRFMag  = SQRT(TOTAL(downTail_B_IGRF^2))
@@ -834,7 +840,7 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
 
         mRStruc = CREATE_STRUCT(struc,mRStruc,'DOY',DOYstruct,'SWDAT',swDat,'BMODELINFO',BModelInfo)
 
-        PRINT_FA_MIRROR_RATIO,mRStruc
+        PRINT_FA_MIRROR_RATIO,mRStruc,/SKIP_IGRF
 
      END
   ENDCASE

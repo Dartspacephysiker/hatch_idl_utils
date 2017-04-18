@@ -7,7 +7,7 @@ FUNCTION GET_DENTON_ET_AL_2006__EQUATORIAL_DENSITY,ne_F,mlt,RE_F,Lshell
   b = -3.0D
   c = 0.28D
 
-  alpha_LT = 2.0D - 0.43D * mlt
+  alpha_LT = 2.0D - 0.43D * Lshell
 
   logne = ALOG10(ne_F)
   logRd = ALOG10(Lshell / RE_F)

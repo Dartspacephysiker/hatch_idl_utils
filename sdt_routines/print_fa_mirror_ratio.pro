@@ -1,5 +1,6 @@
 ;2017/04/13
-PRO PRINT_FA_MIRROR_RATIO,mRStruc
+PRO PRINT_FA_MIRROR_RATIO,mRStruc, $
+                          SKIP_IGRF=skip_IGRF
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -31,34 +32,73 @@ PRO PRINT_FA_MIRROR_RATIO,mRStruc
      END
      ELSE: BEGIN
 
-        fmtString = '(A0,T25,A0,T32,A0,T38,' + $
-                    'A0,T56,A0,T79,A0,T92,A0,T107,A0,T134,A0)'
+        CASE 1 OF
+           KEYWORD_SET(skip_IGRF): BEGIN
 
-        PRINT,''
-        ;; PRINT,'Triplets are "ionos,FAST,downTail"'
-        PRINT,FORMAT='(A0,A0,",",A0,",",A0,A0)','Triplets are "',mRStruc.name.ionos,mRStruc.name.FAST,mRStruc.name.downTail,'"'
+              fmtString = '(A0,T25,A0,T32,A0,T41,' + $
+                          'A0,T64,A0,T89,A0,T120,A0)'
 
-        PRINT,FORMAT=fmtString, $
-              "TIME","LAT","MLT", $
-              "R_E","km","B-TS04","R_B-TS04","B-IGRF","R_B-IGRF"
+              PRINT,''
+              ;; PRINT,'Triplets are "ionos,FAST,downTail"'
+              PRINT,FORMAT='(A0,A0,",",A0,",",A0,A0)','Triplets are "',mRStruc.name.ionos,mRStruc.name.FAST,mRStruc.name.downTail,'"'
 
-        FOR k=0,nHere-1 DO BEGIN
+              PRINT,FORMAT=fmtString, $
+                    "TIME","LAT","MLT", $
+                    "R_E","km","B-TS04","R_B-TS04"
 
-           stringR_E      = STRING(FORMAT='(F-5.2,",",F-5.2,",",F-5.2)',mRStruc.R_E.ionos[k],mRStruc.R_E.FAST[k],mRStruc.R_E.downTail[k])
-           stringkm       = STRING(FORMAT='(I-0,",",G-8.2,",",G-8.2)',mRStruc.km.ionos[k],mRStruc.km.FAST[k],mRStruc.km.downTail[k])
+              FOR k=0,nHere-1 DO BEGIN
 
-           ;; stringBMag     = STRING(FORMAT='(G-8.2,",",G-8.2,",",I-4)',mRStruc.BMag.ionos[k],mRStruc.BMag.FAST[k],mRStruc.BMag.downTail[k])
-           stringBMag     = STRING(FORMAT='(I-3,",",I-3,",",I-4)',mRStruc.BMag.ionos[k],mRStruc.BMag.FAST[k],mRStruc.BMag.downTail[k])
-           stringR_B      = STRING(FORMAT='(F-5.1,",",F-5.1,",",I1)',mRStruc.R_B.ionos[k],mRStruc.R_B.FAST[k],1)
+                 stringR_E      = STRING(FORMAT='(F-5.2,",",F-5.2,",",F-5.2)',mRStruc.R_E.ionos[k],mRStruc.R_E.FAST[k],mRStruc.R_E.downTail[k])
+                 stringkm       = STRING(FORMAT='(I-0,",",G-9.3,",",G-9.3)',mRStruc.km.ionos[k],mRStruc.km.FAST[k],mRStruc.km.downTail[k])
 
-           stringB_IGRFMag     = STRING(FORMAT='(G-8.2,",",G-8.2,",",F-6.1)',mRStruc.B_IGRFMag.ionos[k],mRStruc.B_IGRFMag.FAST[k],mRStruc.B_IGRFMag.downTail[k])
-           stringR_B_IGRF = STRING(FORMAT='(F-7.1,",",F-6.1,",",I1)',mRStruc.R_B_IGRF.ionos[k],mRStruc.R_B_IGRF.FAST[k],1)
+                 ;; stringBMag     = STRING(FORMAT='(G-8.2,",",G-8.2,",",I-4)',mRStruc.BMag.ionos[k],mRStruc.BMag.FAST[k],mRStruc.BMag.downTail[k])
+                 stringBMag     = STRING(FORMAT='(G-9.3,",",G-9.3,",",G-9.3)',mRStruc.BMag.ionos[k],mRStruc.BMag.FAST[k],mRStruc.BMag.downTail[k])
+                 stringR_B      = STRING(FORMAT='(G-9.3,",",G-9.3,",",G-8.2)',mRStruc.R_B.ionos[k],mRStruc.R_B.FAST[k],1)
 
-           PRINT,FORMAT=fmtString, $
-                 TIME_TO_STR(mRStruc.time[k],/MS),STRING(FORMAT='(F0.2)',mRStruc.ilat[k]),STRING(FORMAT='(F0.2)',mRStruc.mlt[k]), $
-                 stringR_E,stringkm,stringBMag,stringR_B,stringB_IGRFMag,stringR_B_IGRF
+                 ;; stringB_IGRFMag     = STRING(FORMAT='(G-8.2,",",G-8.2,",",F-6.1)',mRStruc.B_IGRFMag.ionos[k],mRStruc.B_IGRFMag.FAST[k],mRStruc.B_IGRFMag.downTail[k])
+                 ;; stringR_B_IGRF = STRING(FORMAT='(F-7.1,",",F-6.1,",",I1)',mRStruc.R_B_IGRF.ionos[k],mRStruc.R_B_IGRF.FAST[k],1)
 
-        ENDFOR
+                 PRINT,FORMAT=fmtString, $
+                       TIME_TO_STR(mRStruc.time[k],/MS),STRING(FORMAT='(F0.2)',mRStruc.ilat[k]),STRING(FORMAT='(F0.2)',mRStruc.mlt[k]), $
+                       stringR_E,stringkm,stringBMag,stringR_B
+
+              ENDFOR
+
+           END
+           ELSE: BEGIN
+
+              fmtString = '(A0,T25,A0,T32,A0,T38,' + $
+                          'A0,T56,A0,T79,A0,T92,A0,T107,A0,T134,A0)'
+
+              PRINT,''
+              ;; PRINT,'Triplets are "ionos,FAST,downTail"'
+              PRINT,FORMAT='(A0,A0,",",A0,",",A0,A0)','Triplets are "',mRStruc.name.ionos,mRStruc.name.FAST,mRStruc.name.downTail,'"'
+
+              PRINT,FORMAT=fmtString, $
+                    "TIME","LAT","MLT", $
+                    "R_E","km","B-TS04","R_B-TS04","B-IGRF","R_B-IGRF"
+
+              FOR k=0,nHere-1 DO BEGIN
+
+                 stringR_E      = STRING(FORMAT='(F-5.2,",",F-5.2,",",F-5.2)',mRStruc.R_E.ionos[k],mRStruc.R_E.FAST[k],mRStruc.R_E.downTail[k])
+                 stringkm       = STRING(FORMAT='(I-0,",",G-8.2,",",G-8.2)',mRStruc.km.ionos[k],mRStruc.km.FAST[k],mRStruc.km.downTail[k])
+
+                 ;; stringBMag     = STRING(FORMAT='(G-8.2,",",G-8.2,",",I-4)',mRStruc.BMag.ionos[k],mRStruc.BMag.FAST[k],mRStruc.BMag.downTail[k])
+                 stringBMag     = STRING(FORMAT='(I-3,",",I-3,",",I-4)',mRStruc.BMag.ionos[k],mRStruc.BMag.FAST[k],mRStruc.BMag.downTail[k])
+                 stringR_B      = STRING(FORMAT='(F-5.1,",",F-5.1,",",I1)',mRStruc.R_B.ionos[k],mRStruc.R_B.FAST[k],1)
+
+                 stringB_IGRFMag     = STRING(FORMAT='(G-8.2,",",G-8.2,",",F-6.1)',mRStruc.B_IGRFMag.ionos[k],mRStruc.B_IGRFMag.FAST[k],mRStruc.B_IGRFMag.downTail[k])
+                 stringR_B_IGRF = STRING(FORMAT='(F-7.1,",",F-6.1,",",I1)',mRStruc.R_B_IGRF.ionos[k],mRStruc.R_B_IGRF.FAST[k],1)
+
+                 PRINT,FORMAT=fmtString, $
+                       TIME_TO_STR(mRStruc.time[k],/MS),STRING(FORMAT='(F0.2)',mRStruc.ilat[k]),STRING(FORMAT='(F0.2)',mRStruc.mlt[k]), $
+                       stringR_E,stringkm,stringBMag,stringR_B,stringB_IGRFMag,stringR_B_IGRF
+
+              ENDFOR
+
+
+           END
+        ENDCASE
         
      END
   ENDCASE
