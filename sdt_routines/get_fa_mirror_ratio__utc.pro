@@ -51,7 +51,7 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
   __TRACE_ANTIPARALLEL_B = 1
   __TRACE_PARALLEL_B     = -1
 
-  RE_to_km        = 6370.D
+  RE_to_km        = 6374.D
   ;; Polar_apogee_km = 100000.D
   Polar_apogee_km = 40000.D
 
@@ -73,6 +73,7 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
         RLim = Polar_apogee_km / RE_to_km
         downTailNavn = 'Polar'
      END
+     KEYWORD_SET(to_equator):
   ENDCASE
 
   navn            = {ionos    : ionosNavn, $
@@ -137,12 +138,11 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
   ENDCASE
 
   swdat         = GET_SW_CONDS_UTC(t1Str,t2Str, $
-                                   TIME_ARRAY=time_array)
-  swDat.v_SW[1,*] += 29.78 ;Re-aberrate Vy (you know, earth's orbital motion of ~30 km/s)
+                                   TIME_ARRAY=time_array, $
+                                   /REABERRATE_VY)
+  
 
   tStrings      = TIME_TO_STR(swdat.times.FAST,/MS)
-
-  IF N_ELEMENTS(TS04) EQ 0 AND N_ELEMENTS(IGRF) EQ 0 AND N_ELEMENTS(T01) EQ 0 THEN IGRF = 1
 
   CONVERT_TIME_STRING_TO_YMDHMS_ARRAYS, $
      t1Str, $
@@ -166,30 +166,71 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                TIME_ARRAY=time_array, $
                /NO_STORE, $
                STRUC=struc
-  time_epoch    = UTC_TO_CDF_EPOCH(struc.time)
 
+  ;; time_epoch2   = UTC_TO_CDF_EPOCH(struc.time) ;;Doesn't exactly match GEOPACK EPOCH ...
+
+  nIter         = N_ELEMENTS(struc.time)
+  time_epoch    = MAKE_ARRAY(nIter,/DOUBLE,VALUE=0.0D)
+  FOR k=0,nIter-1 DO BEGIN
+     tmpUTC = struc.time[k]
+     ;; GEOPACK_EPOCH,tmpEpoch,YearArr[k],MonthArr[k],DayArr[k], $
+     ;;               HourArr[k],MinArr[k],SecArr[k], $
+     ;;               /COMPUTE_EPOCH
+     GEOPACK_EPOCH,tmpEpoch,YearArr[k],DOYArr[k], $
+                   HourArr[k],MinArr[k],FLOOR(SecArr[k]),SecArr[k]-FLOOR(SecArr[k]), $
+                   /DOY, $
+                   /COMPUTE_EPOCH
+     time_epoch[k]  = TEMPORARY(tmpEpoch)
+  ENDFOR
+  
   ;;For TS04, T01, etc.
-  itvlSteps_5Sec = CEIL((MAX(struc.time)-MIN(struc.time))/5)
-  revHour_d5Min = REVERSE( (INDGEN(60+itvlSteps_5Sec)+1) * 300)
+  itvlSteps_5Min = CEIL((MAX(struc.time)-MIN(struc.time))/300)
+  revHour_d5Min  = REVERSE( (INDGEN(12+itvlSteps_5Min)+1) * 300)
 
   precedingHour_UTC = MAX(struc.time) - revHour_d5Min
   GInds             = VALUE_CLOSEST2(precedingHour_UTC,struc.time,/CONSTRAINED)
   tmpSWDat          = GET_SW_CONDS_UTC(precedingHour_UTC, $
-                                       /TIME_ARRAY)
+                                       /TIME_ARRAY, $
+                                       /REABERRATE_VY)
+  
 
-  IF (WHERE(tmpSWDat.P   LT  0.5 OR tmpSWDat.P   GT 10))[0] EQ -1 AND $
-     (WHERE(tmpSWDat.Dst LT -100 OR tmpSWDat.Dst GT 20))[0] EQ -1 AND $
-     (WHERE(ABS(tmpSWDat.IMF[1,*]) GT 10))[0]               EQ -1 AND $
-     (WHERE(ABS(tmpSWDat.IMF[2,*]) GT 10))[0]               EQ -1 $
-  THEN BEGIN
-     T89 = 1
+  ;; IF (WHERE(tmpSWDat.P   LT  0.5 OR tmpSWDat.P   GT 10))[0] EQ -1 AND $
+  ;;    (WHERE(tmpSWDat.Dst LT -100 OR tmpSWDat.Dst GT 20))[0] EQ -1 AND $
+  ;;    (WHERE(ABS(tmpSWDat.IMF[1,*]) GT 10))[0]               EQ -1 AND $
+  ;;    (WHERE(ABS(tmpSWDat.IMF[2,*]) GT 10))[0]               EQ -1 $
+  ;; THEN BEGIN
 
-     IOPT_89 = ROUND(swDat.Kp) + 1
+  IOPGen = 0
+  IF ~tmpSWDat.valid THEN BEGIN
 
+     ;; IOPT_89 = ROUND(swDat.Kp) + 1
+
+     T89  = 1
      T96  = 0
      T01  = 0
      TS04 = 0
-  ENDIF
+
+  ENDIF ELSE BEGIN
+
+     IF KEYWORD_SET(IOPGen) OR KEYWORD_SET(IOPT) OR KEYWORD_SET(IOPB) OR KEYWORD_SET(IOPR) THEN BEGIN
+
+        T89  = 0
+        T96  = 0
+        T01  = 0
+        TS04 = 1
+
+     ENDIF ELSE BEGIN
+
+        T89  = 0
+        T96  = 1
+        T01  = 0
+        TS04 = 0
+
+     ENDELSE
+
+  ENDELSE
+
+  IF N_ELEMENTS(TS04) EQ 0 AND N_ELEMENTS(IGRF) EQ 0 AND N_ELEMENTS(T01) EQ 0 THEN IGRF = 1
 
   Bmodelinfo = {T89  : KEYWORD_SET(T89), $
                 T96  : KEYWORD_SET(T96), $
@@ -197,18 +238,18 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                 TS04 : KEYWORD_SET(TS04), $
                 IOPT_89 : ROUND(swDat.Kp)+1}
 
-  IF KEYWORD_SET(T01) THEN BEGIN
-     CASE 1 OF
-        KEYWORD_SET(storm): BEGIN
-           GEOPACK_GETG,tmpSWDat.N,tmpSWDat.vSpeed,tmpSWDat.IMF[2,*],GParms,/STORM
-        END
-        ELSE: BEGIN
-           GEOPACK_GETG,tmpSWDat.vSpeed,tmpSWDat.IMF[1,*],tmpSWDat.IMF[2,*],GParms
-        END
-     ENDCASE
+  ;; IF KEYWORD_SET(T01) THEN BEGIN
+  CASE 1 OF
+     KEYWORD_SET(storm): BEGIN
+        GEOPACK_GETG,tmpSWDat.N,tmpSWDat.vSpeed,tmpSWDat.IMF[2,*],GParms,/STORM
+     END
+     ELSE: BEGIN
+        GEOPACK_GETG,tmpSWDat.vSpeed,tmpSWDat.IMF[1,*],tmpSWDat.IMF[2,*],GParms
+     END
+  ENDCASE
 
-     GParms = GParms[GInds,*]
-  ENDIF
+  GParms = GParms[GInds,*]
+  ;; ENDIF
 
   ;;For TS04
   GEOPACK_GETW,tmpSWDat.N,tmpSWDat.vSpeed,tmpSWDat.IMF[2,*],wParms
@@ -224,6 +265,12 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
   ;; parMod[1]     = dstVal
   ;; parMod[2]     = By
   ;; parMod[3]     = Bz
+
+  ;;For T96 (http://geo.phys.spbu.ru/~tsyganenko/T96.html):
+  ;; PDYN=PARMOD(1)
+  ;; DST=PARMOD(2)
+  ;; BYIMF=PARMOD(3)
+  ;; BZIMF=PARMOD(4)
 
 
   i=0
@@ -271,8 +318,7 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
      ELSE: BEGIN
         ;;GEO to GEI
 
-        nIter = N_ELEMENTS(struc.alt)
-        struc.fa_pos /= 6370.D
+        struc.fa_pos /= RE_to_km
 
         IF nIter GT 1 THEN BEGIN
 
@@ -321,6 +367,9 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
         STR_ELEMENT,Bmodelinfo,'parmod',parMod,/ADD_REPLACE
         STR_ELEMENT,Bmodelinfo,'GParms',GParms,/ADD_REPLACE
         
+        FAST_Lshell_arr         = MAKE_ARRAY(nIter,VALUE=0.)
+        FAST_Lshell_IGRF_arr    = MAKE_ARRAY(nIter,VALUE=0.)
+
         FAST_RE_arr             = MAKE_ARRAY(nIter,VALUE=0.)
         downTail_RE_arr         = MAKE_ARRAY(nIter,VALUE=0.)
         ionos_RE_arr            = MAKE_ARRAY(nIter,VALUE=0.)
@@ -345,10 +394,10 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
 
         FOR k=0,nIter-1 DO BEGIN
 
-           GEOPACK_RECALC_08,YearArr[i],MonthArr[i],DayArr[i], $
-                             HourArr[i],MinArr[i],SecArr[i], $
+           GEOPACK_RECALC_08,YearArr[k],MonthArr[k],DayArr[k], $
+                             HourArr[k],MinArr[k],SecArr[k], $
                              /DATE, $
-                             VGSE=swDat.v_SW[*,i], $
+                             VGSE=swDat.v_SW[*,k], $
                              TILT=thisTilt
 
            IF nIter GT 1 THEN BEGIN
@@ -372,7 +421,10 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
 
            CASE 1 OF
               KEYWORD_SET(T89): BEGIN
-                 tmpParMod = IOPT_89[k]
+                 tmpParMod = Bmodelinfo.IOPT_89[k]
+              END
+              KEYWORD_SET(T96): BEGIN
+                 tmpParMod = parMod[*,k]
               END
               KEYWORD_SET(T01): BEGIN
                  tmpParMod = parMod[*,k]
@@ -393,10 +445,11 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                             RLIM=RLim, $
                             FLINE=fLine_toEq, $
                             T89=T89, $
+                            T96=T96, $
                             T01=T01, $
                             TS04=TS04, $
-                            ;; IGRF=IGRF, $
-                            /IGRF, $
+                            IGRF=IGRF, $
+                            ;; /IGRF, $
                             TILT=thisTilt, $ ;should be in degrees
                             EPOCH=time_epoch[k], $
                             DSMAX=dsMax, $
@@ -412,14 +465,131 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                             FLINE=fLine_toIonos, $
                             /IONOSPHERE, $
                             T89=T89, $
+                            T96=T96, $
                             T01=T01, $
                             TS04=TS04, $
-                            ;; IGRF=IGRF, $
-                            /IGRF, $
+                            IGRF=IGRF, $
+                            ;; /IGRF, $
                             TILT=thisTilt, $ ;should be in degrees
                             EPOCH=time_epoch[k], $
                             DSMAX=dsMax, $
                             ERR=traceErr
+
+           plot_field_line = 0
+           IF KEYWORD_SET(plot_field_line) THEN BEGIN
+
+              RLimFull = 3000 ;;For full field line 
+              GEOPACK_TRACE_08,FAST_GSM_x,FAST_GSM_y,FAST_GSM_z, $
+                               ;; trace_to_equator,(KEYWORD_SET(TS04) ? tmpParMod : !NULL), $
+                               trace_to_equator,tmpParMod, $
+                               dTFull_GSM_x,dTFull_GSM_y,dTFull_GSM_z, $
+                               /REFINE, $
+                               EQUATOR=to_equator, $
+                               R0=R0, $
+                               RLIM=RLimFull, $
+                               FLINE=fLine_toEqFull, $
+                               T89=T89, $
+                               T96=T96, $
+                               T01=T01, $
+                               TS04=TS04, $
+                               IGRF=IGRF, $
+                               ;; /IGRF, $
+                               TILT=thisTilt, $ ;should be in degrees
+                               EPOCH=time_epoch[k], $
+                               DSMAX=dsMax, $
+                               ERR=traceErr
+
+              GEOPACK_TRACE_08,FAST_GSM_x,FAST_GSM_y,FAST_GSM_z, $
+                               ;; trace_to_ionos,(KEYWORD_SET(TS04) ? tmpParMod : !NULL), $
+                               trace_to_ionos,tmpParMod, $
+                               ionosFull_GSM_x,ionosFull_GSM_y,ionosFull_GSM_z, $
+                               /REFINE, $
+                               R0=R0, $
+                               RLIM=RLimFull, $
+                               FLINE=fLine_toIonosFull, $
+                               /IONOSPHERE, $
+                               T89=T89, $
+                               T96=T96, $
+                               T01=T01, $
+                               TS04=TS04, $
+                               IGRF=IGRF, $
+                               ;; /IGRF, $
+                               TILT=thisTilt, $ ;should be in degrees
+                               EPOCH=time_epoch[k], $
+                               DSMAX=dsMax, $
+                               ERR=traceErr
+
+              flip_GSM_x = FAST_GSM_x
+              flip_GSM_y = FAST_GSM_y
+              flip_GSM_z = FAST_GSM_z * (-1.D)
+
+
+              GEOPACK_TRACE_08,flip_GSM_x,flip_GSM_y,flip_GSM_z, $
+                               ;; trace_to_equator,(KEYWORD_SET(TS04) ? tmpParMod : !NULL), $
+                               trace_to_equator*(-1),tmpParMod, $
+                               dTFlip_GSM_x,dTFlip_GSM_y,dTFlip_GSM_z, $
+                               /REFINE, $
+                               EQUATOR=to_equator, $
+                               R0=R0, $
+                               RLIM=RLimFull, $
+                               FLINE=fLine_toEqFlip, $
+                               T89=T89, $
+                               T96=T96, $
+                               T01=T01, $
+                               TS04=TS04, $
+                               IGRF=IGRF, $
+                               ;; /IGRF, $
+                               TILT=thisTilt, $ ;should be in degrees
+                               EPOCH=time_epoch[k], $
+                               DSMAX=dsMax, $
+                               ERR=traceErr
+
+              GEOPACK_TRACE_08,flip_GSM_x,flip_GSM_y,flip_GSM_z, $
+                               ;; trace_to_ionos,(KEYWORD_SET(TS04) ? tmpParMod : !NULL), $
+                               trace_to_ionos*(-1),tmpParMod, $
+                               ionosFlip_GSM_x,ionosFlip_GSM_y,ionosFlip_GSM_z, $
+                               /REFINE, $
+                               R0=R0, $
+                               RLIM=RLimFull, $
+                               FLINE=fLine_toIonosFlip, $
+                               /IONOSPHERE, $
+                               T89=T89, $
+                               T96=T96, $
+                               T01=T01, $
+                               TS04=TS04, $
+                               IGRF=IGRF, $
+                               ;; /IGRF, $
+                               TILT=thisTilt, $ ;should be in degrees
+                               EPOCH=time_epoch[k], $
+                               DSMAX=dsMax, $
+                               ERR=traceErr
+
+              plotFL = PLOT3D([fline_toIonosFull[*,0],fline_toEqFull[*,0]], $
+                              [fline_toIonosFull[*,1],fline_toEqFull[*,1]], $
+                              [fline_toIonosFull[*,2],fline_toEqFull[*,2]], $
+                              XTITLE='XGSM', $
+                              YTITLE='YGSM', $
+                              ZTITLE='ZGSM', $
+                              'o', $
+                              color='red', $
+                              aspect_ratio=1.0, $
+                              aspect_z=1.0)
+              ;; plotFL = PLOT3D([fline_toIonosFull[*,0],fline_toEqFull[*,0],fline_toEqFlip[*,0],fline_toIonosFlip[*,0]], $
+              ;;                 [fline_toIonosFull[*,1],fline_toEqFull[*,1],fline_toEqFlip[*,1],fline_toIonosFlip[*,1]], $
+              ;;                 [fline_toIonosFull[*,2],fline_toEqFull[*,2],fline_toEqFlip[*,2],fline_toIonosFlip[*,2]], $
+              ;;                 XTITLE='XGSM', $
+              ;;                 YTITLE='YGSM', $
+              ;;                 ZTITLE='ZGSM', $
+              ;;                 'o', $
+              ;;                 color='red', $
+              ;;                 aspect_ratio=1.0, $
+              ;;                 aspect_z=1.0)
+
+              STOP
+
+
+
+           ENDIF
 
            CASE 1 OF
               KEYWORD_SET(T89): BEGIN
@@ -438,6 +608,42 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                               ionos_Bx,ionos_By,ionos_Bz, $
                               TILT=thisTilt, $
                               EPOCH=time_epoch[k]
+
+              END
+              KEYWORD_SET(T96): BEGIN
+
+                 GEOPACK_T96,tmpParMod,downTail_GSM_x,downTail_GSM_y,downTail_GSM_z, $
+                             downTail_Bx,downTail_By,downTail_Bz, $
+                             TILT=thisTilt, $
+                             EPOCH=time_epoch[k]
+
+                 GEOPACK_T96,tmpParMod,FAST_GSM_x,FAST_GSM_y,FAST_GSM_z, $
+                             FAST_Bx,FAST_By,FAST_Bz, $
+                             TILT=thisTilt, $
+                             EPOCH=time_epoch[k]
+
+                 GEOPACK_T96,tmpParMod,ionos_GSM_x,ionos_GSM_y,ionos_GSM_z, $
+                             ionos_Bx,ionos_By,ionos_Bz, $
+                             TILT=thisTilt, $
+                             EPOCH=time_epoch[k]
+
+              END
+              KEYWORD_SET(T01): BEGIN
+
+                 GEOPACK_T01,tmpParMod,downTail_GSM_x,downTail_GSM_y,downTail_GSM_z, $
+                             downTail_Bx,downTail_By,downTail_Bz, $
+                             TILT=thisTilt, $
+                             EPOCH=time_epoch[k]
+
+                 GEOPACK_T01,tmpParMod,FAST_GSM_x,FAST_GSM_y,FAST_GSM_z, $
+                             FAST_Bx,FAST_By,FAST_Bz, $
+                             TILT=thisTilt, $
+                             EPOCH=time_epoch[k]
+
+                 GEOPACK_T01,tmpParMod,ionos_GSM_x,ionos_GSM_y,ionos_GSM_z, $
+                             ionos_Bx,ionos_By,ionos_Bz, $
+                             TILT=thisTilt, $
+                             EPOCH=time_epoch[k]
 
               END
               ELSE: BEGIN
@@ -489,6 +695,27 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
            downTail_GSM = [downTail_GSM_x,downTail_GSM_y,downTail_GSM_z]
            ionos_GSM    = [ionos_GSM_x,ionos_GSM_y,ionos_GSM_z]
 
+
+
+           Lshell = GET_FA_L_SHELL_FROM_GSM_POS(FAST_GSM_x,FAST_GSM_y,FAST_GSM_z,tmpParMod, $
+                                                trace_to_equator, $
+                                                T89=T89, $
+                                                T96=T96, $
+                                                T01=T01, $
+                                                TS04=TS04, $
+                                                IGRF=IGRF, $
+                                                TILT=thisTilt, $ ;should be in degrees
+                                                EPOCH=time_epoch[k], $
+                                                DSMAX=dsMax, $
+                                                ERR=traceErr)
+
+           Lshell_IGRF = GET_FA_L_SHELL_FROM_GSM_POS(FAST_GSM_x,FAST_GSM_y,FAST_GSM_z,tmpParMod, $
+                                                     trace_to_equator, $
+                                                     /IGRF, $
+                                                     TILT=thisTilt, $ ;should be in degrees
+                                                     EPOCH=time_epoch[k], $
+                                                     DSMAX=dsMax, $
+                                                     ERR=traceErr)
 
 
            FAST_RE             = SQRT(TOTAL(FAST_GSM^2))
@@ -552,6 +779,9 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
               END
            ENDCASE
 
+           FAST_Lshell_arr[k]         = TEMPORARY(Lshell)
+           FAST_Lshell_IGRF_arr[k]     = TEMPORARY(Lshell_IGRF)
+
            FAST_RE_arr[k]             = TEMPORARY(FAST_RE)
            downTail_RE_arr[k]         = TEMPORARY(downTail_RE)
            ionos_RE_arr[k]            = TEMPORARY(ionos_RE)
@@ -598,6 +828,8 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                                R_B_IGRF  : {ionos    : R_B_IGRF_ionos_arr, $
                                             FAST     : R_B_IGRF_FAST_arr, $
                                             downTail : 1}, $
+                               Lshell    : {T        : FAST_Lshell_arr, $
+                                            IGRF     : FAST_Lshell_IGRF_arr}, $
                                name      : TEMPORARY(navn)}
 
         mRStruc = CREATE_STRUCT(struc,mRStruc,'DOY',DOYstruct,'SWDAT',swDat,'BMODELINFO',BModelInfo)
