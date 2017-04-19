@@ -53,7 +53,7 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
 
   RE_to_km        = 6374.D
   ;; Polar_apogee_km = 100000.D
-  Polar_apogee_km = 40000.D
+  Polar_apogee_km = 50000.D
 
   downTailNavn    = 'downTail'
   FASTNavn        = 'FAST'

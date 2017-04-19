@@ -92,7 +92,7 @@ FUNCTION DENSITY_FACTOR__BARBOSA_1977,E_b,T,kappa,n,R_B
 
 
      mFac        = 1.D + $
-                  2.D * (1.D - alpha) * EXP( -alpha * potBar ) * SQRT(potBar) / ERFC(-SQRT(potBar)) * QSIMP('ONEYOUNEED',integLims[0],integLims[1])
+                  2.D * (1.D - alpha) * EXP( -alpha * potBar ) * SQRT(potBar) / ERFC(-SQRT(potBar)) * QSIMP('ONEYOUNEED',integLims[0],integLims[1],JMAX=25)
 
      RETURN,n / mFac
 
