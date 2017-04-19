@@ -1,0 +1,8 @@
+;2017/04/19
+FUNCTION POWGEN,minVal,maxVal,step
+
+  COMPILE_OPT IDL2,STRICTARRSUBS
+
+  RETURN,minVal*step^(LINDGEN(ALOG10(maxVal/minVal)/ALOG10(step)+1))
+
+END
