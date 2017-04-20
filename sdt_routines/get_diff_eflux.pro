@@ -1,6 +1,7 @@
 PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    EEB_OR_EES=eeb_or_ees, $
                    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                   MANUAL_ANGLE_CORRECTION=manual_angle_correction, $
                    SC_POT=sc_pot, $
                    NAME__DIFF_EFLUX=name__diff_eFlux, $
                    CALC_GEOM_FACTORS=calc_geom_factors, $
@@ -153,6 +154,22 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
      ENDIF ELSE BEGIN
         ;; PRINT,"Sorry, no save for you"
      ENDELSE
+  ENDIF
+
+  IF KEYWORD_SET(manual_angle_correction) THEN BEGIN
+
+     ;; STOP
+
+     ;; COMMON cc,counter
+
+     ;; cLimit = 1
+
+     ;; IF counter GE cLimit THEN STOP
+     ;; IF N_ELEMENTS(counter) EQ 0 THEN counter = 1 ELSE counter += 1
+
+
+     MANUALLY_CORRECT_DIFF_EFLUX_ANGLE,diff_eFlux,manual_angle_correction
+
   ENDIF
 
   IF KEYWORD_SET(old_mode) THEN BEGIN

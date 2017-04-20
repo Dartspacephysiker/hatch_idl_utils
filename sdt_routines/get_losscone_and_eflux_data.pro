@@ -14,6 +14,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 ;; ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                                 FIT_EACH_ANGLE=fit_each_angle, $
                                 CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
+                                MANUAL_ANGLE_CORRECTION=manual_angle_correction, $
                                 ANGLESTR=angleStr, $
                                 ;; ESPECUNITS=eSpecUnits, $
                                 ;; ELECTRON_ENERGY_LIMS=energy_electrons, $
@@ -103,6 +104,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                     ;; UNITS=eSpecUnits, $          
                     FIT_EACH_ANGLE=fit_each_angle, $
                     SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                    MANUAL_ANGLE_CORRECTION=manual_angle_correction, $
                     OUT_DIFF_EFLUX=diff_eflux, $
                     SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
                     DIFF_EFLUX_FILE=loadFile, $
