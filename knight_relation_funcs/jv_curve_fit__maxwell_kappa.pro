@@ -24,6 +24,7 @@ FUNCTION JV_CURVE_FIT__MAXWELL_KAPPA,X,P, $
    IN_KAPPAS=in_kappas, $
    NO_MULT_BY_CHARGE=no_mult_by_charge, $
    IS_MAXWELLIAN_FIT=is_maxwellian_fit, $
+   TIE_R_B_AND_DENS=tie_R_B_and_dens, $
    UNITS=units, $
    MASS=mass
 
@@ -47,6 +48,29 @@ FUNCTION JV_CURVE_FIT__MAXWELL_KAPPA,X,P, $
 
   IF KEYWORD_SET(in_kappas) THEN BEGIN
      kappa  = in_kappas
+  ENDIF
+
+  IF KEYWORD_SET(tie_R_B_and_dens) THEN BEGIN
+
+     ;; COMMON tieRB,tRB_RBpairs,tRB_fLine,tRB_nFAST,tRB_nFLine,tRB_fLineRE
+     @common__jv_curve_fit__tie_r_b_and_dens.pro
+
+     dens_m = JV_CURVE_FIT__TIE_R_B_AND_DENS__GET_DENS(pot,T_m,R_B)
+     PRINT,'wasHere ',kappa,T_m,dens_m,R_B
+     ;; R_B_ionos  = tRB_RBpairs[1,VALUE_CLOSEST2(tRB_RBpairs[1,*],R_B,/CONSTRAINED)]
+     ;; IF ABS(R_B_ionos - R_B)/R_B_ionos GT 0.2 THEN STOP
+
+     ;; R_B_FAST   = tRB_RBpairs[0,VALUE_CLOSEST2(tRB_RBpairs[1,*],R_B,/CONSTRAINED)]
+
+     ;; dens_m     = DENSITY_FACTOR__BARBOSA_1977(10.D^(MEAN(ALOG10(pot))), $
+     ;; tRB_nFLine = DENSITY_FACTOR__BARBOSA_1977(10.D^(MEAN(ALOG10(pot))), $
+                                               ;; T_m, $
+                                               ;; 0, $
+                                               ;; tRB_nFAST, $
+                                               ;; R_B_FAST)
+                                               ;; tRB_RBpairs[1,*])
+
+
   ENDIF
 
   CASE 1 OF

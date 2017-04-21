@@ -53,7 +53,8 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
 
   RE_to_km        = 6374.D
   ;; Polar_apogee_km = 100000.D
-  Polar_apogee_km = 50000.D
+  ;; Polar_apogee_km = 50000.D
+  Polar_apogee_km = 30000.D
 
   downTailNavn    = 'downTail'
   FASTNavn        = 'FAST'
@@ -142,7 +143,7 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                                    /REABERRATE_VY)
   
 
-  tStrings      = TIME_TO_STR(swdat.times.FAST,/MS)
+  ;; tStrings      = TIME_TO_STR(swdat.times.FAST,/MS)
 
   CONVERT_TIME_STRING_TO_YMDHMS_ARRAYS, $
      t1Str, $
@@ -475,7 +476,8 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                             ERR=traceErr
 
            plot_field_line = 0
-           IF KEYWORD_SET(plot_field_line) THEN BEGIN
+           need_field_line = 1
+           IF KEYWORD_SET(plot_field_line) OR KEYWORD_SET(need_field_line) THEN BEGIN
 
               RLimFull = 3000 ;;For full field line 
               GEOPACK_TRACE_08,FAST_GSM_x,FAST_GSM_y,FAST_GSM_z, $
@@ -562,7 +564,9 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                                EPOCH=time_epoch[k], $
                                DSMAX=dsMax, $
                                ERR=traceErr
+           ENDIF
 
+           IF KEYWORD_SET(plot_field_line) THEN BEGIN
               plotFL = PLOT3D([fline_toIonosFull[*,0],fline_toEqFull[*,0]], $
                               [fline_toIonosFull[*,1],fline_toEqFull[*,1]], $
                               [fline_toIonosFull[*,2],fline_toEqFull[*,2]], $
@@ -585,8 +589,6 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
               ;;                 aspect_z=1.0)
 
               STOP
-
-
 
            ENDIF
 

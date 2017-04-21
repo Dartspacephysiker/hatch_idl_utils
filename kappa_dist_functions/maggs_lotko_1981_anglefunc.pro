@@ -3,24 +3,24 @@
 ;Angular inputs (theta, lcw) assumed to be in degrees
 ;
 ;Example:
-lcw      = 20
-steep    = 2
-tmpTheta = (LINDGEN(2001))/2000.D*!PI/2.D
-window = WINDOW(dimensions=[800,600])
-colors = GENERATE_LIST_OF_RANDOM_COLORS(10)
-lstyles = GENERATE_LIST_OF_RANDOM_LINESTYLES(10)
-plotarr = MAKE_ARRAY(10,/OBJ)
-FOR k=0,9 DO plotarr[k] = PLOT(tmpTheta*!RADEG, $
-                               MAGGS_LOTKO_1981_ANGLEFUNC(tmpTheta,lcw,DELTA=k,STEEP=steep), $
-                               OVERPLOT=k GT 0, $
-                               COLOR=colors[k], $
-                               LINESTYLE=lStyles[k], $
-                               NAME=STRING(FORMAT='("$\delta$ = ",I0)',k), $
-                               /CURRENT, $
-                               XTITLE='Angle (deg)', $
-                               YTITLE='g($\theta$)', $
-                               THICK=2)
-leg = LEGEND(TARGET=plotArr)
+;; lcw      = 20
+;; steep    = 2
+;; tmpTheta = (LINDGEN(2001))/2000.D*!PI/2.D
+;; window = WINDOW(dimensions=[800,600])
+;; colors = GENERATE_LIST_OF_RANDOM_COLORS(10)
+;; lstyles = GENERATE_LIST_OF_RANDOM_LINESTYLES(10)
+;; plotarr = MAKE_ARRAY(10,/OBJ)
+;; FOR k=0,9 DO plotarr[k] = PLOT(tmpTheta*!RADEG, $
+;;                                MAGGS_LOTKO_1981_ANGLEFUNC(tmpTheta,lcw,DELTA=k,STEEP=steep), $
+;;                                OVERPLOT=k GT 0, $
+;;                                COLOR=colors[k], $
+;;                                LINESTYLE=lStyles[k], $
+;;                                NAME=STRING(FORMAT='("$\delta$ = ",I0)',k), $
+;;                                /CURRENT, $
+;;                                XTITLE='Angle (deg)', $
+;;                                YTITLE='g($\theta$)', $
+;;                                THICK=2)
+;; leg = LEGEND(TARGET=plotArr)
 FUNCTION ML81_AFUNC,theta
 
   COMPILE_OPT IDL2,STRICTARRSUBS
