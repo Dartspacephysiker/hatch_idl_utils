@@ -106,7 +106,7 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
   magRedInds              = [minMagFullInd:maxMagFullInd]
   ;;Calculate the current from mag
   ;; deltaBY                 = DERIV(position2,magz.y)*sign_dILAT ;Take stock of hemi
-  deltaBY                 = DERIV(position2,SMOOTH(magz.y,100,/EDGE_TRUNCATE))*sign_dILAT ;Take stock of hemi
+  deltaBY                 = DERIV(position2,SMOOTH(magz.y,100 < (N_ELEMENTS(position2)/2),/EDGE_TRUNCATE))*sign_dILAT ;Take stock of hemi
   ;;in number flux units
   jtemp                   = 1.0D-3*(deltaBY)/1.26D-6*(-1.) ;Spaceward currents positive
 
