@@ -92,8 +92,8 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
 
   ;;Equation segments
   ;; JVinv                  = (-0.5D) * eCharge * n
-  JVinv   = (0.5D) * eCharge * n
-  JV1     = SQRT( 2.D * T_m / ( !PI * inMass ) * (1.D - DOUBLE(1.5D / kappa ) ) )
+  JVinv   = eCharge * n
+  JV1     = SQRT( T_m / ( 2.D * !PI * inMass ) * (1.D - DOUBLE(1.5D / kappa ) ) )
   JV2     = kappa / ( kappa - 1.D )
 
   ;; JV3  = GAMMA(kappa + 1.D) / ( kappa^(1.5D) * GAMMA(kappa - 0.5D) )
