@@ -522,6 +522,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                n              : TEMPORARY(n        ), $
                j              : TEMPORARY(j        ), $
                je             : TEMPORARY(je       ), $
+               mapRatio       : mapRatio            , $
                T              : TEMPORARY(T        ), $
                charE          : TEMPORARY(charE    ), $
                cur            : TEMPORARY(cur      ), $
@@ -534,7 +535,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                curErr         : TEMPORARY(curErr   ), $
                charEErr       : TEMPORARY(charEErr ), $
                perp           : TEMPORARY(perp), $
-               all            : TEMPORARY(all)}
+               all            : TEMPORARY(all), $
+               info           :{ is_mapped : KEYWORD_SET(map_to_100km)}}
      
      IF N_ELEMENTS(source) GT 0 THEN BEGIN
 

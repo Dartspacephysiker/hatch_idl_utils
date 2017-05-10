@@ -1,6 +1,7 @@
 ;2017/04/13
 FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
                                   TIME_ARRAY=time_array, $
+                                  USE_FAST_AS_IONOS=use_FAST_as_ionos, $
                                   START_AT_EQUATOR=start_at_equator, $
                                   DOWNTAIL_GSE=downTail_GSE, $
                                   TO_EQUATOR=to_equator, $
@@ -845,6 +846,17 @@ FUNCTION GET_FA_MIRROR_RATIO__UTC,tee1,tee2, $
 
      END
   ENDCASE
+
+  ;; IF KEYWORD_SET(use_FAST_as_ionos) THEN BEGIN
+
+  ;;    mRStruc.R_E.ionos        = mRStruc.R_E.FAST
+  ;;    mRStruc.km.ionos         = mRStruc.km.FAST
+  ;;    mRStruc.BMag.ionos       = mRStruc.BMag.FAST
+  ;;    mRStruc.B_IGRFMag.ionos  = mRStruc.B_IGRFMag.FAST
+  ;;    mRStruc.R_B.ionos        = mRStruc.R_B.FAST
+  ;;    mRStruc.R_B_IGRF.ionos   = mRStruc.R_B_IGRF.FAST
+
+  ;; ENDIF
 
   CASE 1 OF
      KEYWORD_SET(time_array): BEGIN
