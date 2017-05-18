@@ -62,219 +62,219 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
      ;; RETURN,-1
   ENDIF
 
-     IF KEYWORD_SET(use_double_streaker) THEN BEGIN
-        GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,data.x,-2, $
-                                              N=20, $
-                                              DELTA=0.01, $
-                                              START_I=strt_i, $
-                                              STOP_I=stop_i, $
-                                              STREAKLENS=streakLens, $
-                                              FLOOR=floor, $
-                                              CEILING=ceiling
+  IF KEYWORD_SET(use_double_streaker) THEN BEGIN
+     GET_DOUBLE_BUFS__NTH_DECIMAL_PLACE,data.x,-2, $
+                                        N=20, $
+                                        DELTA=0.01, $
+                                        START_I=strt_i, $
+                                        STOP_I=stop_i, $
+                                        STREAKLENS=streakLens, $
+                                        FLOOR=floor, $
+                                        CEILING=ceiling
 
-        two = 2.D
-        four = 4.D
-        
-     ENDIF ELSE BEGIN
-        PRINT,"Strangeway-decimating and smoothing ..."
+     two = 2.D
+     four = 4.D
+     
+  ENDIF ELSE BEGIN
+     PRINT,"Strangeway-decimating and smoothing ..."
 
-        FA_FIELDS_BUFS,{time:data.x},BUF_STARTS=strt_i,BUF_ENDS=stop_i
+     FA_FIELDS_BUFS,{time:data.x},BUF_STARTS=strt_i,BUF_ENDS=stop_i
 
-        IF (strt_i[0] EQ 0) AND (stop_i[0] EQ 0) THEN BEGIN
-           PRINT,"Can't Strangeway-decimate or Strangeway-smooth these data! They can't be chunked into buffers ..."
+     IF (strt_i[0] EQ 0) AND (stop_i[0] EQ 0) THEN BEGIN
+        PRINT,"Can't Strangeway-decimate or Strangeway-smooth these data! They can't be chunked into buffers ..."
 
+     ENDIF
+  ENDELSE
+
+
+  sRates = 1./(data.x[strt_i+1]-data.x[strt_i])
+  sPeriods = data.x[strt_i+1]-data.x[strt_i]
+  nBufs    = N_ELEMENTS(strt_i)
+
+  tmpDat = data
+  CASE KEYWORD_SET(use_double_streaker) OF
+     1: BEGIN
+
+        FOR k=0,nBufs-1 DO BEGIN
+
+           curSampRate    = sRates[k]
+           tmpI           = [strt_i[k]:stop_i[k]]
+           tmp            = {x:tmpDat.x[tmpI], $
+                             y:tmpDat.y[tmpI]}
+
+           earlyBreak     = 0
+           WHILE curSampRate GT 1 DO BEGIN
+              
+              
+              ;;5-point smooth
+              tmp.y = SMOOTH(tmp.y,5,/NAN,MISSING=!VALUES.F_NaN)
+              
+              nCurrent       = N_ELEMENTS(tmp.x)
+              CASE 1 OF
+                 (curSampRate LT 4): BEGIN
+                    tmp   = {x:tmp.x[0:nCurrent-1:curSampRate], $
+                             y:tmp.y[0:nCurrent-1:curSampRate]}
+
+                    curSampRate /= curSampRate
+
+                 END
+                 ( (curSampRate GE 4) AND (curSampRate LT 8) ): BEGIN
+
+                    ;;Don't jump over every fourth data point here
+                    tmp   = {x:tmp.x[0:nCurrent-1], $
+                             y:tmp.y[0:nCurrent-1]}
+
+
+                 END
+                 ( (curSampRate GE 8) AND (curSampRate LT 12) ): BEGIN
+
+                    ;;Jump over every other data point here
+                    tmp   = {x:tmp.x[0:nCurrent-1:2], $
+                             y:tmp.y[0:nCurrent-1:2]}
+
+                    curSampRate /= 2.D
+
+                 END
+                 ELSE: BEGIN
+                    tmp   = {x:tmp.x[0:nCurrent-1:4], $
+                             y:tmp.y[0:nCurrent-1:4]}
+
+                    curSampRate /= 4.D
+
+                 END
+              ENDCASE
+
+              IF KEYWORD_SET(interp_4Hz_to_1s) AND ( curSampRate LE 4 ) THEN BREAK
+
+              ;; IF KEYWORD_SET(earlyBreak) THEN BREAK
+
+           ENDWHILE
+
+           ;;OK, it's been smoothed and decimated to one second. 
+           ;;Now let's get Alfvénic and DC components
+           DCdat = SMOOTH(tmp.y,5,/NAN,MISSING=!VALUES.F_NaN)
+           
+           ACdat = tmp.y-DCdat
+
+           IF N_ELEMENTS(final) EQ 0 THEN BEGIN
+              final = {x:tmp.x, $
+                       DC:DCDat, $
+                       AC:ACDat}
+           ENDIF ELSE BEGIN
+              final = {x:[final.x,tmp.x], $
+                       DC:[final.DC,DCDat], $
+                       AC:[final.AC,ACDat]}
+           ENDELSE
+
+        ENDFOR
+
+     END
+     ELSE: BEGIN
+
+        IF (WHERE( ABS(FIX(sRates) - sRates) GT 0.1))[0] NE -1 AND $
+           ~KEYWORD_SET(use_double_streaker) THEN BEGIN
+           MESSAGE,"The sampling frequencies aren't integer! Sorry ..."
+           ;; RETURN,-1
         ENDIF
-     ENDELSE
 
+        sRates = FIX(sRates)
 
-     sRates = 1./(data.x[strt_i+1]-data.x[strt_i])
-     sPeriods = data.x[strt_i+1]-data.x[strt_i]
-     nBufs    = N_ELEMENTS(strt_i)
+        FOR k=0,nBufs-1 DO BEGIN
 
-     tmpDat = data
-     CASE KEYWORD_SET(use_double_streaker) OF
-        1: BEGIN
+           ;; curSampPeriod  = sPeriods[k]
+           curSampRate    = sRates[k]
+           tmpI           = [strt_i[k]:stop_i[k]]
+           tmp            = {x:tmpDat.x[tmpI], $
+                             y:tmpDat.y[tmpI]}
 
-           FOR k=0,nBufs-1 DO BEGIN
-
-              curSampRate    = sRates[k]
-              tmpI           = [strt_i[k]:stop_i[k]]
-              tmp            = {x:tmpDat.x[tmpI], $
-                                y:tmpDat.y[tmpI]}
-
-              earlyBreak     = 0
-              WHILE curSampRate GT 1 DO BEGIN
-                 
-                 
-                 ;;5-point smooth
-                 tmp.y = SMOOTH(tmp.y,5,/NAN,MISSING=!VALUES.F_NaN)
-                 
-                 nCurrent       = N_ELEMENTS(tmp.x)
-                 CASE 1 OF
-                    (curSampRate LT 4): BEGIN
-                       tmp   = {x:tmp.x[0:nCurrent-1:curSampRate], $
-                                y:tmp.y[0:nCurrent-1:curSampRate]}
-
-                       curSampRate /= curSampRate
-
-                    END
-                    ( (curSampRate GE 4) AND (curSampRate LT 8) ): BEGIN
-
-                       ;;Don't jump over every fourth data point here
-                       tmp   = {x:tmp.x[0:nCurrent-1], $
-                                y:tmp.y[0:nCurrent-1]}
-
-
-                    END
-                    ( (curSampRate GE 8) AND (curSampRate LT 12) ): BEGIN
-
-                       ;;Jump over every other data point here
-                       tmp   = {x:tmp.x[0:nCurrent-1:2], $
-                                y:tmp.y[0:nCurrent-1:2]}
-
-                       curSampRate /= 2.D
-
-                    END
-                    ELSE: BEGIN
-                       tmp   = {x:tmp.x[0:nCurrent-1:4], $
-                                y:tmp.y[0:nCurrent-1:4]}
-
-                       curSampRate /= 4.D
-
-                    END
-                 ENDCASE
-
-                 IF KEYWORD_SET(interp_4Hz_to_1s) AND ( curSampRate LE 4 ) THEN BREAK
-
-                 ;; IF KEYWORD_SET(earlyBreak) THEN BREAK
-
-              ENDWHILE
-
-              ;;OK, it's been smoothed and decimated to one second. 
-              ;;Now let's get Alfvénic and DC components
-              DCdat = SMOOTH(tmp.y,5,/NAN,MISSING=!VALUES.F_NaN)
+           ;; WHILE curSampPeriod GT 1 DO BEGIN
+           earlyBreak     = 0
+           WHILE curSampRate GT 1 DO BEGIN
               
-              ACdat = tmp.y-DCdat
-
-              IF N_ELEMENTS(final) EQ 0 THEN BEGIN
-                 final = {x:tmp.x, $
-                          DC:DCDat, $
-                          AC:ACDat}
-              ENDIF ELSE BEGIN
-                 final = {x:[final.x,tmp.x], $
-                          DC:[final.DC,DCDat], $
-                          AC:[final.AC,ACDat]}
-              ENDELSE
-
-           ENDFOR
-
-        END
-        ELSE: BEGIN
-
-           IF (WHERE( ABS(FIX(sRates) - sRates) GT 0.1))[0] NE -1 AND $
-              ~KEYWORD_SET(use_double_streaker) THEN BEGIN
-              MESSAGE,"The sampling frequencies aren't integer! Sorry ..."
-              ;; RETURN,-1
-           ENDIF
-
-           sRates = FIX(sRates)
-
-           FOR k=0,nBufs-1 DO BEGIN
-
-              ;; curSampPeriod  = sPeriods[k]
-              curSampRate    = sRates[k]
-              tmpI           = [strt_i[k]:stop_i[k]]
-              tmp            = {x:tmpDat.x[tmpI], $
-                                y:tmpDat.y[tmpI]}
-
-              ;; WHILE curSampPeriod GT 1 DO BEGIN
-              earlyBreak     = 0
-              WHILE curSampRate GT 1 DO BEGIN
-                 
-                 
-                 ;;7-point smooth
-                 tmp.y = SMOOTH(tmp.y,7,/NAN,MISSING=!VALUES.F_NaN)
-                 
-                 nCurrent       = N_ELEMENTS(tmp.x)
-                 CASE 1 OF
-                    (curSampRate LT 4): BEGIN
-                       tmp   = {x:tmp.x[0:nCurrent-1:curSampRate], $
-                                y:tmp.y[0:nCurrent-1:curSampRate]}
-
-                       curSampRate /= curSampRate
-
-                    END
-                    ( curSampRate EQ 4 ): BEGIN
-
-                       ;;Don't jump over every fourth data point here
-                       tmp   = {x:tmp.x[0:nCurrent-1], $
-                                y:tmp.y[0:nCurrent-1]}
-
-                       earlyBreak = 1
-                       ;; IF KEYWORD_SET(interp_4Hz_to_1s) THEN earlyBreak = 1
-
-                    END
-                    ( curSampRate EQ 8 ): BEGIN
-
-                       ;;Jump over every other data point here
-                       tmp   = {x:tmp.x[0:nCurrent-1:2], $
-                                y:tmp.y[0:nCurrent-1:2]}
-
-                       curSampRate /= 2
-
-                       ;; IF KEYWORD_SET(interp_4Hz_to_1s) THEN earlyBreak = 1
-
-                    END
-                    ( (curSampRate MOD 4) EQ 0): BEGIN
-                       tmp   = {x:tmp.x[0:nCurrent-1:4], $
-                                y:tmp.y[0:nCurrent-1:4]}
-
-                       curSampRate /= 4
-
-                    END
-                    ELSE: BEGIN
-                       MESSAGE,'What???? Samprate is ' + STRCOMPRESS(curSampRate,/REMOVE_ALL)
-                       ;; earlyBreak = 1
-                       STOP
-                    END
-                 ENDCASE
-
-                 IF KEYWORD_SET(interp_4Hz_to_1s) AND ( curSampRate EQ 4 ) THEN BREAK
-
-                 IF KEYWORD_SET(earlyBreak) THEN BREAK
-
-              ENDWHILE
-
-              ;;OK, it's been smoothed and decimated to one second. 
-              ;;Now let's get Alfvénic and DC components
-              DCdat = SMOOTH(tmp.y,7,/NAN,MISSING=!VALUES.F_NaN)
               
-              ACdat = tmp.y-DCdat
+              ;;7-point smooth
+              tmp.y = SMOOTH(tmp.y,7,/NAN,MISSING=!VALUES.F_NaN)
+              
+              nCurrent       = N_ELEMENTS(tmp.x)
+              CASE 1 OF
+                 (curSampRate LT 4): BEGIN
+                    tmp   = {x:tmp.x[0:nCurrent-1:curSampRate], $
+                             y:tmp.y[0:nCurrent-1:curSampRate]}
 
-              IF N_ELEMENTS(final) EQ 0 THEN BEGIN
-                 final = {x:tmp.x, $
-                          DC:DCDat, $
-                          AC:ACDat}
-              ENDIF ELSE BEGIN
-                 final = {x:[final.x,tmp.x], $
-                          DC:[final.DC,DCDat], $
-                          AC:[final.AC,ACDat]}
-              ENDELSE
+                    curSampRate /= curSampRate
 
-           ENDFOR
+                 END
+                 ( curSampRate EQ 4 ): BEGIN
 
-        END
-     ENDCASE
+                    ;;Don't jump over every fourth data point here
+                    tmp   = {x:tmp.x[0:nCurrent-1], $
+                             y:tmp.y[0:nCurrent-1]}
 
-     CASE 1 OF
-        KEYWORD_SET(no_separate_DC_AC): BEGIN
-           final = {x:final.x, $
-                    y:final.DC+final.AC}
-        END
-        ELSE: BEGIN
+                    earlyBreak = 1
+                    ;; IF KEYWORD_SET(interp_4Hz_to_1s) THEN earlyBreak = 1
 
-        END
-     ENDCASE
+                 END
+                 ( curSampRate EQ 8 ): BEGIN
+
+                    ;;Jump over every other data point here
+                    tmp   = {x:tmp.x[0:nCurrent-1:2], $
+                             y:tmp.y[0:nCurrent-1:2]}
+
+                    curSampRate /= 2
+
+                    ;; IF KEYWORD_SET(interp_4Hz_to_1s) THEN earlyBreak = 1
+
+                 END
+                 ( (curSampRate MOD 4) EQ 0): BEGIN
+                    tmp   = {x:tmp.x[0:nCurrent-1:4], $
+                             y:tmp.y[0:nCurrent-1:4]}
+
+                    curSampRate /= 4
+
+                 END
+                 ELSE: BEGIN
+                    MESSAGE,'What???? Samprate is ' + STRCOMPRESS(curSampRate,/REMOVE_ALL)
+                    ;; earlyBreak = 1
+                    STOP
+                 END
+              ENDCASE
+
+              IF KEYWORD_SET(interp_4Hz_to_1s) AND ( curSampRate EQ 4 ) THEN BREAK
+
+              IF KEYWORD_SET(earlyBreak) THEN BREAK
+
+           ENDWHILE
+
+           ;;OK, it's been smoothed and decimated to one second. 
+           ;;Now let's get Alfvénic and DC components
+           DCdat = SMOOTH(tmp.y,7,/NAN,MISSING=!VALUES.F_NaN)
+           
+           ACdat = tmp.y-DCdat
+
+           IF N_ELEMENTS(final) EQ 0 THEN BEGIN
+              final = {x:tmp.x, $
+                       DC:DCDat, $
+                       AC:ACDat}
+           ENDIF ELSE BEGIN
+              final = {x:[final.x,tmp.x], $
+                       DC:[final.DC,DCDat], $
+                       AC:[final.AC,ACDat]}
+           ENDELSE
+
+        ENDFOR
+
+     END
+  ENDCASE
+
+  CASE 1 OF
+     KEYWORD_SET(no_separate_DC_AC): BEGIN
+        final = {x:final.x, $
+                 y:final.DC+final.AC}
+     END
+     ELSE: BEGIN
+
+     END
+  ENDCASE
 
   ;;Interp data with 4 Hz resolution 
   IF KEYWORD_SET(interp_4Hz_to_1s) THEN BEGIN
