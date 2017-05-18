@@ -81,10 +81,18 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
 
   start_i  = WHERE(diffTot GT gapMod,nStart)
 
-  IF diffTot[0] LT 0 THEN BEGIN
-     start_i = [0,start_i]
-     nStart++
-  ENDIF
+  CASE start_i[0] OF
+     -1: BEGIN
+        start_i = 0
+        nStart  = 1
+     END
+     ELSE: BEGIN
+        IF diffTot[0] LT 0 THEN BEGIN
+           start_i = [0,start_i]
+           nStart++
+        ENDIF
+     END
+  ENDCASE
 
   CASE nStart OF
      1: BEGIN
