@@ -1,4 +1,4 @@
-;;09/30/16
+;;2016/09/30
 PRO GET_FA_PARTICLE_2DT,type,routine, $
    T1=t1, $
    T2=t2, $
