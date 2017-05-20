@@ -92,8 +92,8 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
   nBufs    = N_ELEMENTS(strt_i)
 
   tmpDat = data
-  CASE KEYWORD_SET(use_double_streaker) OF
-     1: BEGIN
+  CASE 1 OF
+     KEYWORD_SET(use_double_streaker): BEGIN
 
         FOR k=0,nBufs-1 DO BEGIN
 
@@ -180,6 +180,7 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
 
         sRates = FIX(sRates)
 
+        PRINT,'Buf, CurSampRate, nPoints'
         FOR k=0,nBufs-1 DO BEGIN
 
            ;; curSampPeriod  = sPeriods[k]
@@ -192,41 +193,78 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
            earlyBreak     = 0
            WHILE curSampRate GT 1 DO BEGIN
               
-              
-              ;;7-point smooth
-              tmp.y = SMOOTH(tmp.y,7,/NAN,MISSING=!VALUES.F_NaN)
-              
               nCurrent       = N_ELEMENTS(tmp.x)
+
+              PRINT,k,', ',curSampRate,', ',nCurrent
+
+              ;;7-point smooth
+              ;; tmp.y = SMOOTH(tmp.y,7,/NAN,MISSING=!VALUES.F_NaN)
+
               CASE 1 OF
-                 (curSampRate LT 4): BEGIN
+                 ;; (curSampRate LT 4): BEGIN
+
+                 ;;    PRINT,"What should you actually do here? What you ARE doing is using the current sample rate as the stride"
+                 ;;    STOP
+                 ;;    tmp   = {x:tmp.x[0:nCurrent-1:curSampRate], $
+                 ;;             y:tmp.y[0:nCurrent-1:curSampRate]}
+
+                 ;;    curSampRate /= curSampRate
+
+                 ;; END
+                 ;; ( curSampRate EQ 4 ): BEGIN
+
+                 ;;    ;;Don't jump over every fourth data point here
+                 ;;    tmp   = {x:tmp.x[0:nCurrent-1], $
+                 ;;             y:tmp.y[0:nCurrent-1]}
+
+                 ;;    earlyBreak = 1
+                 ;;    ;; IF KEYWORD_SET(interp_4Hz_to_1s) THEN earlyBreak = 1
+
+                 ;; END
+                 ;; ( curSampRate EQ 8 ): BEGIN
+
+                 ;;    ;;Jump over every other data point here
+                 ;;    tmp   = {x:tmp.x[0:nCurrent-1:2], $
+                 ;;             y:tmp.y[0:nCurrent-1:2]}
+
+                 ;;    curSampRate /= 2
+
+                 ;;    ;; IF KEYWORD_SET(interp_4Hz_to_1s) THEN earlyBreak = 1
+
+                 ;; END
+                 ;; ( (curSampRate MOD 4) EQ 0): BEGIN
+
+                 ;;    ;;7-point smooth
+                 ;;    tmp.y = SMOOTH(tmp.y,7,/NAN,MISSING=!VALUES.F_NaN)
+
+                 ;;    tmp   = {x:tmp.x[0:nCurrent-1:4], $
+                 ;;             y:tmp.y[0:nCurrent-1:4]}
+
+                 ;;    curSampRate /= 4
+
+                 ;; END
+                 (curSampRate LE 1): BEGIN
+                    earlyBreak = 1
+                 END
+                 (curSampRate LE 4): BEGIN
+
+                    ;; PRINT,"What should you actually do here? What you ARE doing is using the current sample rate as the stride"
+                    ;; STOP
+
+                    ;;(2N-1)-point smooth
+                    tmp.y = SMOOTH(tmp.y,FIX(curSampRate*2-1) < (nCurrent - 1),/NAN,MISSING=!VALUES.F_NaN)
+
                     tmp   = {x:tmp.x[0:nCurrent-1:curSampRate], $
                              y:tmp.y[0:nCurrent-1:curSampRate]}
 
                     curSampRate /= curSampRate
 
                  END
-                 ( curSampRate EQ 4 ): BEGIN
-
-                    ;;Don't jump over every fourth data point here
-                    tmp   = {x:tmp.x[0:nCurrent-1], $
-                             y:tmp.y[0:nCurrent-1]}
-
-                    earlyBreak = 1
-                    ;; IF KEYWORD_SET(interp_4Hz_to_1s) THEN earlyBreak = 1
-
-                 END
-                 ( curSampRate EQ 8 ): BEGIN
-
-                    ;;Jump over every other data point here
-                    tmp   = {x:tmp.x[0:nCurrent-1:2], $
-                             y:tmp.y[0:nCurrent-1:2]}
-
-                    curSampRate /= 2
-
-                    ;; IF KEYWORD_SET(interp_4Hz_to_1s) THEN earlyBreak = 1
-
-                 END
                  ( (curSampRate MOD 4) EQ 0): BEGIN
+
+                    ;;7-point smooth
+                    tmp.y = SMOOTH(tmp.y,7 < (nCurrent - 1),/NAN,MISSING=!VALUES.F_NaN)
+
                     tmp   = {x:tmp.x[0:nCurrent-1:4], $
                              y:tmp.y[0:nCurrent-1:4]}
 
@@ -246,20 +284,21 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
 
            ENDWHILE
 
+           nCurrent = N_ELEMENTS(tmp.x)
            ;;OK, it's been smoothed and decimated to one second. 
            ;;Now let's get Alfvénic and DC components
-           DCdat = SMOOTH(tmp.y,7,/NAN,MISSING=!VALUES.F_NaN)
+           DCdat = SMOOTH(tmp.y,7 < (nCurrent - 1),/NAN,MISSING=!VALUES.F_NaN)
            
            ACdat = tmp.y-DCdat
 
            IF N_ELEMENTS(final) EQ 0 THEN BEGIN
               final = {x:tmp.x, $
-                       DC:DCDat, $
-                       AC:ACDat}
+                       DC:TEMPORARY(DCDat), $
+                       AC:TEMPORARY(ACDat)}
            ENDIF ELSE BEGIN
               final = {x:[final.x,tmp.x], $
-                       DC:[final.DC,DCDat], $
-                       AC:[final.AC,ACDat]}
+                       DC:[final.DC,TEMPORARY(DCDat)], $
+                       AC:[final.AC,TEMPORARY(ACDat)]}
            ENDELSE
 
         ENDFOR
