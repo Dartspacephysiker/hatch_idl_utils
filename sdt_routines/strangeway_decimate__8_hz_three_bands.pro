@@ -1,15 +1,16 @@
 ;;09/29/16
 ;;Smoothing après une manière qui est similaire á ce qu'on a décrit dans Strangeway et al. [2005]
 FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
-   ITERP_8HZ_RES_TO_0_125S_TIMESERIES=iterp_8Hz_to_0_125s, $
-   ;; INTERP_TO_COMMON_TS=interp_to_common_TS, $
-   ONESEC_TS=tS_0_125s, $
+   INTERP_8HZ_RES_TO_0_125S_TIMESERIES=interp_8Hz_to_0_125s, $
+   EIGHTHZ_TS=tS_0_125s, $
+   SIXTEENHZ_TS=tS_0_0625s, $
    NO_SEPARATE_DC_AC=no_separate_DC_AC, $
+   GAP_DIST=gap_dist, $
    USE_DOUBLE_STREAKER=use_double_streaker
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
-  IF KEYWORD_SET(iterp_8Hz_to_0_125s) OR KEYWORD_SET(interp_to_common_TS) THEN BEGIN
+  IF KEYWORD_SET(interp_8Hz_to_0_125s) OR KEYWORD_SET(interp_to_common_TS) THEN BEGIN
 
      tSeriesName = (KEYWORD_SET(interp_8Hz_to_0_125s) ? '0.125-s' : '' ) +  ' time series'
      IF N_ELEMENTS(tS_0_125s) EQ 0 THEN BEGIN
@@ -35,7 +36,7 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
      ENDIF
 
      ;;Make sure gap is actually 0.125 seconds
-     IF KEYWORD_SET(iterp_8Hz_to_0_125s) THEN BEGIN
+     IF KEYWORD_SET(interp_8Hz_to_0_125s) THEN BEGIN
         IF ( (WHERE( ABS( tS_0_125s[1:-1] - tS_0_125s[0:-2] ) LT 0.99))[0] NE -1 ) AND $
            ( (WHERE( ABS( tS_0_125s[1:-1] - tS_0_125s[0:-2] ) GT 1.01))[0] NE -1 ) THEN BEGIN
            MESSAGE,'This supposedly 0.125-s resolved time series is bogus! Try again, liar.'
@@ -94,16 +95,18 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
   sRates   = 1./(data.x[strt_i+1]-data.x[strt_i])
   sPeriods = data.x[strt_i+1]-data.x[strt_i]
   nBufs    = N_ELEMENTS(strt_i)
+  nPerBuf  = stop_i-strt_i+1
 
-  tmpDat = data
-  finalSampRates = !NULL
+  tmpDat            = data
+  prefinalSampRates = !NULL
+  finalSampRates    = !NULL
   CASE 1 OF
      KEYWORD_SET(use_double_streaker): BEGIN
 
         PRINT,"Not clear what this means for double streaker"
         STOP
 
-     ;;    sampRateInQuestion = KEYWORD_SET(iterp_8Hz_to_0_125s) ? 4 : 1
+     ;;    sampRateInQuestion = KEYWORD_SET(interp_8Hz_to_0_125s) ? 4 : 1
 
      ;;    FOR k=0,nBufs-1 DO BEGIN
 
@@ -167,14 +170,14 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
      ;;             END
      ;;          ENDCASE
 
-     ;;          IF KEYWORD_SET(iterp_8Hz_to_0_125s) AND ( curSampRate LE 4 ) THEN BREAK
+     ;;          IF KEYWORD_SET(interp_8Hz_to_0_125s) AND ( curSampRate LE 4 ) THEN BREAK
 
      ;;          ;; IF KEYWORD_SET(earlyBreak) THEN BREAK
 
      ;;       ENDWHILE
      ;;       finalSampRates = [finalSampRates,curSampRate]
 
-     ;;       IF KEYWORD_SET(iterp_8Hz_to_0_125s) THEN BEGIN
+     ;;       IF KEYWORD_SET(interp_8Hz_to_0_125s) THEN BEGIN
 
      ;;          ;;It has NOT been smoothed and decimated to one second. 
      ;;          IF N_ELEMENTS(final) EQ 0 THEN BEGIN
@@ -233,7 +236,6 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
            tmp            = {x:tmpDat.x[tmpI], $
                              y:tmpDat.y[tmpI]}
 
-
            earlyBreak     = 0
            WHILE curSampRate GT 8 DO BEGIN
               
@@ -243,7 +245,7 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
 
 
               CASE 1 OF
-                 KEYWORD_SET(iterp_8Hz_to_0_125s): BEGIN
+                 KEYWORD_SET(interp_8Hz_to_0_125s): BEGIN
 
                     CASE 1 OF
                        (curSampRate LT 8): BEGIN
@@ -257,20 +259,51 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
                           earlyBreak = 1
 
                        END
-                       ;; ( curSampRate EQ 8 ): BEGIN
+                       ( curSampRate EQ 16 ): BEGIN
 
-                       ;;    ;;3-point smooth
-                       ;;    tmp.y = SMOOTH(tmp.y,3,/NAN,MISSING=!VALUES.F_NaN)
+                          earlyBreak = 1
 
-                       ;;    ;;Jump over every other data point here
-                       ;;    tmp   = {x:tmp.x[0:nCurrent-1:2], $
-                       ;;             y:tmp.y[0:nCurrent-1:2]}
+                       END
+                       ( curSampRate EQ 32 ): BEGIN
 
-                       ;;    curSampRate /= 2
+                          earlyBreak = 1
 
-                       ;;    ;; IF KEYWORD_SET(iterp_8Hz_to_0_125s) THEN earlyBreak = 1
+                          ;;3-point smooth (to cut effective frequency in half, bring us to 16 Hz)
+                          tmp.y = SMOOTH(tmp.y,3,/NAN,MISSING=!VALUES.F_NaN)
 
-                       ;; END
+                          tmp   = {x:tmp.x[0:nCurrent-1:2], $
+                                   y:tmp.y[0:nCurrent-1:2]}
+
+                          curSampRate /= 2
+                          
+
+                       END
+                       ( curSampRate EQ 64 ): BEGIN
+
+                          earlyBreak = 1
+
+                          ;;7-point smooth (to cut effective frequency by a quarter, bring us to 16 Hz)
+                          tmp.y = SMOOTH(tmp.y,7,/NAN,MISSING=!VALUES.F_NaN)
+
+                          tmp   = {x:tmp.x[0:nCurrent-1:4], $
+                                   y:tmp.y[0:nCurrent-1:4]}
+
+                          curSampRate /= 4
+                          
+
+                       END
+                       ( curSampRate EQ 128 ): BEGIN
+
+                          ;;3-point smooth (to cut effective frequency by half, bring us to 64 Hz)
+                          tmp.y = SMOOTH(tmp.y,3,/NAN,MISSING=!VALUES.F_NaN)
+
+                          tmp   = {x:tmp.x[0:nCurrent-1:2], $
+                                   y:tmp.y[0:nCurrent-1:2]}
+
+                          curSampRate /= 2
+                          
+
+                       END
                        ( (curSampRate MOD 4) EQ 0): BEGIN
 
                           ;;7-point smooth
@@ -289,6 +322,9 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
                  END
                  ELSE: BEGIN
                     
+                    PRINT,"What does this mean? You're not interping?"
+                    STOP
+
                     CASE 1 OF
                        (curSampRate LE 1): BEGIN
                           earlyBreak = 1
@@ -328,14 +364,59 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
                  END
               ENDCASE
 
-              IF KEYWORD_SET(iterp_8Hz_to_0_125s) AND ( curSampRate LE 4 ) THEN BREAK
+              IF KEYWORD_SET(interp_8Hz_to_0_125s) AND ( curSampRate LE 16 ) THEN BREAK
 
               IF KEYWORD_SET(earlyBreak) THEN BREAK
 
            ENDWHILE
-           finalSampRates = [finalSampRates,curSampRate]
 
-           IF KEYWORD_SET(iterp_8Hz_to_0_125s) THEN BEGIN
+           prefinalSampRates = [prefinalSampRates,curSampRate]
+           ;; finalSampRates = [finalSampRates,curSampRate]
+
+           IF KEYWORD_SET(interp_8Hz_to_0_125s) THEN BEGIN
+
+              ;;If we're working with 16-Hz, we might think about interping this to 
+              IF curSampRate EQ 16 THEN BEGIN
+
+                 ;; junk      = MIN(ABS(tmp.x[0]-tS_0_125s),tS_ind)
+                 ;; startTime = tS_0_0625s[VALUE_CLOSEST2(tS_0_0625s,tmp.x[0],/CONSTRAIN)]
+                 ;; stopTime  = tS_0_0625s[VALUE_CLOSEST2(tS_0_0625s,tmp.x[-1],/ONLY_GE,/CONSTRAIN)]
+
+                 ;; IF junk GT 0.0625D THEN STOP
+                 ;; startTime = tS_0_125s[tS_ind]
+
+                 startInd = VALUE_CLOSEST2(tS_0_0625s,tmp.x[0] ,/CONSTRAIN)
+                 stopInd  = VALUE_CLOSEST2(tS_0_0625s,tmp.x[-1],/CONSTRAIN)
+
+                 IF (stopInd-startInd+1) GT nPerBuf[k] THEN BEGIN
+                    stopInd--
+                    IF (stopInd-startInd+1) GT nPerBuf[k] THEN STOP
+                 ENDIF
+
+                 thesens  = [startInd:stopInd]
+                 tmper    = DATA_CUT({x:tmp.x,y:tmp.y},tS_0_0625s[thesens], $
+                                     ;; COUNT=count, $
+                                     GAP_THRESH=gap_thresh, $
+                                     INTERP_GAP=interp_gap, $
+                                     GAP_DIST=gap_dist, $
+                                     ;; MISSING=missing, $
+                                     IGNORE_NAN=ignore_nan)
+
+                 tmp.x    = tS_0_0625s[thesens]
+                 tmp.y    = TEMPORARY(tmper)
+
+                 tmp.y    = SMOOTH(tmp.y,3,/NAN,MISSING=!VALUES.F_NaN)
+
+                 nCurrent = N_ELEMENTS(tmp.y)
+
+                 tmp      = {x:tmp.x[0:nCurrent-1:2], $
+                             y:tmp.y[0:nCurrent-1:2]}
+
+                 curSampRate /= 2
+
+              ENDIF
+              
+              finalSampRates = [finalSampRates,curSampRate]
 
               IF N_ELEMENTS(final) EQ 0 THEN BEGIN
 
@@ -350,26 +431,29 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
 
            ENDIF ELSE BEGIN
 
-              nCurrent = N_ELEMENTS(tmp.x)
-              ;;OK, it's been smoothed and decimated to one second. 
-              ;;Now let's get Alfvénic and DC components
-              DCdat = SMOOTH(tmp.y,7 < (nCurrent - 1),/NAN,MISSING=!VALUES.F_NaN)
+              PRINT,'YO'
+              STOP
+
+              ;; nCurrent = N_ELEMENTS(tmp.x)
+              ;; ;;OK, it's been smoothed and decimated to one second. 
+              ;; ;;Now let's get Alfvénic and DC components
+              ;; DCdat = SMOOTH(tmp.y,7 < (nCurrent - 1),/NAN,MISSING=!VALUES.F_NaN)
               
-              ACdat = tmp.y-DCdat
+              ;; ACdat = tmp.y-DCdat
 
-              IF N_ELEMENTS(final) EQ 0 THEN BEGIN
+              ;; IF N_ELEMENTS(final) EQ 0 THEN BEGIN
 
-                 final = {x:tmp.x, $
-                          DC:TEMPORARY(DCDat), $
-                          AC:TEMPORARY(ACDat)}
+              ;;    final = {x:tmp.x, $
+              ;;             DC:TEMPORARY(DCDat), $
+              ;;             AC:TEMPORARY(ACDat)}
 
-              ENDIF ELSE BEGIN
+              ;; ENDIF ELSE BEGIN
 
-                 final = {x:[final.x,tmp.x], $
-                          DC:[final.DC,TEMPORARY(DCDat)], $
-                          AC:[final.AC,TEMPORARY(ACDat)]}
+              ;;    final = {x:[final.x,tmp.x], $
+              ;;             DC:[final.DC,TEMPORARY(DCDat)], $
+              ;;             AC:[final.AC,TEMPORARY(ACDat)]}
 
-              ENDELSE
+              ;; ENDELSE
 
            ENDELSE
 
@@ -389,97 +473,140 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
   ENDCASE
 
   ;;Interp data with 4 Hz resolution 
-  IF KEYWORD_SET(iterp_8Hz_to_0_125s) THEN BEGIN
+  IF KEYWORD_SET(interp_8Hz_to_0_125s) THEN BEGIN
 
-     IF (WHERE(finalSampRates GT 4))[0] NE -1 THEN STOP
+     IF (WHERE(finalSampRates NE 8))[0] NE -1 THEN STOP
      
-     CASE 1 OF
-        KEYWORD_SET(use_double_streaker): BEGIN
-           delt_t = 2.9
-           finalSm = 5
-        END
-        ELSE: BEGIN
-           delt_t = 0.9
-           finalSm = 7
-        END
-     ENDCASE
+     ;; CASE 1 OF
+     ;; KEYWORD_SET(use_double_streaker): BEGIN
+     ;;    delt_t = 2.9
+     ;;    finalSm = 5
+     ;; END
+     ;; ELSE: BEGIN
+     ;; delt_t  = 0.9
+     ;; finalSm = 7
+     ;;    END
+     ;; ENDCASE
 
-     CASE 1 OF
-        KEYWORD_SET(no_separate_DC_AC): BEGIN
-           ;; FA_FIELDS_COMBINE,{time:tS_0_125s,comp1:tS_0_125s}, $
-           ;;                   {time:final.x,comp1:final.y}, $
-           ;;                   RESULT=finalDat, $
-           ;;                   /SPLINE, $
-           ;;                   DELT_T=delt_t
+     ;; CASE 1 OF
+     ;; KEYWORD_SET(no_separate_DC_AC): BEGIN
+     ;;    ;; FA_FIELDS_COMBINE,{time:tS_0_125s,comp1:tS_0_125s}, $
+     ;;    ;;                   {time:final.x,comp1:final.y}, $
+     ;;    ;;                   RESULT=finalDat, $
+     ;;    ;;                   /SPLINE, $
+     ;;    ;;                   DELT_T=delt_t
 
-           final.y  = SMOOTH(final.y,finalSm,/NAN,MISSING=!VALUES.F_NaN)
+     ;;    final.y  = SMOOTH(final.y,finalSm,/NAN,MISSING=!VALUES.F_NaN)
 
-           finalDat = DATA_CUT({x:final.x,y:final.y},tS_0_125s, $
-                               ;; COUNT=count, $
-                               GAP_THRESH=gap_thresh, $
-                               INTERP_GAP=interp_gap, $
-                               GAP_DIST=gap_dist, $
-                               ;; MISSING=missing, $
-                               IGNORE_NAN=ignore_nan)
-           final = {x:tS_0_125s, $
-                    y:finalDat}
+     ;;    finalDat = DATA_CUT({x:final.x,y:final.y},tS_0_125s, $
+     ;;                        ;; COUNT=count, $
+     ;;                        GAP_THRESH=gap_thresh, $
+     ;;                        INTERP_GAP=interp_gap, $
+     ;;                        GAP_DIST=gap_dist, $
+     ;;                        ;; MISSING=missing, $
+     ;;                        IGNORE_NAN=ignore_nan)
+     ;;    final = {x:tS_0_125s, $
+     ;;             y:finalDat}
 
-        END
-        ELSE: BEGIN
-           ;; FA_FIELDS_COMBINE,{time:tS_0_125s,comp1:tS_0_125s}, $
-           ;;                   {time:final.x,comp1:final.DC}, $
-           ;;                   RESULT=DCinterp, $
-           ;;                   /SPLINE, $
-           ;;                   DELT_T=delt_t
-           ;; FA_FIELDS_COMBINE,{time:tS_0_125s,comp1:tS_0_125s}, $
-           ;;                   {time:final.x,comp1:final.AC}, $
-           ;;                   RESULT=ACinterp, $
-           ;;                   /SPLINE, $
-           ;;                   DELT_T=delt_t
-           ;; DCinterp = DATA_CUT({x:final.x,y:final.DC},tS_0_125s, $
-           ;;                     ;; COUNT=count, $
-           ;;                     GAP_THRESH=gap_thresh, $
-           ;;                     INTERP_GAP=interp_gap, $
-           ;;                     GAP_DIST=gap_dist, $
-           ;;                     ;; MISSING=missing, $
-           ;;                     IGNORE_NAN=ignore_nan)
-           ;; ACinterp = DATA_CUT({x:final.x,y:final.AC},tS_0_125s, $
-           ;;                     ;; COUNT=count, $
-           ;;                     GAP_THRESH=gap_thresh, $
-           ;;                     INTERP_GAP=interp_gap, $
-           ;;                     GAP_DIST=gap_dist, $
-           ;;                     ;; MISSING=missing, $
-           ;;                     IGNORE_NAN=ignore_nan)
+     ;; END
+     ;; ELSE: BEGIN
 
-           final.y = SMOOTH(final.y,7,/NAN,MISSING=!VALUES.F_NaN)
+     ;; final.y = SMOOTH(final.y,7,/NAN,MISSING=!VALUES.F_NaN)
 
-           yInterp  = DATA_CUT({x:final.x,y:final.y},tS_0_125s, $
-                               ;; COUNT=count, $
-                               GAP_THRESH=gap_thresh, $
-                               INTERP_GAP=interp_gap, $
-                               GAP_DIST=gap_dist, $
-                               ;; MISSING=missing, $
-                               IGNORE_NAN=ignore_nan)
-
-           ;;some-point smooth
-           DCdat    = SMOOTH(yInterp,finalSm,/NAN,MISSING=!VALUES.F_NaN)
-           ACdat    = yInterp-DCdat
-
-           ;; ACinterp = DATA_CUT({x:final.x,y:final.AC},tS_0_125s, $
-           ;;                     ;; COUNT=count, $
-           ;;                     GAP_THRESH=gap_thresh, $
-           ;;                     INTERP_GAP=interp_gap, $
-           ;;                     GAP_DIST=gap_dist, $
-           ;;                     ;; MISSING=missing, $
-           ;;                     IGNORE_NAN=ignore_nan)
+     ;;This is only necessary for those buffers that were at 8 Hz and were not interpolated above
+     ;;The rest are pretty much aligned, you know?
+     yInterp  = DATA_CUT({x:final.x,y:final.y},tS_0_125s, $
+                         ;; COUNT=count, $
+                         GAP_THRESH=gap_thresh, $
+                         INTERP_GAP=interp_gap, $
+                         GAP_DIST=gap_dist, $
+                         ;; MISSING=missing, $
+                         IGNORE_NAN=ignore_nan)
 
 
-           final = {x:tS_0_125s, $
-                    DC:DCdat, $
-                    AC:ACdat}
+     nCurrent = N_ELEMENTS(yInterp)
 
-        END
-     ENDCASE
+     ;;Nearest multiple of 8     
+     inds   = [0:(nCurrent-1)]
+     dim1   = CEIL(nCurrent/8.)
+     nanArr = MAKE_ARRAY(dim1*8,VALUE=!VALUES.F_NaN)
+     ;; nanArr = MAKE_ARRAY(CEIL(nCurrent/8.),VALUE=!VALUES.F_NaN)
+
+     AC     = nanArr
+     ACHigh = nanArr
+     DC     = nanArr
+
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;;OLD WAY
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;;DC31 is 0.0–0.5   Hz, AC31 is 0.5  –4.0 Hz
+     ;;DC63 is 0.0–0.125 Hz, AC31 is 0.125–4.0 Hz
+     ;; DC31   = SMOOTH(yInterp,31 < (nCurrent-1),/NAN,MISSING=!VALUES.F_NaN)
+     ;; DC63   = SMOOTH(yInterp,63 < (nCurrent-1),/NAN,MISSING=!VALUES.F_NaN)
+
+     ;; ;;Get AC_Strangeway (which is 0.125–0.5 Hz) @ 8 Hz
+     ;; AC[inds]     = DC31-DC63
+
+     ;; ;;Get AC_high (which is 0.5–4 Hz) @ 8 Hz
+     ;; ACHigh[inds] = yInterp - DC31
+
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;;NEW WAY
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+     DC63   = SMOOTH(yInterp,63 < (nCurrent-1),/NAN,MISSING=!VALUES.F_NaN)
+
+     ;;Has regulier AC and ACHigh
+     ACAll    = yInterp-DC63
+
+     ;;Get AC_Strangeway (which is 0.125–0.5 Hz) @ 8 Hz
+     AC[inds] = SMOOTH(ACAll,31 < (nCurrent-1),/NAN,MISSING=!VALUES.F_NaN)
+
+     ;;Get AC_high (which is 0.5–4 Hz) @ 8 Hz
+     ACHigh[inds] = ACAll - AC[inds]
+
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;;END WAYS
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     
+     ;;Get DC_Strangeway (which is 0.0–0.125 Hz) @ 8 Hz
+     DC[inds]     = TEMPORARY(DC63)
+
+     AC           = REFORM(AC    ,8,dim1)
+     ACHigh       = REFORM(ACHigh,8,dim1)
+     DC           = REFORM(DC    ,8,dim1)
+
+     ;;Shouldn't need to interp
+     ;; yInterp  = DATA_CUT({x:final.x,y:final.y},tS_0_125s, $
+     ;;                     ;; COUNT=count, $
+     ;;                     GAP_THRESH=gap_thresh, $
+     ;;                     INTERP_GAP=interp_gap, $
+     ;;                     GAP_DIST=gap_dist, $
+     ;;                     ;; MISSING=missing, $
+     ;;                     IGNORE_NAN=ignore_nan)
+
+     ;;some-point smooth
+     ;; DCdat    = SMOOTH(yInterp,finalSm,/NAN,MISSING=!VALUES.F_NaN)
+     ;; ACdat    = yInterp-DCdat
+
+     ;; ACinterp = DATA_CUT({x:final.x,y:final.AC},tS_0_125s, $
+     ;;                     ;; COUNT=count, $
+     ;;                     GAP_THRESH=gap_thresh, $
+     ;;                     INTERP_GAP=interp_gap, $
+     ;;                     GAP_DIST=gap_dist, $
+     ;;                     ;; MISSING=missing, $
+     ;;                     IGNORE_NAN=ignore_nan)
+
+     
+
+     final = {x         : tS_0_125s[0:-1:8], $
+              DC        : TEMPORARY(DC)    , $
+              AC        : TEMPORARY(AC)    , $
+              ACHigh    : TEMPORARY(ACHigh), $
+              max_smInd : 63 < (nCurrent-1)}
+
+     ;;    END
+     ;; ENDCASE
 
   ENDIF
 
