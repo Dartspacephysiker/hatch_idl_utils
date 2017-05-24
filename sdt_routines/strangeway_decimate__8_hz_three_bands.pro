@@ -1,12 +1,22 @@
 ;;09/29/16
 ;;Smoothing après une manière qui est similaire á ce qu'on a décrit dans Strangeway et al. [2005]
+PRO ERRME,error,errFile,orbString
+
+  OPENW,thisLun,errFile,/GET_LUN,/APPEND
+  PRINTF,thisLun,FORMAT='("Orbit ",A0," err: ",A0)',orbString,error
+  CLOSE,thisLun
+  FREE_LUN,thisLun
+
+END
 FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
    INTERP_8HZ_RES_TO_0_125S_TIMESERIES=interp_8Hz_to_0_125s, $
    EIGHTHZ_TS=tS_0_125s, $
    SIXTEENHZ_TS=tS_0_0625s, $
    NO_SEPARATE_DC_AC=no_separate_DC_AC, $
    GAP_DIST=gap_dist, $
-   USE_DOUBLE_STREAKER=use_double_streaker
+   USE_DOUBLE_STREAKER=use_double_streaker, $
+   ERRFILE=errFile, $
+   ORBSTRING=orbString
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -14,46 +24,60 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
 
      tSeriesName = (KEYWORD_SET(interp_8Hz_to_0_125s) ? '0.125-s' : '' ) +  ' time series'
      IF N_ELEMENTS(tS_0_125s) EQ 0 THEN BEGIN
-        MESSAGE,'Must provide ' + tSeriesName + ' if you want me to interp for you'
-        ;; RETURN,-1
+        PRINT,'Must provide ' + tSeriesName + ' if you want me to interp for you'
+        error = 'Must provide ' + tSeriesName + ' if you want me to interp for you'
+        ERRME,error,errFile,orbString
+        RETURN,error
      ENDIF
 
      IF SIZE(tS_0_125s,/TYPE) NE 5 THEN BEGIN
-        MESSAGE,'Provided ' + tSeriesName + " isn't of type double! Returning ..."
-        ;; RETURN,-1
+        PRINT,'Provided ' + tSeriesName + " isn't of type double! Returning ..."
+        error = 'Provided ' + tSeriesName + " isn't of type double! Returning ..."
+        ERRME,error,errFile,orbString
+        RETURN,error
      ENDIF
 
      junk1 = MIN(ABS(data.x[0]-tS_0_125s),strt_i)
      IF strt_i EQ (N_ELEMENTS(tmp_tS)-1) THEN BEGIN
-        MESSAGE,tSeriesName + ' ends before desired decimated data begin! Returning ...'
-        ;; RETURN,-1
+        PRINT,tSeriesName + ' ends before desired decimated data begin! Returning ...'
+        error = tSeriesName + ' ends before desired decimated data begin! Returning ...'
+        ERRME,error,errFile,orbString
+        RETURN,error
      ENDIF
 
      junk2 = MIN(ABS(data.x[-1]-tS_0_125s),stop_i)
      IF stop_i EQ 0 THEN BEGIN
-        MESSAGE,tSeriesName + ' ends before desired decimated data begin! Returning ...'
-        ;; RETURN,-1
+        PRINT,tSeriesName + ' ends before desired decimated data begin! Returning ...'
+        error = tSeriesName + ' ends before desired decimated data begin! Returning ...'
+        ERRME,error,errFile,orbString
+        RETURN,error
      ENDIF
 
      ;;Make sure gap is actually 0.125 seconds
      IF KEYWORD_SET(interp_8Hz_to_0_125s) THEN BEGIN
         IF ( (WHERE( ABS( tS_0_125s[1:-1] - tS_0_125s[0:-2] ) LT 0.99))[0] NE -1 ) AND $
            ( (WHERE( ABS( tS_0_125s[1:-1] - tS_0_125s[0:-2] ) GT 1.01))[0] NE -1 ) THEN BEGIN
-           MESSAGE,'This supposedly 0.125-s resolved time series is bogus! Try again, liar.'
-           ;; RETURN,-1
+           PRINT,'This supposedly 0.125-s resolved time series is bogus! Try again, liar.'
+           error = tSeriesName + ' ends before desired decimated data begin! Returning ...'
+           ERRME,error,errFile,orbString
+           RETURN,error
         ENDIF
      ENDIF
   ENDIF
 
 
   IF SIZE(data,/TYPE) NE 8 THEN BEGIN
-     MESSAGE,"SMOOTH_TSERIES: Incorrect data type"
-     ;; RETURN,-1
+     PRINT,"SMOOTH_TSERIES: Incorrect data type"
+     error = "SMOOTH_TSERIES: Incorrect data type"
+     ERRME,error,errFile,orbString
+     RETURN,error
   ENDIF
 
   IF N_ELEMENTS(SIZE(data.y,/DIMENSIONS)) GT 1 THEN BEGIN
-     MESSAGE,"Only set up to handle 1D Array! Returning ..."
-     ;; RETURN,-1
+     PRINT,"Only set up to handle 1D Array! Returning ..."
+     error = "Only set up to handle 1D Array! Returning ..."
+     ERRME,error,errFile,orbString
+     RETURN,error
   ENDIF
 
   ;;Never hurt anyone to be monotonic
@@ -63,8 +87,10 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
   finite_y         = FINITE(data.y)
 
   IF (WHERE(finite_y))[0] EQ -1 THEN BEGIN
-     MESSAGE,"No finite data here! No smoothing to be done ..."
-     ;; RETURN,-1
+     PRINT,"No finite data here! No smoothing to be done ..."
+     error = "No finite data here! No smoothing to be done ..."
+     ERRME,error,errFile,orbString
+     RETURN,error
   ENDIF
 
   IF KEYWORD_SET(use_double_streaker) THEN BEGIN
@@ -87,7 +113,9 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
 
      IF (strt_i[0] EQ 0) AND (stop_i[0] EQ 0) THEN BEGIN
         PRINT,"Can't Strangeway-decimate or Strangeway-smooth these data! They can't be chunked into buffers ..."
-
+        error = "Can't Strangeway-decimate or Strangeway-smooth these data! They can't be chunked into buffers ..."
+        ERRME,error,errFile,orbString
+        RETURN,error
      ENDIF
   ENDELSE
 
@@ -104,7 +132,9 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
      KEYWORD_SET(use_double_streaker): BEGIN
 
         PRINT,"Not clear what this means for double streaker"
-        STOP
+        error = "Not clear what this means for double streaker"
+        ERRME,error,errFile,orbString
+        RETURN,error
 
      ;;    sampRateInQuestion = KEYWORD_SET(interp_8Hz_to_0_125s) ? 4 : 1
 
@@ -220,9 +250,10 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
 
         IF (WHERE( ABS(FIX(sRates) - sRates) GT 0.1))[0] NE -1 AND $
            ~KEYWORD_SET(use_double_streaker) THEN BEGIN
-           MESSAGE,"The sampling frequencies aren't integer! Sorry ... (Oh, and is there any chance you're using spin-fitted variables? That'll booger you up in no time: their sample rate is 0.4, or T=2.5 s)"
-           
-           ;; RETURN,-1
+           PRINT,"The sampling frequencies aren't integer! Sorry ... (Oh, and is there any chance you're using spin-fitted variables? That'll booger you up in no time: their sample rate is 0.4, or T=2.5 s)"
+           error = "The sampling frequencies aren't integer! Sorry ... (Oh, and is there any chance you're using spin-fitted variables? That'll booger you up in no time: their sample rate is 0.4, or T=2.5 s)"
+           ERRME,error,errFile,orbString
+           RETURN,error
         ENDIF
 
         sRates = FIX(sRates)
@@ -251,28 +282,30 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
                        (curSampRate LT 8): BEGIN
 
                           PRINT,"It should never happen! How have we come to this place???"
-                          STOP
+                          error = "It should never happen! How have we come to this place???"
+                          ERRME,error,errFile,orbString
+                          RETURN,"It should never happen! How have we come to this place???"
 
                        END
                        ( curSampRate EQ 8 ): BEGIN
 
-                          earlyBreak = 1
+                          earlyBreak   = 1
 
                        END
                        ( curSampRate EQ 16 ): BEGIN
 
-                          earlyBreak = 1
+                          earlyBreak   = 1
 
                        END
                        ( curSampRate EQ 32 ): BEGIN
 
-                          earlyBreak = 1
+                          earlyBreak   = 1
 
                           ;;3-point smooth (to cut effective frequency in half, bring us to 16 Hz)
-                          tmp.y = SMOOTH(tmp.y,3,/NAN,MISSING=!VALUES.F_NaN)
+                          tmp.y        = SMOOTH(tmp.y,3,/NAN,MISSING=!VALUES.F_NaN)
 
-                          tmp   = {x:tmp.x[0:nCurrent-1:2], $
-                                   y:tmp.y[0:nCurrent-1:2]}
+                          tmp          = {x:tmp.x[0:nCurrent-1:2], $
+                                          y:tmp.y[0:nCurrent-1:2]}
 
                           curSampRate /= 2
                           
@@ -280,13 +313,13 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
                        END
                        ( curSampRate EQ 64 ): BEGIN
 
-                          earlyBreak = 1
+                          earlyBreak   = 1
 
                           ;;7-point smooth (to cut effective frequency by a quarter, bring us to 16 Hz)
-                          tmp.y = SMOOTH(tmp.y,7,/NAN,MISSING=!VALUES.F_NaN)
+                          tmp.y        = SMOOTH(tmp.y,7,/NAN,MISSING=!VALUES.F_NaN)
 
-                          tmp   = {x:tmp.x[0:nCurrent-1:4], $
-                                   y:tmp.y[0:nCurrent-1:4]}
+                          tmp          = {x:tmp.x[0:nCurrent-1:4], $
+                                          y:tmp.y[0:nCurrent-1:4]}
 
                           curSampRate /= 4
                           
@@ -295,13 +328,12 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
                        ( curSampRate EQ 128 ): BEGIN
 
                           ;;3-point smooth (to cut effective frequency by half, bring us to 64 Hz)
-                          tmp.y = SMOOTH(tmp.y,3,/NAN,MISSING=!VALUES.F_NaN)
+                          tmp.y        = SMOOTH(tmp.y,3,/NAN,MISSING=!VALUES.F_NaN)
 
-                          tmp   = {x:tmp.x[0:nCurrent-1:2], $
-                                   y:tmp.y[0:nCurrent-1:2]}
+                          tmp          = {x:tmp.x[0:nCurrent-1:2], $
+                                          y:tmp.y[0:nCurrent-1:2]}
 
                           curSampRate /= 2
-                          
 
                        END
                        ( (curSampRate MOD 4) EQ 0): BEGIN
@@ -316,6 +348,10 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
 
                        END
                        ELSE: BEGIN
+                          PRINT,"What sample rate is this?"
+                          error = "What sample rate is this?"
+                          ERRME,error,errFile,orbString
+                          RETURN,"What sample rate is this?"
                        END
                     ENDCASE
 
@@ -323,8 +359,10 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
                  ELSE: BEGIN
                     
                     PRINT,"What does this mean? You're not interping?"
-                    STOP
-
+                    error = "What does this mean? You're not interping?"
+                    ERRME,error,errFile,orbString
+                    RETURN,"What does this mean? You're not interping?"
+                    
                     CASE 1 OF
                        (curSampRate LE 1): BEGIN
                           earlyBreak = 1
@@ -355,9 +393,11 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
 
                        END
                        ELSE: BEGIN
-                          MESSAGE,'What???? Samprate is ' + STRCOMPRESS(curSampRate,/REMOVE_ALL)
+                          PRINT,'What???? Samprate is ' + STRCOMPRESS(curSampRate,/REMOVE_ALL)
+                          error = 'What???? Samprate is ' + STRCOMPRESS(curSampRate,/REMOVE_ALL)
+                          ERRME,error,errFile,orbString
                           ;; earlyBreak = 1
-                          STOP
+                          RETURN,'What???? Samprate is ' + STRCOMPRESS(curSampRate,/REMOVE_ALL)
                        END
                     ENDCASE
 
@@ -432,7 +472,9 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
            ENDIF ELSE BEGIN
 
               PRINT,'YO'
-              STOP
+              error = 'YO'
+              ERRME,error,errFile,orbString
+              RETURN,'YO'
 
               ;; nCurrent = N_ELEMENTS(tmp.x)
               ;; ;;OK, it's been smoothed and decimated to one second. 
@@ -475,8 +517,15 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
   ;;Interp data with 4 Hz resolution 
   IF KEYWORD_SET(interp_8Hz_to_0_125s) THEN BEGIN
 
-     IF (WHERE(finalSampRates NE 8))[0] NE -1 THEN STOP
-     
+     IF (WHERE(finalSampRates NE 8))[0] NE -1 THEN BEGIN
+        PRINT,''
+        PRINT,"THESE CULPRIT SAMPLE RATES:"
+        stringOut = STRING(FORMAT='("Final sampRates(GARBAGE): ",12(F0.1,:,", "))',finalSampRates)
+        error = stringOut
+        ERRME,error,errFile,orbString
+        PRINT,stringOut
+        RETURN,stringOut
+     ENDIF
      ;; CASE 1 OF
      ;; KEYWORD_SET(use_double_streaker): BEGIN
      ;;    delt_t = 2.9
