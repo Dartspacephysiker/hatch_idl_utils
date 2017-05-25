@@ -602,14 +602,16 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;NEW WAY
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     max_smInd    = 63 < (nCurrent-1)
+     min_smInd    = 15 < (nCurrent-1)
 
-     DC63   = SMOOTH(yInterp,63 < (nCurrent-1),/NAN,MISSING=!VALUES.F_NaN)
+     DC63         = SMOOTH(yInterp,max_smInd,/NAN,MISSING=!VALUES.F_NaN)
 
      ;;Has regulier AC and ACHigh
-     ACAll    = yInterp-DC63
+     ACAll        = yInterp-DC63
 
      ;;Get AC_Strangeway (which is 0.125–0.5 Hz) @ 8 Hz
-     AC[inds] = SMOOTH(ACAll,31 < (nCurrent-1),/NAN,MISSING=!VALUES.F_NaN)
+     AC[inds]     = SMOOTH(ACAll,min_smInd,/NAN,MISSING=!VALUES.F_NaN)
 
      ;;Get AC_high (which is 0.5–4 Hz) @ 8 Hz
      ACHigh[inds] = ACAll - AC[inds]
@@ -652,7 +654,8 @@ FUNCTION STRANGEWAY_DECIMATE__8_HZ_THREE_BANDS,data, $
               DC        : TEMPORARY(DC)    , $
               AC        : TEMPORARY(AC)    , $
               ACHigh    : TEMPORARY(ACHigh), $
-              max_smInd : 63 < (nCurrent-1)}
+              max_smInd : 63 < (nCurrent-1), $
+              min_smInd : 15 < (nCurrent-1)}
 
      ;;    END
      ;; ENDCASE
