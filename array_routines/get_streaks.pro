@@ -6,10 +6,12 @@ PRO GET_STREAKS,input, $
                 START_I=start_i, $
                 STOP_I=stop_i, $
                 SINGLE_I=single_i, $
+                ALLOWABLE_GAP=allowable_gap, $
                 MIN_STREAK_TO_KEEP=min_streak, $
                 LOWSTREAK_START_I=lowStreak_start_i, $
                 LOWSTREAK_STOP_I=lowStreak_stop_i, $
                 OUT_STREAKLENS=streakLens, $
+                OUT_GAPLENS=gapLens, $
                 LUN=lun, $
                 N_STREAKS=n_streaks, $
                 NO_PRINT_SUMMARY=no_print_summary, $
@@ -38,7 +40,11 @@ PRO GET_STREAKS,input, $
 
   diff                              = input - shift(input,1)
 
-  start_i                           = WHERE(diff NE 1,nStart)
+  ;; IF KEYWORD_SET(allowable_gap) THEN BEGIN
+  ;;    start_i                        = WHERE(ABS(diff) GT allowable_gap,nStart)
+  ;; ENDIF ELSE BEGIN
+     start_i                        = WHERE(diff NE 1,nStart)
+  ;; ENDELSE
   WHERECHECK,start_i  ;;Make sure this is OK
 
   CASE nStart OF
@@ -70,14 +76,58 @@ PRO GET_STREAKS,input, $
      END
   ENDCASE
 
+  IF (nKeep GT 0) AND KEYWORD_SET(allowable_gap) THEN BEGIN
+     IF ~KEYWORD_SET(quiet) THEN PRINTF,lun,'Allowable gap between start and stop: ' + STRCOMPRESS(allowable_gap,/REMOVE_ALL)
+     gapLens = start_i[1:-1]-stop_i[0:-2]
+
+     stitchTheseGaps_ii = WHERE(gapLens LE allowable_gap,nGapsToStitch)
+     IF nGapsToStitch GT 0 THEN BEGIN
+
+        streakInd = 1
+        nStreaks  = N_ELEMENTS(start_i)
+
+        newStart_i = start_i[0]
+        newStop_i  = stop_i[0]
+        newNStreaks = 1
+        WHILE streakInd LT nStreaks DO BEGIN
+           
+           ;; tmpStop_i     = stop_i[streakInd-1]
+           ;;Check the start_i ahead of where we are, see if it is within allowable_gap of the last stop_i
+           keepStreaking = (start_i[streakInd] - stop_i[streakInd-1]) LE allowable_gap
+           IF keepStreaking THEN BEGIN
+              ;;If the start_i ahead of current position is within allowable gap, just adjust newStop_i
+              newStop_i[-1] = stop_i[streakInd]
+           ENDIF ELSE BEGIN
+              ;;In this case we need to add a new start_i and a new stop_i since the gap was too large
+              newStart_i    = [newStart_i,start_i[streakInd]]
+              newStop_i     = [newStop_i,stop_i[streakInd]]
+              ;; tmpStart_i    = start_i[streakInd]
+              newNStreaks++
+           ENDELSE
+
+           streakInd++
+              
+        ENDWHILE
+
+        STOP
+
+        start_i = TEMPORARY(newStart_i)
+        stop_i  = TEMPORARY(newStop_i)
+
+     ENDIF ELSE BEGIN
+
+     ENDELSE
+
+  ENDIF
+
   IF KEYWORD_SET(min_streak) THEN BEGIN
-     PRINTF,lun,'Minimum streak for keeping: ' + STRCOMPRESS(min_streak,/REMOVE_ALL)
+     IF ~KEYWORD_SET(quiet) THEN PRINTF,lun,'Minimum streak for keeping: ' + STRCOMPRESS(min_streak,/REMOVE_ALL)
      minStreak_ii                   = WHERE((stop_i-start_i) GE min_streak,n_streaks, $
                                             COMPLEMENT=lowStreak_ii,/NULL,NCOMPLEMENT=nLow)
      IF N_ELEMENTS(minStreak_ii) GT 0 THEN BEGIN
         
         IF nLow GT 0 THEN BEGIN
-           PRINT,'Losing ' + STRCOMPRESS(nLow,/REMOVE_ALL) + ' due to min streak requirement...'
+           IF ~KEYWORD_SET(quiet) THEN PRINT,'Losing ' + STRCOMPRESS(nLow,/REMOVE_ALL) + ' due to min streak requirement...'
            lowStreak_start_i        = start_i[lowStreak_ii]
            lowStreak_stop_i         = stop_i[lowStreak_ii]
         ENDIF
@@ -92,7 +142,7 @@ PRO GET_STREAKS,input, $
   streakLens                        = stop_i-start_i
 
   n_streaks                         = N_ELEMENTS(WHERE(streakLens GT 0,/NULL))
-  IF ~no_print_summary THEN BEGIN
+  IF ~(no_print_summary OR KEYWORD_SET(quiet)) THEN BEGIN
      nSingle_i                      = single_i[0] EQ -1 ? 0 : N_ELEMENTS(single_i)
      PRINTF,lun,""
      PRINTF,lun,FORMAT='("**GET_STREAKS**")'
