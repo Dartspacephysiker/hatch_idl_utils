@@ -383,16 +383,6 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
      END
   ENDCASE
 
-  CASE 1 OF
-     KEYWORD_SET(no_separate_DC_AC): BEGIN
-        ;; final = {x:final.x, $
-        ;;          y:final.DC+final.AC}
-     END
-     ELSE: BEGIN
-
-     END
-  ENDCASE
-
   ;;Interp data with 4 Hz resolution 
   IF KEYWORD_SET(interp_4Hz_to_1s) THEN BEGIN
 
@@ -486,7 +476,19 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
         END
      ENDCASE
 
-  ENDIF
+  ENDIF ELSE BEGIN
+
+     CASE 1 OF
+        KEYWORD_SET(no_separate_DC_AC): BEGIN
+           final = {x:final.x, $
+                    y:final.DC+final.AC}
+        END
+        ELSE: BEGIN
+
+        END
+     ENDCASE
+
+  ENDELSE
 
   RETURN,final
 

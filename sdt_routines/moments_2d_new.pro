@@ -97,7 +97,7 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
 
   ;; ENDIF
   
-  if dat.data_name ne 'HSPAD' and dat.energy(0)-dat.denergy(0) lt dat.sc_pot then begin
+  if dat.data_name ne 'HSPAD' and dat.energy(0)-dat.denergy(0) lt (TAG_EXIST(dat,'sc_pot') ? dat.sc_pot : 0) then begin
      tmpmin=min(abs(dat.energy(*,0)-sc_pot),ind1)
      tmpmax=max(dat.data(ind1,*),ind2)
      th=dat.theta(ind1,ind2)
