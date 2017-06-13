@@ -2,6 +2,7 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
    lc_angleRange, $
    i_angle,i_angle_up, $
    north_south, $
+   ALLEXCLATM_ARANGE=allExclAtm_aRange, $
    OUT_LCW=lcw, $
    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
    CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
@@ -22,18 +23,19 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
   ENDIF
   
   IF KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
-     lcw               = REPLICATE(5,N_ELEMENTS(alt.y))
+     lcw               = FLOAT(REPLICATE(5,N_ELEMENTS(alt.y)))
   ENDIF ELSE BEGIN
      loss_cone_alt     = alt.y*1000.0
      loss_cone_alt     = alt.y*1000.0
-     lcw               = LOSS_CONE_WIDTH(loss_cone_alt)*180.0/!DPI
+     lcw               = FLOAT(LOSS_CONE_WIDTH(loss_cone_alt)*180.0/!DPI)
   ENDELSE
   
   ;; GET_DATA,'ILAT',DATA=ilat
-  north_south       = ABS(ilat.y)/ilat.y
+  north_south       = FLOAT(ABS(ilat.y)/ilat.y)
   
   ;;Loss cone stuff
   lc_angleRange     = !NULL
+  allExclAtm_aRange = !NULL
   i_angle           = !NULL
   i_angle_up        = !NULL
 
@@ -65,6 +67,8 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
 
               lc_angleRange     = [[lc_angleRange],[180.-lcw,180+lcw]] ; for Southern Hemis.
               
+              allExclAtm_aRange = [[allExclAtm_aRange],[lcw,360.-lcw]] ; for Southern Hemis.
+
               ;; i_angle  = [270.0,90.0]	
               ;; eliminate ram from data
               i_angle     = [[i_angle],[180.0,360.0]]
@@ -89,6 +93,9 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
            ELSE: BEGIN
 
               lc_angleRange     = [[lc_angleRange],[360.-lcw,lcw]] ;	for Northern Hemis.
+
+              allExclAtm_aRange = [[allExclAtm_aRange],[180.+lcw,180.-lcw]] ; for Northern Hemis.
+
               ;; i_angle  = [90.,270.0]
               ;; eliminate ram from data
               i_angle     = [[i_angle],[0.0,180.0]]

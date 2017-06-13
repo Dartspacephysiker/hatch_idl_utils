@@ -15,6 +15,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 FIT_EACH_ANGLE=fit_each_angle, $
                                 CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
                                 MANUAL_ANGLE_CORRECTION=manual_angle_correction, $
+                                ALLEXCLATM_ARANGE=allExclAtm_aRange, $
                                 ANGLESTR=angleStr, $
                                 ;; ESPECUNITS=eSpecUnits, $
                                 ;; ELECTRON_ENERGY_LIMS=energy_electrons, $
@@ -64,9 +65,11 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
   ;;get_orbit data
   GET_FA_ORBIT,[t1,t2],/TIME_ARRAY,/NO_STORE,STRUC=struc
   
-  GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2,lc_angleRange, $
+  GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
+                                          lc_angleRange, $
                                           i_angle,i_angle_up, $
                                           north_south, $
+                                          ALLEXCLATM_ARANGE=allExclAtm_aRange, $
                                           CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
                                           UPGOING=upgoing, $
                                           OUT_E_ANGLE=e_angle, $
