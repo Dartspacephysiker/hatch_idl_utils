@@ -84,7 +84,11 @@ FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
                                      OMAX1=OmaxMLT,OMAX2=OmaxILAT,OMIN1=OminMLT,OMIN2=OminILAT, $
                                      OBIN1=Obin1,OBIN2=Obin2, $
                                      DENSITY=Density, $
-                                     BINEDGE1=Binedge1,BINEDGE2=Binedge2;; , $
+                                     BINEDGE1=Binedge1,BINEDGE2=Binedge2, $
+                                     CALCVARIANCE=calcVariance, $
+                                     VAR__WEIGHTSARELOGGED=var__weightsAreLogged, $
+                                     NORMALIZE_VARIANCE=normalize_variance, $
+                                     OUT_VARIANCE=hVar
                                      ;; EQUAL_AREA_STRUCT=EA
 
   COMPILE_OPT IDL2,STRICTARRSUBS
@@ -193,6 +197,39 @@ FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
          ENDIF
 
          h = HIST1D(sum, Wgtc, MIN=0,MAX=latSwitch_i[-1],DENSITY=Density )
+
+         IF KEYWORD_SET(calcVariance) THEN BEGIN
+
+;  Align with means, subtract means, sqwar
+            hMean1D        = REFORM((KEYWORD_SET(var__weightsAreLogged) ? 10.D^(h) : h),N_ELEMENTS(h))
+            density1D      = REFORM(density,N_ELEMENTS(density))
+            nz_i           = WHERE(density1D GT 0,nNZero, $
+                                   COMPLEMENT=z_i, $
+                                   NCOMPLEMENT=nZero)
+
+            IF KEYWORD_SET(var__weightsAreLogged) THEN STOP
+
+            IF MAX(WHERE(density1D GT 0)) NE MAX(sum) THEN STOP
+            IF nNZero GT 0 THEN BEGIN
+               hMean1D[nz_i] /= density1D[nz_i]
+            ENDIF
+
+            meansInds      = LINDGEN(N_ELEMENTS(h))
+            meanIntoWgt_i  = VALUE_LOCATE(meansInds,sum)
+            wgtv           = (wgtc-hMean1D[meanIntoWgt_i])^2
+            
+            hVar           = HIST1D(sum, wgtv, $
+                                    MIN=0, $
+                                    MAX=latSwitch_i[-1], $
+                                    DENSITY=density)
+            ;; hVar           = REFORM(hVar,n1,n2, $
+            ;;                         /OVERWRITE)
+
+            hVar /= density
+
+            hvar = SQRT(hvar/density)/(h/density)
+            
+         ENDIF
 
          RETURN,h
 end
