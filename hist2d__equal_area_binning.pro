@@ -86,6 +86,7 @@ FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
                                      DENSITY=Density, $
                                      BINEDGE1=Binedge1,BINEDGE2=Binedge2, $
                                      CALCVARIANCE=calcVariance, $
+                                     VAROPT=varOpt, $
                                      VAR__WEIGHTSARELOGGED=var__weightsAreLogged, $
                                      NORMALIZE_VARIANCE=normalize_variance, $
                                      OUT_VARIANCE=hVar
@@ -200,34 +201,92 @@ FUNCTION HIST2D__EQUAL_AREA_BINNING, MLTs, ILATS, Weight, $
 
          IF KEYWORD_SET(calcVariance) THEN BEGIN
 
-;  Align with means, subtract means, sqwar
-            hMean1D        = REFORM((KEYWORD_SET(var__weightsAreLogged) ? 10.D^(h) : h),N_ELEMENTS(h))
+            IF KEYWORD_SET(varOpt) THEN BEGIN
+
+               assume_logNorm = 0
+
+               yes = !NULL
+               STR_ELEMENT,varOpt,'assume_lognorm',yes
+               IF N_ELEMENTS(yes) GT 0 THEN assume_lognorm = varOpt.assume_logNorm
+
+            ENDIF
+
+            ;;Can we do anything?
             density1D      = REFORM(density,N_ELEMENTS(density))
             nz_i           = WHERE(density1D GT 0,nNZero, $
                                    COMPLEMENT=z_i, $
                                    NCOMPLEMENT=nZero)
 
-            IF KEYWORD_SET(var__weightsAreLogged) THEN STOP
-
             IF MAX(WHERE(density1D GT 0)) NE MAX(sum) THEN STOP
-            IF nNZero GT 0 THEN BEGIN
-               hMean1D[nz_i] /= density1D[nz_i]
-            ENDIF
+            IF nNZero EQ 0 THEN STOP
 
-            meansInds      = LINDGEN(N_ELEMENTS(h))
-            meanIntoWgt_i  = VALUE_LOCATE(meansInds,sum)
-            wgtv           = (wgtc-hMean1D[meanIntoWgt_i])^2
+;  Align with means, subtract means, sqwar
+            CASE 1 OF
+               KEYWORD_SET(assume_logNorm): BEGIN
+                  hLog           = HIST1D(sum, ALOG(wgtc), $
+                                          MIN=0, $
+                                          MAX=n1 * n2 -1)
+
+                  ;;YMean meaning X  EQ e^Y, and we are examining Y at present
+                  hYMean1D       = REFORM(hLog,N_ELEMENTS(hLog))
+                  hYMean1D[nz_i] /= density1D[nz_i]
+
+                  meansInds      = LINDGEN(N_ELEMENTS(hLog))
+                  meanIntoWgt_i  = VALUE_LOCATE(meansInds,sum)
+                  wgtv           = (ALOG(wgtc)-hYMean1D[meanIntoWgt_i])^2
+                  
+                  hYVar          = HIST1D(sum, wgtv, $
+                                          MIN=0, $
+                                          MAX=n1*n2-1, $
+                                          DENSITY=density)
+                  hYVar          = REFORM(hYVar,n1,n2, $
+                                          /OVERWRITE)
+
+                  hYVar         /= (density-1) ;density-1 because sample variance
+
+                  hVar           = SQRT(EXP(hYVar)-1)
+
+               END
+               ELSE: BEGIN
+                  hMean1D  = REFORM((KEYWORD_SET(var__weightsAreLogged) ? 10.D^(h) : h),N_ELEMENTS(h))
+                  hMean1D[nz_i] /= density1D[nz_i]
+
+                  meansInds      = LINDGEN(N_ELEMENTS(h))
+                  meanIntoWgt_i  = VALUE_LOCATE(meansInds,sum)
+                  wgtv           = (wgtc-hMean1D[meanIntoWgt_i])^2
+                  
+                  hVar           = HIST1D(sum, wgtv, $
+                                          MIN=0, $
+                                          MAX=n1*n2-1, $
+                                          DENSITY=density)
+                  hVar           = REFORM(hVar,n1,n2, $
+                                          /OVERWRITE)
+
+                  hVar /= density
+
+                  hvar = SQRT(hvar/density)/(h/density)
+
+               END
+            ENDCASE
+
+            ;; hMean1D        = REFORM((KEYWORD_SET(var__weightsAreLogged) ? 10.D^(h) : h),N_ELEMENTS(h))
             
-            hVar           = HIST1D(sum, wgtv, $
-                                    MIN=0, $
-                                    MAX=latSwitch_i[-1], $
-                                    DENSITY=density)
+            ;; hMean1D[nz_i] /= density1D[nz_i]
+
+            ;; meansInds      = LINDGEN(N_ELEMENTS(h))
+            ;; meanIntoWgt_i  = VALUE_LOCATE(meansInds,sum)
+            ;; wgtv           = (wgtc-hMean1D[meanIntoWgt_i])^2
+            
+            ;; hVar           = HIST1D(sum, wgtv, $
+            ;;                         MIN=0, $
+            ;;                         MAX=latSwitch_i[-1], $
+            ;;                         DENSITY=density)
             ;; hVar           = REFORM(hVar,n1,n2, $
             ;;                         /OVERWRITE)
 
-            hVar /= density
+            ;; hVar /= density
 
-            hvar = SQRT(hvar/density)/(h/density)
+            ;; hvar = SQRT(hvar/density)/(h/density)
             
          ENDIF
 
