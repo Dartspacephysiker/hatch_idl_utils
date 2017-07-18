@@ -6,6 +6,7 @@ PRO GET_FAST_GEI_COORDS,times, $
                         GEI_COORD_FILENAME=GEI_coord_filename, $ 
                         GEI_STRUCT_NAME=GEI_struct_name, $
                         ORIG_ROUTINENAME=orig_routineName, $
+                        CHECK_IF_EXISTS=check_if_exists, $
                         QUIET=quiet
 
   COMPILE_OPT IDL2,STRICTARRSUBS

@@ -79,6 +79,7 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
                          GEI_COORD_FILENAME=GEI_coord_filename, $ 
                          GEI_STRUCT_NAME=defGEIStructName, $
                          ORIG_ROUTINENAME=orig_routineName, $
+                         CHECK_IF_EXISTS=check_if_exists, $
                          QUIET=quiet
 
      PRINT,"Finished getting GEI coords!"
