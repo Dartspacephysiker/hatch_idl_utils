@@ -12,7 +12,7 @@ PRO CONVERT_GEO_TO_AACGM, $
    R_E=R_E, $
    ALTITUDE_MAX=altitude_max, $
    ALLOW_FL_TRACE=allow_FL_trace, $
-   CHECK_IF_EXISTS=check_IF_exists, $
+   CHECK_IF_EXISTS=check_if_exists, $
    CREATE_NOTALTITUDE_FILE=create_notAltitude_file, $
    NOTALTITUDE_SUFF=notAltitude_suff, $
    CONVERT_VARNAMES_AND_RESAVE_OUTFILES=convert_varNames_and_resave_outFiles, $
