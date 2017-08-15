@@ -133,35 +133,35 @@ if n_elements(value) ne 1 then domega = dat.domega
 
 ; This section for FAST
 if max(dat.theta) gt 200. OR dat.project_name EQ 'FAST' then begin
-  if (theta(0, 0) eq theta(na-1, 0)) then nna = 0 else nna = na-1
+  if (theta(0,0) eq theta(na-1,0)) then nna = 0 else nna = na-1
   if ndimen(dtheta) eq 1 then dtheta = replicate(1., na)#dtheta
   domega = theta
-  for a = 0, nna do begin
-    for b = 0, nb-1 do begin
-      if (abs(theta(a, b)-!pi) lt dtheta(a, b)/2.) then begin 
-        th1 = (!pi+theta(a, b)-dtheta(a, b)/2.)/2.
-        dth1 = (!pi-th1)
-        th2 = (!pi+theta(a, b)+dtheta(a, b)/2.)/2.
-        dth2 = (th2-!pi)
-        domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)+abs(sin(th2))*sin(dth2)) 
-      endif else if (abs(theta(a, b)-2*!pi) lt dtheta(a, b)/2.) then begin
-        th1 = (2.*!pi+theta(a, b)-dtheta(a, b)/2.)/2.
-        dth1 = (2.*!pi-th1)
-        th2 = (2.*!pi+theta(a, b)+dtheta(a, b)/2.)/2.
-        dth2 = (th2-2.*!pi)
-        domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)+abs(sin(th2))*sin(dth2)) 
-      endif else if (abs(theta(a, b)) lt dtheta(a, b)/2.) then begin
-        th1 = (theta(a, b)-dtheta(a, b)/2.)/2.
-        dth1 = abs(th1)
-        th2 = (theta(a, b)+dtheta(a, b)/2.)/2.
-        dth2 = (th2)
-        domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)+abs(sin(th2))*sin(dth2)) 
-      endif else begin
-        th1 = theta(a, b)
-        dth1 = dtheta(a, b)/2.
-        domega(a, b) = 2.*!pi*abs(sin(th1))*sin(dth1)
-      endelse
-    endfor
+  for a=0, nna do begin
+     for b=0, nb-1 do begin
+        if (abs(theta(a, b)-!pi) lt dtheta(a, b)/2.) then begin 
+           th1 = (!pi+theta(a, b)-dtheta(a, b)/2.)/2.
+           dth1 = (!pi-th1)
+           th2 = (!pi+theta(a, b)+dtheta(a, b)/2.)/2.
+           dth2 = (th2-!pi)
+           domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)+abs(sin(th2))*sin(dth2)) 
+        endif else if (abs(theta(a, b)-2*!pi) lt dtheta(a, b)/2.) then begin
+           th1 = (2.*!pi+theta(a, b)-dtheta(a, b)/2.)/2.
+           dth1 = (2.*!pi-th1)
+           th2 = (2.*!pi+theta(a, b)+dtheta(a, b)/2.)/2.
+           dth2 = (th2-2.*!pi)
+           domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)+abs(sin(th2))*sin(dth2)) 
+        endif else if (abs(theta(a, b)) lt dtheta(a, b)/2.) then begin
+           th1 = (theta(a, b)-dtheta(a, b)/2.)/2.
+           dth1 = abs(th1)
+           th2 = (theta(a, b)+dtheta(a, b)/2.)/2.
+           dth2 = (th2)
+           domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)+abs(sin(th2))*sin(dth2)) 
+        endif else begin
+           th1 = theta(a, b)
+           dth1 = dtheta(a, b)/2.
+           domega(a, b) = 2.*!pi*abs(sin(th1))*sin(dth1)
+        endelse
+     endfor
   endfor
   if (nna eq 0) then for a = 1, na-1 do domega(a, *) = domega(0, *)
 endif

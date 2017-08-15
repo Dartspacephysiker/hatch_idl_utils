@@ -10,7 +10,7 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
 
 
   ;;See if we can get it from FA_POTENTIAL before going to the trouble
-  SPAWN,'ps ux | grep sdt',result
+  SPAWN,'ps x | grep sdt',result
   IF (WHERE(STRMATCH(result,'*FastDecom*')))[0] NE -1 THEN BEGIN
 
      IF ~(KEYWORD_SET(Chaston_style) OR KEYWORD_SET(from_file)) THEN BEGIN

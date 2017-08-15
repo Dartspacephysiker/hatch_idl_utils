@@ -222,15 +222,15 @@ FUNCTION OMEGA_ZZ_2D_B,dat2, $
               dth1 = (!pi-th1)
               th2 = (!pi+theta(a,b)+dtheta(a,b)/2.)/2.
               dth2 = (th2-!pi)
-;        	domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)+abs(sin(th2))*sin(dth2)) 
-              domega(a,b)=2.*!pi*(abs(sin(th1))*sin(dth1)*cos(th1)*cos(dth1) + abs(sin(th2))*sin(dth2)*cos(th1)*cos(dth2)) 
+;             domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)+abs(sin(th2))*sin(dth2)) 
+              domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)*cos(th1)*cos(dth1) + abs(sin(th2))*sin(dth2)*cos(th1)*cos(dth2)) 
            endif else if (abs(theta(a,b)-2*!pi) lt dtheta(a,b)/2.) then begin
               th1 = (2.*!pi+theta(a,b)-dtheta(a,b)/2.)/2.
               dth1 = (2.*!pi-th1)
               th2 = (2.*!pi+theta(a,b)+dtheta(a,b)/2.)/2.
               dth2 = (th2-2.*!pi)
-;        	domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)+abs(sin(th2))*sin(dth2)) 
-              domega(a,b)=2.*!pi*(abs(sin(th1))*sin(dth1)*cos(th1)*cos(dth1) + abs(sin(th2))*sin(dth2)*cos(th1)*cos(dth2)) 
+;             domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)+abs(sin(th2))*sin(dth2)) 
+              domega(a, b) = 2.*!pi*(abs(sin(th1))*sin(dth1)*cos(th1)*cos(dth1) + abs(sin(th2))*sin(dth2)*cos(th1)*cos(dth2)) 
            endif else if (abs(theta(a,b)) lt dtheta(a,b)/2.) then begin
               th1 = (theta(a,b)-dtheta(a,b)/2.)/2.
               dth1 = abs(th1)

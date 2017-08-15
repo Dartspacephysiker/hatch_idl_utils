@@ -19,7 +19,6 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   Const_je = (mass)^(-2.)*(2.)*(1.e5)*1.6e-12
   Const_p  = (mass)^(-2.5)*(2.)^1.5
 
-
   moments  = 0.
 
   if dat2.valid eq 0 then begin
