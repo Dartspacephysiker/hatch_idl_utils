@@ -8,7 +8,7 @@
 ; A[3]: n,         Plasma density (cm^-3)
 ; A[4]: bulkAngle, Angle between bulk velocity, u_b, and velocity in direction for which we're interested in the distribution
 
-; This function returns s^3/cm^3-km^3
+; This function returns s^3/cm^3-km^3 (unless you do something with the units)
 
 FUNCTION MAXWELL_FLUX__FUNC,X,P,DP, $
                             UNITS=units, $
@@ -64,6 +64,12 @@ FUNCTION MAXWELL_FLUX__FUNC,X,P,DP, $
         ;; Finv      = n * ( m / 2.D ) ^ (1.5D) * energy
         ;; Finv     *= energy
         Finv     *= DOUBLE(2e5) * energy / inMass^2 ;/  inDT
+     END
+     'DF': BEGIN                ; 'DF'     :  #/(km^3-(cm/s)^3)
+        ;;Just leave 'er, Ted!
+     END
+     'DFSTD': BEGIN             ; 'DFSTD'  :  s^3/m^6
+        Finv /= DOUBLE(1D3)
      END
   ENDCASE
 

@@ -9,6 +9,11 @@
 ; A[4]: bulkAngle, Angle between bulk velocity, u_b, and velocity in direction for which we're interested in the distribution
 
 ; This function returns s^3/cm^3-km^3
+;
+; If in DFSTD units, the max val should be of order 10^-16 or less (or thereabouts).
+; Why? look: n = 1.0 cm^-3 = 10^6 m^-3.   T = 500 eV. m = 5.11 keV/c^2. c = 3.0e8
+; The frontmost term is n (m / 2 / !PI / T)^(3.D/2.D)
+; code: n = 1D6 & T = 500 & c = 3.0D8 & m = 5.11D5 / c^2 & maxTerm = n * (m / 2.D / !PI / T)^(3.D/2.D) & PRINT,maxTerm
 
 FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
    UNITS=units, $
@@ -76,6 +81,12 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
         ;; Finv      = n * ( m / 2.D ) ^ (1.5D) * energy
         ;; Finv     *= energy
         Finv     *= DOUBLE(2e5) * energy / inMass^2 ;/  inDT
+     END
+     'DF': BEGIN                ; 'DF'     :  #/(km^3-(cm/s)^3)
+        ;;Just leave 'er, Ted!
+     END
+     'DFSTD': BEGIN             ; 'DFSTD'  :  s^3/m^6
+        Finv /= DOUBLE(1D3)
      END
   ENDCASE
 
