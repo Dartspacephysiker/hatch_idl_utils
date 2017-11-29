@@ -252,7 +252,7 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
      add_str_element,oplotstuff,'yticks',2,/REPLACE
      add_str_element,plotstuff,'ytickv',[1,3,5],/REPLACE
      add_str_element,oplotstuff,'ytickv',[1,3,5],/REPLACE
-     col  =   [ 100      ,250   ,!p.color]
+     col  =   [ 100      ,235   ,!p.color]
   ENDIF ELSE BEGIN
      names = ['Mono','Strict Mono','Broad','Strict Broad','Diffuse' ]
      add_str_element,plotstuff ,'ytickname',names
@@ -261,7 +261,7 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
      add_str_element,oplotstuff,'yticks',4,/REPLACE
      add_str_element,plotstuff,'ytickv',[1,2,3,4,5],/REPLACE
      add_str_element,oplotstuff,'ytickv',[1,2,3,4,5],/REPLACE
-     col  =   [ 100      ,120   ,250   ,30    ,!p.color]
+     col  =   [ 100      ,120   ,235   ,30    ,!p.color]
   ENDELSE
   ;; add_str_element,plotstuff,'ytickv',[2,3,4,5,6],/REPLACE
   ;; add_str_element,oplotstuff,'ytickv',[2,3,4,5,6],/REPLACE
