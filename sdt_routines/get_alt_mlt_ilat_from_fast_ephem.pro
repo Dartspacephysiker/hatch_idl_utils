@@ -21,7 +21,7 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
 
         CASE 1 OF
            N_ELEMENTS(timeArr) EQ 2: BEGIN
-              PRINT,"GET_ALT_MLT_ILAT_FROM_FAST_EPHEM: Beginning-and-end-array mode"
+              ;; PRINT,"GET_ALT_MLT_ILAT_FROM_FAST_EPHEM: Beginning-and-end-array mode"
            END
            N_ELEMENTS(orb) EQ 1: BEGIN
               PRINT,"GET_ALT_MLT_ILAT_FROM_FAST_EPHEM: Orb (" + STRCOMPRESS(orb) + ") mode"
