@@ -6,6 +6,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    NAME__DIFF_EFLUX=name__diff_eFlux, $
                    CALC_GEOM_FACTORS=calc_geom_factors, $
                    CLEAN_THE_MCFADDEN_WAY=clean_the_McFadden_way, $
+                   MCFADDEN_GAP_TIME=gap_time, $
                    ;; UNITS=units, $          
                    ;; ANGLE=angle, $
                    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
@@ -15,7 +16,8 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
                    DIFF_EFLUX_FILE=diff_eFlux_file, $
                    LOAD_DAT_FROM_FILE=loadFile, $
-                   LOAD_DIR=loadDir
+                   LOAD_DIR=loadDir, $
+                   NO_DATA=no_data
                    
   ;; QUIET=quiet
 
@@ -72,76 +74,120 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
      IF KEYWORD_SET(clean_the_McFadden_way) THEN BEGIN
 
 
+        killed = 0
+        ;; First needs to be valid
+        IF ~dat_eFlux[0].valid THEN BEGIN
+           no_data = 1
+           RETURN
+        ENDIF ELSE no_data = 0
+
+        ;; Just following MAKE_ESA_CDF in SDT IDL routines
+        IF NOT KEYWORD_SET(gap_time) then gap_time = 4. ; for burst data gap_time should be 0.1
+        ;; if routine eq 'fa_ees_c' then nskip=2 else nskip=3
+        nskip = 3               ;Assume that 3 need to be skipped. I have no idea why fa_ees_c has any bearing
+
+        last_delta_time=dat_eFlux[0].end_time-dat_eFlux[0].time
+        last_time = (dat_eFlux[0].time+dat_eFlux[0].end_time)/2.
+
         ind = 0
         max = N_ELEMENTS(dat_eFlux)
+        invalidInds = !NULL
         ;; Skip to first good one
         WHILE ind LT max DO BEGIN
-           IF dat_eFlux[ind].valid THEN BREAK ELSE ind++
-        ENDWHILE
 
-        ;;YOU ARE HERE
-
-        last_time = (dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2.
-        last_delta_time=dat_eFlux[ind].end_time-dat_eFlux[ind].time
-
-
-        WHILE (dat_eFlux[ind].valid) AND (ind lt max) do begin
            IF (dat_eFlux[ind].valid) THEN BEGIN
 
               ;; Test to see if a transition between fast and slow survey occurs, 
               ;; ie delta_time changes, and skip some data if it does.
-              if (abs((dat_eFlux[ind].end_time-dat_eFlux[ind].time) - last_delta_time) gt 1. ) then begin
-                 if routine eq 'fa_ees_c' then nskip=2 else nskip=3
-                                ; if fast to slow, skip two or three arrays
-                 if (dat_eFlux[ind].end_time-dat_eFlux[ind].time) gt last_delta_time then begin
-                    for i=1,nskip do begin
-                       dat = call_function(routine,t,/calib,/ad)
-                    endfor
-                 endif else begin
-                    while dat_eFlux[ind].time lt last_time+7.5 do begin
-                       dat = call_function(routine,t,/calib,/ad)
-                    endwhile
-                 endelse
-              endif
+              IF (abs((dat_eFlux[ind].end_time-dat_eFlux[ind].time) - last_delta_time) GT 1. ) THEN BEGIN
+                 
+                 ;; if fast to slow, skip two or three arrays
+                 IF (dat_eFlux[ind].end_time-dat_eFlux[ind].time) GT last_delta_time THEN BEGIN
+                    ;; FOR i=1,nskip DO BEGIN
+                    ;;    dat = call_function(routine,t,/calib,/ad)
+                    ;; ENDFOR
+                    CASE 1 OF
+                       ((ind+nskip) GE max) AND (ind EQ 0): BEGIN
+                          dat_eFlux = !NULL
+                          no_data   = 1
+                          killed   += max
+                       END
+                       (ind+nskip) GE max: BEGIN
+                          indsBef   = [0:(ind-1)]
+                          ;; dat_eFlux = dat_eFlux
+                          killed   += (ind+nskip-max)
+                          indsAft   = !NULL
+                          ind       = max
+                       END
+                       ELSE: BEGIN
+                          indsBef  = [0:(ind-1)]
+                          indsAft  = [(ind+nskip-1):max]      
+                          killed  += 3
+                       END
+                    ENDCASE
+                    IF no_data THEN RETURN
+                    inds      = [indsBef,indsAft]
+                    dat_eFlux = dat_eFlux[inds]
+
+                 ENDIF ELSE BEGIN
+                    WHILE dat_eFlux[ind].time LT last_time+7.5 DO BEGIN
+                       ind++
+                       killed++
+                    ENDWHILE
+                 ENDELSE
+              ENDIF
               
               ;; Test for data gaps and add NAN if gaps are present.
-              if abs((dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2.-last_time) ge gap_time then begin
-                 if n ge 2 then dbadtime = cdfdat[n-1].time - cdfdat[n-2].time else dbadtime = gap_time/2.
-                 cdfdat[n].time = (last_time) + dbadtime
-                 cdfdat[n].delta_time = !values.f_nan
-                 cdfdat[n].data[*,*] = !values.f_nan
-                 cdfdat[n].energy[*] = !values.f_nan
-                 cdfdat[n].angle[*,*] = !values.f_nan
-                 cdfdat[n].n_energy = !values.f_nan
-                 cdfdat[n].n_angle = !values.f_nan
-                 n=n+1
-;;            if ((dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2. gt cdfdat(n-1).time + gap_time) and (n lt max) then begin
-;;               cdfdat[n].time = (dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2. - dbadtime
-;;               cdfdat[n].delta_time = !values.f_nan
-;;               ;; cdfdat[n].data(*,*) = !values.f_nan
-;; ;			cdfdat[n].energy(*,*) = !values.f_nan
-;;               cdfdat[n].energy(*) = !values.f_nan
-;;               ;; cdfdat[n].angle(*,*) = !values.f_nan
-;;               cdfdat[n].n_energy = !values.f_nan
-;;               cdfdat[n].n_angle = !values.f_nan
-;;               n=n+1
-;;            endif
-              endif
+              IF abs((dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2.-last_time) GE gap_time THEN BEGIN
+                 IF ind GE 2 THEN dbadtime = dat_eFlux[ind-1].time - dat_eFlux[ind-2].time ELSE dbadtime = gap_time/2.
+                 dat_eFlux[ind].time = (last_time) + dbadtime
+                 ;; dat_eFlux[ind].delta_time = !values.f_nan
+                 dat_eFlux[ind].data[*,*] = !values.f_nan
+                 dat_eFlux[ind].energy[*] = !values.f_nan
+                 ;; dat_eFlux[ind].angle[*,*] = !values.f_nan
+                 dat_eFlux[ind].theta[*,*] = !values.f_nan
+                 dat_eFlux[ind].nenergy = !values.f_nan
+                 ;; dat_eFlux[ind].n_angle = !values.f_nan
+                 ind++
+                 killed++
+                 IF ((dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2. GT dat_eFlux[ind-1].time + gap_time) AND $
+                    (ind LT max) $
+                 THEN BEGIN
+                    dat_eFlux[ind].time = (dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2. - dbadtime
+                    ;; dat_eFlux[ind].delta_time = !values.f_nan
+                    dat_eFlux[ind].data[*,*] = !values.f_nan
+;			dat_eFlux[ind].energy(*,*) = !values.f_nan
+                    dat_eFlux[ind].energy[*] = !values.f_nan
+                    dat_eFlux[ind].theta[*,*] = !values.f_nan
+                    dat_eFlux[ind].nenergy = !values.f_nan
+                    ;; dat_eFlux[ind].n_angle = !values.f_nan
+                    ind++
+                    killed++
+                 ENDIF
+              ENDIF
 
-           endif else begin
-              print,'Invalid packet, dat_eFlux[ind].valid ne 1, at: ',time_to_str(dat_eFlux[ind].time)
-           endelse
+           ENDIF;;  ELSE BEGIN
+           ;;    PRINT,'Invalid packet, dat_eFlux[ind].valid ne 1, at: ',TIME_TO_STR(dat_eFlux[ind].time)
+           ;;    invalidInds = [invalidInds,ind]
+           ;; ENDELSE
 
-           dat = call_function(routine,t,/calib,/ad)
-           IF dat_eFlux[ind].valid THEN IF dat_eFlux[ind].time GT tmax THEN dat_eFlux[ind].valid=0
+           last_time       = (dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2.
+           last_delta_time = dat_eFlux[ind].end_time-dat_eFlux[ind].time
+           ind++
 
         ENDWHILE
+
+        invalid = ~dat_eFlux.valid OR (dat_eFlux.nenergy EQ !values.f_nan)
+        invalidInds = WHERE(invalid,nInvalid)
+
+        PRINT,FORMAT='(I0,A0)',nInvalid," invalid structs here"
+        PRINT,FORMAT='(I0,A0)',killed," were killed ..."
 
      ENDIF
 
      tmpT                    = (dat_eFlux[*].time+dat_eFlux[*].end_time)/2.D
      nHere                   = N_ELEMENTS(tmpT)
-     keep                    = WHERE(tmpT GE t1 AND tmpT LE t2,nKeep)
+     keep                    = WHERE(tmpT GE t1 AND tmpT LE t2 AND ~invalid,nKeep)
      
      IF nKeep NE nHere THEN BEGIN
 
