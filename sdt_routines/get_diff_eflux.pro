@@ -5,6 +5,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    SC_POT=sc_pot, $
                    NAME__DIFF_EFLUX=name__diff_eFlux, $
                    CALC_GEOM_FACTORS=calc_geom_factors, $
+                   CLEAN_THE_MCFADDEN_WAY=clean_the_McFadden_way, $
                    ;; UNITS=units, $          
                    ;; ANGLE=angle, $
                    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
@@ -67,6 +68,76 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
      dat_eFlux               = CALL_FUNCTION(routine,t1Tmp,t2Tmp, $
                                              CALIB=calc_geom_factors)
+
+     IF KEYWORD_SET(clean_the_McFadden_way) THEN BEGIN
+
+
+        ind = 0
+        max = N_ELEMENTS(dat_eFlux)
+        ;; Skip to first good one
+        WHILE ind LT max DO BEGIN
+           IF dat_eFlux[ind].valid THEN BREAK ELSE ind++
+        ENDWHILE
+
+        ;;YOU ARE HERE
+
+        last_time = (dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2.
+        last_delta_time=dat_eFlux[ind].end_time-dat_eFlux[ind].time
+
+
+        WHILE (dat_eFlux[ind].valid) AND (ind lt max) do begin
+           IF (dat_eFlux[ind].valid) THEN BEGIN
+
+              ;; Test to see if a transition between fast and slow survey occurs, 
+              ;; ie delta_time changes, and skip some data if it does.
+              if (abs((dat_eFlux[ind].end_time-dat_eFlux[ind].time) - last_delta_time) gt 1. ) then begin
+                 if routine eq 'fa_ees_c' then nskip=2 else nskip=3
+                                ; if fast to slow, skip two or three arrays
+                 if (dat_eFlux[ind].end_time-dat_eFlux[ind].time) gt last_delta_time then begin
+                    for i=1,nskip do begin
+                       dat = call_function(routine,t,/calib,/ad)
+                    endfor
+                 endif else begin
+                    while dat_eFlux[ind].time lt last_time+7.5 do begin
+                       dat = call_function(routine,t,/calib,/ad)
+                    endwhile
+                 endelse
+              endif
+              
+              ;; Test for data gaps and add NAN if gaps are present.
+              if abs((dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2.-last_time) ge gap_time then begin
+                 if n ge 2 then dbadtime = cdfdat[n-1].time - cdfdat[n-2].time else dbadtime = gap_time/2.
+                 cdfdat[n].time = (last_time) + dbadtime
+                 cdfdat[n].delta_time = !values.f_nan
+                 cdfdat[n].data[*,*] = !values.f_nan
+                 cdfdat[n].energy[*] = !values.f_nan
+                 cdfdat[n].angle[*,*] = !values.f_nan
+                 cdfdat[n].n_energy = !values.f_nan
+                 cdfdat[n].n_angle = !values.f_nan
+                 n=n+1
+;;            if ((dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2. gt cdfdat(n-1).time + gap_time) and (n lt max) then begin
+;;               cdfdat[n].time = (dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2. - dbadtime
+;;               cdfdat[n].delta_time = !values.f_nan
+;;               ;; cdfdat[n].data(*,*) = !values.f_nan
+;; ;			cdfdat[n].energy(*,*) = !values.f_nan
+;;               cdfdat[n].energy(*) = !values.f_nan
+;;               ;; cdfdat[n].angle(*,*) = !values.f_nan
+;;               cdfdat[n].n_energy = !values.f_nan
+;;               cdfdat[n].n_angle = !values.f_nan
+;;               n=n+1
+;;            endif
+              endif
+
+           endif else begin
+              print,'Invalid packet, dat_eFlux[ind].valid ne 1, at: ',time_to_str(dat_eFlux[ind].time)
+           endelse
+
+           dat = call_function(routine,t,/calib,/ad)
+           IF dat_eFlux[ind].valid THEN IF dat_eFlux[ind].time GT tmax THEN dat_eFlux[ind].valid=0
+
+        ENDWHILE
+
+     ENDIF
 
      tmpT                    = (dat_eFlux[*].time+dat_eFlux[*].end_time)/2.D
      nHere                   = N_ELEMENTS(tmpT)
