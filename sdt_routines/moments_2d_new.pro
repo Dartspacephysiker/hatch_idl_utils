@@ -11,6 +11,7 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   ;; COMPILE_OPT IDL2,STRICTARRSUBS
 
   common last_pot,pot
+  COMMON momTemplate,momTmplt
   if not keyword_set(pot) then pot=0.
 
   mass     = dat2.mass     
@@ -19,11 +20,30 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   Const_je = (mass)^(-2.)*(2.)*(1.e5)*1.6e-12
   Const_p  = (mass)^(-2.5)*(2.)^1.5
 
-  moments  = 0.
+  IF N_ELEMENTS(momTmplt) EQ 0 THEN BEGIN
+     momTmplt = {n    :   !VALUES.f_NaN, $
+                j     :   !VALUES.f_NaN, $
+                je    :   !VALUES.f_NaN, $
+                jje   :   !VALUES.f_NaN, $
+                p     :   !VALUES.f_NaN, $
+                T     :   !VALUES.f_NaN, $
+                v     :   !VALUES.f_NaN, $
+                charE :   !VALUES.f_NaN, $
+                perp  : {j     : !VALUES.f_NaN, $
+                         je    : !VALUES.f_NaN, $
+                         jje   : !VALUES.f_NaN, $
+                         v     : !VALUES.f_NaN, $
+                         charE : !VALUES.f_NaN}, $
+                all   : {speed : !VALUES.f_NaN, $
+                         j     : !VALUES.f_NaN, $
+                         je    : !VALUES.f_NaN, $
+                         charE : !VALUES.f_NaN}}
+  ENDIF
+  ;; moments  = 0.
 
   if dat2.valid eq 0 then begin
      print,'Invalid Data'
-     return, moments
+     return, momTmplt
   endif
 
   dat = conv_units(dat2,"df")   ; Use distribution function

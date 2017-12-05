@@ -113,7 +113,7 @@ FUNCTION OMEGA_ZZ_2D_B,dat2, $
 
      ENDIF ELSE BEGIN
 
-        PRINT,"Couldn't get sc_pot ..."
+        ;; PRINT,"Couldn't get sc_pot ..."
         STR_ELEMENT,dat,'sc_pot',0.,/ADD_REPLACE
 
      ENDELSE

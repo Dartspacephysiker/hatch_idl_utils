@@ -91,6 +91,12 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                     ORBIT=orbit, $
                     NEW_MOMENT_ROUTINE=new_moment_routine, $
                     QUIET=quiet, $
+                    MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux, $
+                    PROVIDING_EPHEM_INFO=providing_ephem_info, $
+                    IN_ALT=alt, $
+                    IN_ILAT=ilat, $
+                    IN_MLT=mlt, $
+                    INOUT_MAPRATIO=mapRatio, $
                     OUT_STRUCT=struct, $
                     OUTTIME=time, $
                     OUT_N=n, $
@@ -115,8 +121,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                     OUT_ERR_PERPJ_=jPerpErr, $
                     OUT_ERR_PERPJE=jePerpErr, $
                     OUT_ERR_PERPCURRENT=curPerpErr, $
-                    OUT_ERR_PERPCHARE=charEPerpErr, $
-                    OUT_MAPRATIO=mapRatio
+                    OUT_ERR_PERPCHARE=charEPerpErr
 
 
   COMPILE_OPT IDL2,STRICTARRSUBS
@@ -147,7 +152,12 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                                                ANGLE=aRange__moments, $
                                                SC_POT=sc_pot, $
                                                EEB_OR_EES=eeb_or_ees, $
+                                               MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux, $
                                                QUIET=quiet)
+
+        ;; 2017/12/05 You are here, working on orbit 1533 via PROCESS_MCFADDEN_STYLE_ESA_STRUCTS
+        ;; this = WHERE(moms.y[*].n GE 2)
+        ;; FOR k=0,N_ELEMENTS(this)-1 DO PRINT,t2s(moms.x[this[k]]),moms.y[this[k]].n
 
         n    = moms.y[*].n
         j    = moms.y[*].j
@@ -430,15 +440,24 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
   ENDIF
 
-  GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orbit,time, $
-                                   OUT_TSORTED_I=tSort_i, $
-                                   OUT_ALT=alt, $
-                                   OUT_MLT=mlt, $
-                                   OUT_ILAT=ilat, $
-                                   OUT_MAPRATIO=mapRatio, $
-                                   OUT_NEVENTS=nEvents, $
-                                   LOGLUN=logLun
-  IF N_ELEMENTS(tSort_i) GT 0 THEN STOP
+  IF ~(KEYWORD_SET(providing_ephem_info) AND $
+       N_ELEMENTS(alt      ) GT 0        AND $
+       N_ELEMENTS(ilat     ) GT 0        AND $
+       N_ELEMENTS(mlt      ) GT 0        AND $
+       N_ELEMENTS(mapRatio ) GT 0           ) $
+  THEN BEGIN
+
+     GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orbit,time, $
+                                      OUT_TSORTED_I=tSort_i, $
+                                      OUT_ALT=alt, $
+                                      OUT_MLT=mlt, $
+                                      OUT_ILAT=ilat, $
+                                      OUT_MAPRATIO=mapRatio, $
+                                      OUT_NEVENTS=nEvents, $
+                                      LOGLUN=logLun
+     IF N_ELEMENTS(tSort_i) GT 0 THEN STOP
+
+  ENDIF
 
   north_south     = ABS(ilat)/ilat
 
