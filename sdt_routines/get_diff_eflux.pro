@@ -84,18 +84,27 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
         last_time = (dat.time+dat.end_time)/2.
         last_delta_time=dat.end_time-dat.time
-        nenergy=dat.nenergy
-        ;;if dat.data_name eq 'Eesa Survey' then nenergy=47
-        if dat.data_name eq 'Eesa Survey' then nenergy=96
-        if dat.data_name eq 'Iesa Survey' then nenergy=48
-        ;;if dat.data_name eq 'Eesa Burst' then nenergy=47
-        if dat.data_name eq 'Eesa Burst' then nenergy=96
-        if dat.data_name eq 'Iesa Burst' then nenergy=48
-        if nenergy eq 47 then retrace=1 else retrace=0
-        nbins=dat.nbins
-        if dat.data_name eq 'Eesa Survey' then nbins=64
-        if dat.data_name eq 'Iesa Survey' then nbins=64
         if not keyword_set(gap_time) then gap_time = 4. ; for burst data gap_time should be 0.1
+
+        ;;;;;;;;;;;;;;;;;;;;
+        ;; ALDER (2017/12/05)
+        ;; nenergy=dat.nenergy
+        ;; nbins=dat.nbins
+        ;;if dat.data_name eq 'Eesa Survey' then nenergy=47
+        ;; if dat.data_name eq 'Eesa Survey' then nenergy=96
+        ;; if dat.data_name eq 'Iesa Survey' then nenergy=48
+        ;; ;;if dat.data_name eq 'Eesa Burst' then nenergy=47
+        ;; if dat.data_name eq 'Eesa Burst' then nenergy=96
+        ;; if dat.data_name eq 'Iesa Burst' then nenergy=48
+        ;; if nenergy eq 47 then retrace=1 else retrace=0
+        ;; if dat.data_name eq 'Eesa Survey' then nbins=64
+        ;; if dat.data_name eq 'Iesa Survey' then nbins=64
+
+        ;;;;;;;;;;;;;;;;;;;;
+        ;; NYE
+        nenergy = 48
+        nbins   = 64
+        retrace = 0
 
         ;;;;;;;;;;;;;;;;;;;;
         ;; ALDER (2017/12/05)
@@ -105,9 +114,9 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
         ;;;;;;;;;;;;;;;;;;;;
         ;; NYE
-        data=fltarr(nenergy,nbins)*0.
-        energy=fltarr(nenergy)*0.
-        angle=fltarr(nenergy,nbins)*0.
+        ;; data=fltarr(nenergy,nbins)*0.
+        ;; energy=fltarr(nenergy)*0.
+        ;; angle=fltarr(nenergy,nbins)*0.
 
         darr=[1.d,1.d,1.d]
         ;; cdfdat0={time:dat.time,delta_time:dat.integ_t,data:data,$
@@ -123,20 +132,27 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                  time                  : dat.time, $
                  end_time              : dat.end_time*0.D, $
                  integ_t               : dat.integ_t, $
-                 nbins                 : dat.nbins, $
-                 nenergy               : dat.nenergy, $
+                 nbins                 : nbins, $
+                 nenergy               : nenergy, $
                  ;; delta_time         : dat.integ_t, $
-                 data                  : data, $
-                 energy                : energy, $
-                 theta                 : dat.theta, $
+                 ;; data                  : dat.data, $
+                 data                  : fltarr(nenergy,nbins)*0., $
+                 ;; energy                : dat.energy, $
+                 energy                : fltarr(nenergy,nbins)*0., $
+                 ;; theta                 : dat.theta, $
+                 theta                 : fltarr(nenergy,nbins)*0., $
                  ;; angle              : angle, $
-                 geom                  : dat.geom, $
-                 denergy               : denergy, $
-                 dtheta                : dtheta, $
-                 eff                   : eff, $
-                 mass                  : mass, $
-                 geomfactor            : geomfactor, $
-                 header_bytes          : header_bytes, $
+                 ;; geom                  : dat.geom, $
+                 ;; denergy               : dat.denergy, $
+                 ;; dtheta                : dat.dtheta, $
+                 ;; eff                   : dat.eff, $
+                 geom                  : fltarr(nenergy,nbins)*0., $
+                 denergy               : fltarr(nenergy,nbins)*0., $
+                 dtheta                : fltarr(nenergy,nbins)*0., $
+                 eff                   : fltarr(nenergy), $
+                 mass                  : dat.mass, $
+                 geomfactor            : dat.geomfactor, $
+                 header_bytes          : dat.header_bytes, $
                  index                 : dat.index, $
                  ;; n_energy              : nenergy, $
                  ;; n_angle               : nbins, $
@@ -157,6 +173,11 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
         ;;	Collect the data - Main Loop
         
+        nNanned = 0
+        ;; if routine eq 'fa_ees_c' then nskip=2 else nskip=3
+        ;; if fast to slow, skip two or three arrays
+        nskip = 3
+
         if keyword_set(t2) then tmax=t2 else tmax=1.e30
 
         while (dat.valid ne 0) and (n lt max) do begin
@@ -165,8 +186,6 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
               ;; Test to see if a transition between fast and slow survey occurs, 
               ;; ie delta_time changes, and skip some data if it does.
               if (abs((dat.end_time-dat.time) - last_delta_time) gt 1. ) then begin
-                 if routine eq 'fa_ees_c' then nskip=2 else nskip=3
-                                ; if fast to slow, skip two or three arrays
                  if (dat.end_time-dat.time) gt last_delta_time then begin
                     for i=1,nskip do begin
                        dat = call_function(routine,t,/calib,/ad)
@@ -205,6 +224,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                  cdfdat[n].nbins = !values.f_nan
 
                  n=n+1
+                 nNanned++
 
                  if ((dat.time+dat.end_time)/2. gt cdfdat[n-1].time + gap_time) and (n lt max) then begin
 
@@ -229,6 +249,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                     cdfdat[n].nenergy = !values.f_nan
                     cdfdat[n].nbins = !values.f_nan
                     n=n+1
+                    nNanned++
 
                  endif
               endif
@@ -288,13 +309,13 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                  cdfdat[n].integ_t          = dat.integ_t               
                  cdfdat[n].nbins            = dat.nbins                 
                  cdfdat[n].nenergy          = dat.nenergy               
-                 cdfdat[n].data             = dat.data                  
-                 cdfdat[n].energy           = dat.energy                
-                 cdfdat[n].theta            = dat.theta                 
-                 cdfdat[n].geom             = dat.geom                  
-                 cdfdat[n].denergy          = dat.denergy               
-                 cdfdat[n].dtheta           = dat.dtheta                
-                 cdfdat[n].eff              = dat.eff                   
+                 cdfdat[n].data[0:dat.nenergy-1,0:dat.nbins-1]    = dat.data                  
+                 cdfdat[n].energy[0:dat.nenergy-1,0:dat.nbins-1]  = dat.energy                
+                 cdfdat[n].theta[0:dat.nenergy-1,0:dat.nbins-1]   = dat.theta                 
+                 cdfdat[n].geom[0:dat.nenergy-1,0:dat.nbins-1]    = dat.geom                  
+                 cdfdat[n].denergy[0:dat.nenergy-1,0:dat.nbins-1] = dat.denergy               
+                 cdfdat[n].dtheta[0:dat.nenergy-1,0:dat.nbins-1]  = dat.dtheta                
+                 cdfdat[n].eff[0:dat.nenergy-1]                   = dat.eff                   
                  cdfdat[n].mass             = dat.mass                  
                  cdfdat[n].geomfactor       = dat.geomfactor            
                  cdfdat[n].header_bytes     = dat.header_bytes          
@@ -319,6 +340,10 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         cdfdat=cdfdat[0:n-1]
         time = cdfdat.time
 
+        cdfdat = cdfdat[SORT(time)]
+        time   = time[SORT(time)]
+
+        print,FORMAT='(A0,I0)','n NaNned: ',nNanned
         ;; Get the orbit data
 
         orbit_file=fa_almanac_dir()+'/orbit/predicted'
