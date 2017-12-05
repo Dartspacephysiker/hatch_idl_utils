@@ -96,18 +96,61 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         if dat.data_name eq 'Eesa Survey' then nbins=64
         if dat.data_name eq 'Iesa Survey' then nbins=64
         if not keyword_set(gap_time) then gap_time = 4. ; for burst data gap_time should be 0.1
-        data=fltarr(nenergy,nbins)
-        energy=fltarr(nenergy)
-        angle=fltarr(nenergy,nbins)
 
-        n = 0
-        max = 5000              ; this could be improved (increased from 2000 - KRB)
+        ;;;;;;;;;;;;;;;;;;;;
+        ;; ALDER (2017/12/05)
+        ;; data=fltarr(nenergy,nbins) 
+        ;; energy=fltarr(nenergy)
+        ;; angle=fltarr(nenergy,nbins)
+
+        ;;;;;;;;;;;;;;;;;;;;
+        ;; NYE
+        data=fltarr(nenergy,nbins)*0.
+        energy=fltarr(nenergy)*0.
+        angle=fltarr(nenergy,nbins)*0.
 
         darr=[1.d,1.d,1.d]
-        cdfdat0={time:dat.time,delta_time:dat.integ_t,data:data,$
-                 energy:energy,angle:angle,n_energy:nenergy,n_angle:nbins,$
-                 fa_pos:darr,fa_vel:darr,alt:1.d,ilat:1.d,mlt:1.d,orbit:3l,$
-                 b_model:darr,b_foot:darr,foot_lat:1.d,foot_lng:1.d}
+        ;; cdfdat0={time:dat.time,delta_time:dat.integ_t,data:data,$
+        ;;          energy:energy,angle:angle,n_energy:nenergy,n_angle:nbins,$
+        ;;          fa_pos:darr,fa_vel:darr,alt:1.d,ilat:1.d,mlt:1.d,orbit:3l,$
+        ;;          b_model:darr,b_foot:darr,foot_lat:1.d,foot_lng:1.d}
+
+        cdfdat0={data_name             : dat.data_name, $
+                 valid                 : 0B, $
+                 project_name          : 'FAST', $
+                 units_name            : dat.units_name, $
+                 units_procedure       : dat.units_procedure, $
+                 time                  : dat.time, $
+                 end_time              : dat.end_time*0.D, $
+                 integ_t               : dat.integ_t, $
+                 nbins                 : dat.nbins, $
+                 nenergy               : dat.nenergy, $
+                 ;; delta_time         : dat.integ_t, $
+                 data                  : data, $
+                 energy                : energy, $
+                 theta                 : dat.theta, $
+                 ;; angle              : angle, $
+                 geom                  : dat.geom, $
+                 denergy               : denergy, $
+                 dtheta                : dtheta, $
+                 eff                   : eff, $
+                 mass                  : mass, $
+                 geomfactor            : geomfactor, $
+                 header_bytes          : header_bytes, $
+                 index                 : dat.index, $
+                 ;; n_energy              : nenergy, $
+                 ;; n_angle               : nbins, $
+                 fa_pos                : darr, $
+                 fa_vel                : darr, $
+                 alt                   : 1.d, $
+                 ilat                  : 1.d, $
+                 mlt                   : 1.d, $
+                 orbit                 : 3l, $
+                 b_model               : darr, $
+                 b_foot                : darr, $
+                 foot_lat              : 1.d, $
+                 foot_lng              : 1.d}
+
         cdfdat=replicate(cdfdat0,max)
 
         if not keyword_set(units) then units = 'Eflux'
@@ -138,52 +181,127 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
               ;; Test for data gaps and add NAN if gaps are present.
               if abs((dat.time+dat.end_time)/2.-last_time) ge gap_time then begin
                  if n ge 2 then dbadtime = cdfdat[n-1].time - cdfdat[n-2].time else dbadtime = gap_time/2.
+
+                 ;;;;;;;;;;;;;;;;;;;;
+                 ;; ALDER (2017/12/05)
+                 ;; cdfdat[n].time = (last_time) + dbadtime
+                 ;; cdfdat[n].delta_time = !values.f_nan
+                 ;; cdfdat[n].data[*,*] = !values.f_nan
+                 ;; ;;		cdfdat[n].energy[*,*] = !values.f_nan
+                 ;; cdfdat[n].energy[*] = !values.f_nan
+                 ;; cdfdat[n].angle[*,*] = !values.f_nan
+                 ;; cdfdat[n].n_energy = !values.f_nan
+                 ;; cdfdat[n].n_angle = !values.f_nan
+
+                 ;;;;;;;;;;;;;;;;;;;;
+                 ;; NYE
+                 if n ge 2 then dbadtime = cdfdat[n-1].time - cdfdat[n-2].time else dbadtime = gap_time/2.
                  cdfdat[n].time = (last_time) + dbadtime
-                 cdfdat[n].delta_time = !values.f_nan
+                 cdfdat[n].end_time = !values.f_nan
                  cdfdat[n].data[*,*] = !values.f_nan
-                 ;;		cdfdat[n].energy[*,*] = !values.f_nan
                  cdfdat[n].energy[*] = !values.f_nan
-                 cdfdat[n].angle[*,*] = !values.f_nan
-                 cdfdat[n].n_energy = !values.f_nan
-                 cdfdat[n].n_angle = !values.f_nan
+                 cdfdat[n].theta[*,*] = !values.f_nan
+                 cdfdat[n].nenergy = !values.f_nan
+                 cdfdat[n].nbins = !values.f_nan
+
                  n=n+1
+
                  if ((dat.time+dat.end_time)/2. gt cdfdat[n-1].time + gap_time) and (n lt max) then begin
+
+                    ;;;;;;;;;;;;;;;;;;;;
+                    ;; ALDER (2017/12/05)
+                    ;; cdfdat[n].time = (dat.time+dat.end_time)/2. - dbadtime
+                    ;; cdfdat[n].delta_time = !values.f_nan
+                    ;; cdfdat[n].data[*,*] = !values.f_nan
+                    ;; ;; cdfdat[n].energy[*,*] = !values.f_nan
+                    ;; cdfdat[n].energy[*] = !values.f_nan
+                    ;; cdfdat[n].angle[*,*] = !values.f_nan
+                    ;; cdfdat[n].n_energy = !values.f_nan
+                    ;; cdfdat[n].n_angle = !values.f_nan
+
+                    ;;;;;;;;;;;;;;;;;;;;
+                    ;; NYE
                     cdfdat[n].time = (dat.time+dat.end_time)/2. - dbadtime
-                    cdfdat[n].delta_time = !values.f_nan
+                    cdfdat[n].end_time = !values.f_nan
                     cdfdat[n].data[*,*] = !values.f_nan
-;			cdfdat[n].energy[*,*] = !values.f_nan
                     cdfdat[n].energy[*] = !values.f_nan
-                    cdfdat[n].angle[*,*] = !values.f_nan
-                    cdfdat[n].n_energy = !values.f_nan
-                    cdfdat[n].n_angle = !values.f_nan
+                    cdfdat[n].theta[*,*] = !values.f_nan
+                    cdfdat[n].nenergy = !values.f_nan
+                    cdfdat[n].nbins = !values.f_nan
                     n=n+1
+
                  endif
               endif
 
+              ;;;;;;;;;;;;;;;;;;;;
+              ;; ALDER (2017/12/05)
+              ;; dat = conv_units(dat,units)
+              ;; data[*,*]=0.
+              ;; ;;	data(0:nenergy-1,0:dat.nbins-1)=dat.data(retrace:nenergy-1+retrace,0:dat.nbins-1)
+              ;; data[0:dat.nenergy-1,0:dat.nbins-1]=dat.data
+              ;; energy[*,*]=0.
+              ;; ;;	energy(0:nenergy-1,0:dat.nbins-1)=dat.energy(retrace:nenergy-1+retrace,0:dat.nbins-1)
+              ;; energy[0:dat.nenergy-1]=reform(dat.energy[*,0])
+              ;; angle[*,*]=0.
+              ;; ;; angle(0:nenergy-1,0:dat.nbins-1)=dat.theta(retrace:nenergy-1+retrace,0:dat.nbins-1)
+              ;; angle[0:dat.nenergy-1,0:dat.nbins-1]=dat.theta
+
+              ;; if n lt max then begin
+                 
+              ;;    cdfdat[n].time = (dat.time+dat.end_time)/2.
+              ;;    cdfdat[n].delta_time = dat.end_time-dat.time
+              ;;    cdfdat[n].data[*,*] = data
+              ;;    ;;	  cdfdat[n].energy[*,*] = energy
+              ;;    cdfdat[n].energy[*] = energy
+              ;;    cdfdat[n].angle[*,*] = angle
+              ;;    cdfdat[n].n_energy = dat.nenergy
+              ;;    cdfdat[n].n_angle = dat.nbins
+
+              ;;    last_time = cdfdat[n].time
+              ;;    last_delta_time = cdfdat[n].delta_time 
+              ;;    n=n+1
+              ;; endif
+
+              ;;;;;;;;;;;;;;;;;;;;
+              ;; NYE
               dat = conv_units(dat,units)
-              data[*,*]=0.
+              ;; data[*,*]=0.
               ;;	data(0:nenergy-1,0:dat.nbins-1)=dat.data(retrace:nenergy-1+retrace,0:dat.nbins-1)
-              data[0:dat.nenergy-1,0:dat.nbins-1]=dat.data
-              energy[*,*]=0.
+              ;; data[0:dat.nenergy-1,0:dat.nbins-1]=dat.data
+              ;; energy[*,*]=0.
               ;;	energy(0:nenergy-1,0:dat.nbins-1)=dat.energy(retrace:nenergy-1+retrace,0:dat.nbins-1)
-              energy[0:dat.nenergy-1]=reform(dat.energy[*,0])
-              angle[*,*]=0.
-;	angle(0:nenergy-1,0:dat.nbins-1)=dat.theta(retrace:nenergy-1+retrace,0:dat.nbins-1)
-              angle[0:dat.nenergy-1,0:dat.nbins-1]=dat.theta
+              ;; energy[0:dat.nenergy-1]=reform(dat.energy[*,0])
+              ;; angle[*,*]=0.
+              ;; angle(0:nenergy-1,0:dat.nbins-1)=dat.theta(retrace:nenergy-1+retrace,0:dat.nbins-1)
+              ;; angle[0:dat.nenergy-1,0:dat.nbins-1]=dat.theta
 
               if n lt max then begin
                  
-                 cdfdat[n].time = (dat.time+dat.end_time)/2.
-                 cdfdat[n].delta_time = dat.end_time-dat.time
-                 cdfdat[n].data[*,*] = data
-                 ;;	  cdfdat[n].energy[*,*] = energy
-                 cdfdat[n].energy[*] = energy
-                 cdfdat[n].angle[*,*] = angle
-                 cdfdat[n].n_energy = dat.nenergy
-                 cdfdat[n].n_angle = dat.nbins
+                 cdfdat[n].time             = (dat.time+dat.end_time)/2.
+                 cdfdat[n].data_name        = dat.data_name             
+                 cdfdat[n].valid            = dat.valid                 
+                 cdfdat[n].project_name     = dat.project_name          
+                 cdfdat[n].units_name       = dat.units_name            
+                 cdfdat[n].units_procedure  = dat.units_procedure       
+                 cdfdat[n].time             = dat.time                  
+                 cdfdat[n].end_time         = dat.end_time              
+                 cdfdat[n].integ_t          = dat.integ_t               
+                 cdfdat[n].nbins            = dat.nbins                 
+                 cdfdat[n].nenergy          = dat.nenergy               
+                 cdfdat[n].data             = dat.data                  
+                 cdfdat[n].energy           = dat.energy                
+                 cdfdat[n].theta            = dat.theta                 
+                 cdfdat[n].geom             = dat.geom                  
+                 cdfdat[n].denergy          = dat.denergy               
+                 cdfdat[n].dtheta           = dat.dtheta                
+                 cdfdat[n].eff              = dat.eff                   
+                 cdfdat[n].mass             = dat.mass                  
+                 cdfdat[n].geomfactor       = dat.geomfactor            
+                 cdfdat[n].header_bytes     = dat.header_bytes          
+                 cdfdat[n].index            = dat.index                 
 
                  last_time = cdfdat[n].time
-                 last_delta_time = cdfdat[n].delta_time 
+                 last_delta_time = cdfdat[n].end_time-cdfdat[n].time
                  n=n+1
               endif
 
@@ -239,7 +357,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
 
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-        ;; OLD WAY
+        ;; OLDEST WAY (2017/12/04)
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
         ;; killed = 0
