@@ -58,7 +58,7 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
                                      ENERGY=N_ELEMENTS(en) GT 0 ? en[*,k] : !NULL , $
                                      ERANGE=er, $
                                      EBINS=ebins, $
-                                     ANGLE=N_ELEMENTS(an) GT 0 ? an[*,k] : !NULL, $
+                                     ANGLE=N_ELEMENTS(an) GT 0 ? (N_ELEMENTS(an) GT 2 ? an[*,k] : an) : !NULL, $
                                      ARANGE=ar, $
                                      BINS=bins)
 
