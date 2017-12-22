@@ -8,6 +8,7 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
                                          BINS=bins, $
                                          SC_POT=sc_pot, $
                                          EEB_OR_EES=eeb_or_ees, $
+                                         MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux, $
                                          QUIET=quiet
 
   COMPILE_OPT IDL2,STRICTARRSUBS
@@ -49,11 +50,15 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
 
   FOR k=0,max-1 DO BEGIN
 
-     tmpStruct      = MOMENTS_2D_NEW(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k,HAS_SC_POT=(SIZE(sc_pot,/TYPE) EQ 8)), $
+     tmpStruct      = MOMENTS_2D_NEW((KEYWORD_SET(McFadden_style_diff_eFlux) ? $
+                                      MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX__MCFADDEN_STYLE(diff_eFlux,k, $
+                                                                                         HAS_SC_POT=(SIZE(sc_pot,/TYPE) EQ 8)) : $
+                                      MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k, $
+                                                                         HAS_SC_POT=(SIZE(sc_pot,/TYPE) EQ 8))), $
                                      ENERGY=N_ELEMENTS(en) GT 0 ? en[*,k] : !NULL , $
                                      ERANGE=er, $
                                      EBINS=ebins, $
-                                     ANGLE=an, $
+                                     ANGLE=N_ELEMENTS(an) GT 0 ? an[*,k] : !NULL, $
                                      ARANGE=ar, $
                                      BINS=bins)
 
