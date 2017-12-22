@@ -509,7 +509,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                                                 CALIB=calc_geom_factors)
         tmpT                    = (dat_eFlux[*].time+dat_eFlux[*].end_time)/2.D
         nHere                   = N_ELEMENTS(tmpT)
-        keep                    = WHERE(tmpT GE t1 AND tmpT LE t2 AND ~invalid,nKeep)
+        keep                    = WHERE(tmpT GE t1 AND tmpT LE t2 AND dat_eFlux.valid,nKeep)
         
         IF nKeep NE nHere THEN BEGIN
 
