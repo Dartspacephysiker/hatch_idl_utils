@@ -221,7 +221,6 @@ FUNCTION GET_EN_SPEC__SINGLE_STRUCT,dat,  $
 
   ex_time = SYSTIME(1) - ex_start
   MESSAGE,STRING(ex_time)+' seconds execution time.',/cont,/info
-  PRINT,'Number of data points = ',k
 
   RETURN,dataStr
 
