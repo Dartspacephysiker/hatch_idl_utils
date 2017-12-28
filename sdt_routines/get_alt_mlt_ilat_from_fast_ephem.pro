@@ -11,6 +11,7 @@ PRO GET_ALT_MLT_ILAT_FROM_FAST_EPHEM,orb,timeArr, $
                                      OUT_ORBIT=orbit, $
                                      OUT_MAPRATIO=mapRatio, $
                                      OUT_NEVENTS=nEvents, $
+                                     OUT_GETFAORB_STRUCT=struc, $
                                      LOGLUN=logLun
   
 
