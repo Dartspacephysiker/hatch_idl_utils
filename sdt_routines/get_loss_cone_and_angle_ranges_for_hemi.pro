@@ -9,29 +9,48 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
    UPGOING=upgoing, $
    OUT_E_ANGLE=e_angle, $
    ANGLESTR=angleStr, $
+   SDTSTRUCT=struc, $
    JUST_ONE=just_one
 
   ;;get_orbit data if need be
-  GET_DATA,'ALT',DATA=alt
-  GET_DATA,'ILAT',DATA=ilat
-  IF ( SIZE(alt,/TYPE) NE 8 ) OR $
-     ( SIZE(alt,/TYPE) NE 8 )    $
-  THEN BEGIN
-     GET_FA_ORBIT,t1,t2 ;;,/all
+  IF N_ELEMENTS(struc) EQ 0 THEN BEGIN
+
      GET_DATA,'ALT',DATA=alt
      GET_DATA,'ILAT',DATA=ilat
-  ENDIF
-  
+     IF ( SIZE(alt,/TYPE) NE 8 ) OR $
+        ( SIZE(ilat,/TYPE) NE 8 )    $
+     THEN BEGIN
+        GET_FA_ORBIT,t1,t2,/ALL,STRUC=struc
+        ;; GET_DATA,'ALT',DATA=alt
+        ;; GET_DATA,'ILAT',DATA=ilat
+     ENDIF
+  ENDIF ELSE BEGIN
+     ;; alt = {x: struc.x, $
+     ;;        y: struc.alt}
+     ;; ilat = {x: struc.x, $
+     ;;         y: struc.ilat}
+
+  ENDELSE
+
   IF KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
      lcw               = FLOAT(REPLICATE(5,N_ELEMENTS(alt.y)))
+     PRINT,"How is the above line in any way meaningful?"
+     STOP
   ENDIF ELSE BEGIN
-     loss_cone_alt     = alt.y*1000.0
-     loss_cone_alt     = alt.y*1000.0
-     lcw               = FLOAT(LOSS_CONE_WIDTH(loss_cone_alt)*180.0/!DPI)
+     ;; loss_cone_alt     = alt.y*1000.0
+     ;; lcw               = FLOAT(LOSS_CONE_WIDTH(loss_cone_alt)*180.0/!DPI)
+     mag1      = (struc.B_model[*,0]*struc.B_model[*,0]+ $
+                  struc.B_model[*,1]*struc.B_model[*,1]+ $
+                  struc.B_model[*,2]*struc.B_model[*,2])^0.5
+     mag2      = (struc.bFoot[*,0]*struc.bFoot[*,0]+ $
+                  struc.bFoot[*,1]*struc.bFoot[*,1]+ $
+                  struc.bFoot[*,2]*struc.bFoot[*,2])^0.5
+     mapRatio  = TEMPORARY(mag2)/TEMPORARY(mag1)
+     lcw = 180./!DPI * ATAN(SQRT(1.D/(TEMPORARY(mapRatio)-1.D)))
+
   ENDELSE
   
-  ;; GET_DATA,'ILAT',DATA=ilat
-  north_south       = FLOAT(ABS(ilat.y)/ilat.y)
+  north_south       = FLOAT(ABS(struc.ilat)/struc.ilat)
   
   ;;Loss cone stuff
   lc_angleRange     = !NULL
