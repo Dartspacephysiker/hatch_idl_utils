@@ -41,7 +41,7 @@ FUNCTION MAXWELL_FLUX__FUNC,X,P,DP, $
   T                      = DOUBLE(P[1])
   kappa                  = DOUBLE(P[2])
   n                      = DOUBLE(P[3])
-  bulkAngle              = DOUBLE(P[4])*!PI / 180.0
+  bulkAngle              = DOUBLE(P[4])*!DPI / 180.0
   ;; inMass                 = 5.6856602e-06             ;mass in eV/(km/s)^2
   inMass                 = electron_mass                ;mass in eV/(km/s)^2
   m                      = TEMPORARY(electron_mass)
@@ -74,7 +74,7 @@ FUNCTION MAXWELL_FLUX__FUNC,X,P,DP, $
   ENDCASE
 
   ;;First chunk
-  FK1             = (DOUBLE(!PI * T ))^(-1.5D)*EXP( (-1.D) * ( SQRT(energy)-SQRT(E_b) )^2 / T )
+  FK1             = (DOUBLE(!DPI * T ))^(-1.5D)*EXP( (-1.D) * ( SQRT(energy)-SQRT(E_b) )^2 / T )
 
   ;;Fini
   F               = Finv*FK1

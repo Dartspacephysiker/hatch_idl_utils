@@ -53,7 +53,7 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__COMMON,X,Y,P, $
 
   ;; k_ea_ii      = INDGEN(N_ELEMENTS(k_ea__angles))
 
-  mu_vals          = COS(Y/180.*!PI)
+  mu_vals          = COS(Y/180.D*!DPI)
 
   ;;Handle mu vals, gfunction
   ;; IF (N_ELEMENTS(gFunc) EQ 0) OR (N_ELEMENTS(gFunc) NE nAngles) THEN BEGIN

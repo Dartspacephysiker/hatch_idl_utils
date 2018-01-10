@@ -382,7 +382,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
      ;; jerr     = MAKE_ARRAY(nHere,/FLOAT)
      ;; Terr     = MAKE_ARRAY(nHere,/FLOAT)
 
-     ERROR_CALC_2D,diff_eFlux,errors, $
+     ERROR_CALC_2D,errors, $
                    N_=n, $
                    JF=j, $
                    JEF=je, $
@@ -417,7 +417,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
         ;;NOTE, this uses the wrong j, je, and T! They correspond to aRange__moments, not aRange__dens!
         ;;I'm not updating it because they won't affect nErr. They WOULD affect other the calculated uncertainty
         ;; of other moments, of course.
-        ERROR_CALC_2D,diff_eFlux,errorsSC, $
+        ERROR_CALC_2D,errorsSC, $
                       N_=nSC, $
                       JF=jSC, $
                       JEF=jeSC, $
@@ -436,7 +436,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
      ENDIF
 
-     ;; ERROR_CALC_2D,diff_eFlux,errors,j,je,n,T,jerr,jeErr,nerr,Terr
+     ;; ERROR_CALC_2D,errors,j,je,n,T,jerr,jeErr,nerr,Terr
 
   ENDIF
 

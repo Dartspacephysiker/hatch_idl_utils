@@ -153,7 +153,7 @@ PRO ERROR_T,T,n,errors,Terr
 END
 
 ;2017/03/21
-PRO ERROR_CALC_2D,diff_eFlux,errors, $
+PRO ERROR_CALC_2D,errors, $
                   N_=n, $
                   JF=j, $
                   JEF=je, $

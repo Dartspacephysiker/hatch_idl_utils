@@ -12,8 +12,8 @@
 ;
 ; If in DFSTD units, the max val should be of order 10^-16 or less (or thereabouts).
 ; Why? look: n = 1.0 cm^-3 = 10^6 m^-3.   T = 500 eV. m = 5.11 keV/c^2. c = 3.0e8
-; The frontmost term is n (m / 2 / !PI / T)^(3.D/2.D)
-; code: n = 1D6 & T = 500 & c = 3.0D8 & m = 5.11D5 / c^2 & maxTerm = n * (m / 2.D / !PI / T)^(3.D/2.D) & PRINT,maxTerm
+; The frontmost term is n (m / 2 / !DPI / T)^(3.D/2.D)
+; code: n = 1D6 & T = 500 & c = 3.0D8 & m = 5.11D5 / c^2 & maxTerm = n * (m / 2.D / !DPI / T)^(3.D/2.D) & PRINT,maxTerm
 
 FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
    UNITS=units, $
@@ -24,10 +24,10 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
   energy                 = X
 
   ;; speedOfLight           = DOUBLE(29979245800.) ;cm / s
-  speedOfLight           = DOUBLE(299792.458) ;km / s
+  speedOfLight           = 299792.458D ;km / s
 
   inMass                 = KEYWORD_SET(mass) ? DOUBLE(mass) $
-                           : DOUBLE(5.1099891e5)/speedOfLight^2 ;eV/c^2
+                           : 5.1099891D5/speedOfLight^2 ;eV/c^2
 
   
   IF N_ELEMENTS(P) LT 4 THEN BEGIN
@@ -46,7 +46,7 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
   T                      = DOUBLE(P[1])
   kappa                  = DOUBLE(P[2])
   n                      = DOUBLE(P[3])
-  bulkAngle              = DOUBLE(P[4])*!PI / 180.0
+  bulkAngle              = DOUBLE(P[4])*!DPI / 180.D
   ;; inMass                 = 5.6856602e-06             ;mass in eV/(km/s)^2
   ;; m                      = TEMPORARY(electron_mass)
   ;; inMass                 = TEMPORARY(electron_mass)
@@ -73,14 +73,14 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
      'EFLUX': BEGIN
         ;;Converts to differential energy flux units, eV/(cm^2-s-sr-eV)
         
-        ;; Finv            = n * ( inMass / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
-        Finv     *= DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+        ;; Finv            = n * ( inMass / 2.D ) ^ (1.5D) * 2.D5 * energy^2 / inMass^2 ;/  inDT
+        Finv     *= 2.D5 * energy^2 / inMass^2 ;/  inDT
      END
      'FLUX': BEGIN
         ;;Convert to differential number flux units, #/(cm^2-s-sr-eV)
         ;; Finv      = n * ( m / 2.D ) ^ (1.5D) * energy
         ;; Finv     *= energy
-        Finv     *= DOUBLE(2e5) * energy / inMass^2 ;/  inDT
+        Finv     *= 2.D5 * energy / inMass^2 ;/  inDT
      END
      'DF': BEGIN                ; 'DF'     :  #/(km^3-(cm/s)^3)
         ;;Just leave 'er, Ted!
@@ -91,8 +91,8 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
   ENDCASE
 
   ;;First chunk
-  ;; FK1          = (DOUBLE((!PI * T * (kappa - 1.5D + helpMeNotBeZero ) )))^(-1.5D)
-  FK1             = (DOUBLE((!PI * T * (kappaS - 1.5D ) )))^(-1.5D)
+  ;; FK1          = (DOUBLE((!DPI * T * (kappa - 1.5D + helpMeNotBeZero ) )))^(-1.5D)
+  FK1             = (DOUBLE((!DPI * T * (kappaS - 1.5D ) )))^(-1.5D)
 
   ;;Second chunk
   ;; FK2          = GAMMA(kappa + 1.D) / GAMMA(kappa - 0.5D)
@@ -124,25 +124,25 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
      dp                     = MAKE_ARRAY(N_ELEMENTS(x),N_ELEMENTS(p),VALUE=X[0]*0)
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 1: PDs wrt to E_b
-     ;; pdwrtE_b            = Finv * SQRT( !PI^(-3) * (T * (kappa - 1.5D)^(-5) ) ) * FK2 * (-1.D - kappa) * $
+     ;; pdwrtE_b            = Finv * SQRT( !DPI^(-3) * (T * (kappa - 1.5D)^(-5) ) ) * FK2 * (-1.D - kappa) * $
      ;;                       ( fk3_innard )^(-2.D - kappa) * ( 2.D*( SQRT(energy/E_b) - COS(bulkAngle) ) + (SIN(bulkAngle))^2 )
      ;;Pretty sure there are issues with the above
      IF requested[0] GT 0 THEN BEGIN
-        ;; pdwrtE_b            = Finv * SQRT( !PI^(-3) * (T * ( kappa - 1.5D + helpMeNotBeZero ) )^(-5) ) * FK2 * (-1.D - kappa) * $
+        ;; pdwrtE_b            = Finv * SQRT( !DPI^(-3) * (T * ( kappa - 1.5D + helpMeNotBeZero ) )^(-5) ) * FK2 * (-1.D - kappa) * $
         ;;                       ( fk3_innard )^(-2.D - kappa) * ( 1.D - SQRT(energy/E_b) * COS(bulkAngle) )
-        pdwrtE_b            = Finv * SQRT( !PI^(-3) * (T * ( kappaS - 1.5D ) )^(-5) ) * FK2 * (-1.D - kappa) * $
+        pdwrtE_b            = Finv * SQRT( !DPI^(-3) * (T * ( kappaS - 1.5D ) )^(-5) ) * FK2 * (-1.D - kappa) * $
                               ( fk3_innard )^(-2.D - kappa) * ( 1.D - SQRT(energy/E_b) * COS(bulkAngle) )
         dp[*,0]             = TEMPORARY(pdwrtE_b)
      ENDIF
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 2: PDs wrt to T
-     ;; pdwrtT              = (-1.5D) * Finv * SQRT( (!PI * (kappa - 1.5D + helpMeNotBeZero ))^(-3) * T^(-5) ) * FK2 * ( -kappa - 1D) * $
+     ;; pdwrtT              = (-1.5D) * Finv * SQRT( (!DPI * (kappa - 1.5D + helpMeNotBeZero ))^(-3) * T^(-5) ) * FK2 * ( -kappa - 1D) * $
      ;;                       ( -1.D - kappa ) * ( fk3_innard )^(-2.D - kappa) * ( (-1.D / T ) * (fk3_innard - 1.D) )
      ;;Problems with the above
      IF requested[1] GT 0 THEN BEGIN
-        ;; pdwrtT              = Finv * ( (-1.5D) * SQRT( (!PI * (kappa - 1.5D + helpMeNotBeZero ))^(-3) * T^(-5) ) * FK2 * FK3 + $
+        ;; pdwrtT              = Finv * ( (-1.5D) * SQRT( (!DPI * (kappa - 1.5D + helpMeNotBeZero ))^(-3) * T^(-5) ) * FK2 * FK3 + $
         ;;                                FK1 * FK2 * ( 1.D + kappa ) * ( fk3_innard )^(-2.D - kappa) * ( f_e / ( (kappa - 1.5D + helpMeNotBeZero ) * T^2)) )
-        pdwrtT              = Finv * ( (-1.5D) * SQRT( (!PI * (kappaS - 1.5D ))^(-3) * T^(-5) ) * FK2 * FK3 + $
+        pdwrtT              = Finv * ( (-1.5D) * SQRT( (!DPI * (kappaS - 1.5D ))^(-3) * T^(-5) ) * FK2 * FK3 + $
                                        FK1 * FK2 * ( 1.D + kappa ) * ( fk3_innard )^(-2.D - kappa) * ( f_e / ( (kappaS - 1.5D ) * T^2)) )
         dp[*,1]             = TEMPORARY(pdwrtT)
      ENDIF
@@ -150,8 +150,8 @@ FUNCTION KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC,X,P,DP, $
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 3: PDs wrt to kappa--The worst of all, and the most important
      IF requested[2] GT 0 THEN BEGIN
-        ;; dFK1_dkappa         = (-1.5D) * SQRT( (!PI * T )^(-3) * (kappa - 1.5D + helpMeNotBeZero )^(-5) )
-        dFK1_dkappa         = (-1.5D) * SQRT( (!PI * T )^(-3) * (kappaS - 1.5D )^(-5) )
+        ;; dFK1_dkappa         = (-1.5D) * SQRT( (!DPI * T )^(-3) * (kappa - 1.5D + helpMeNotBeZero )^(-5) )
+        dFK1_dkappa         = (-1.5D) * SQRT( (!DPI * T )^(-3) * (kappaS - 1.5D )^(-5) )
         dFK2_dkappa         = FK2 * ( REAL_DIGAMMA(kappa + 1.0D) - REAL_DIGAMMA(kappa - 0.5D) )
 
         ;;The third chunk, which is the worst of the worst

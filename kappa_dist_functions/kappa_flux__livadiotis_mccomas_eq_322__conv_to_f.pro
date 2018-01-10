@@ -40,7 +40,7 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,A,F,pder
   n                      = DOUBLE(A[3])
   inDT                   = N_ELEMENTS(A) GT 4 ? DOUBLE(A[4])             : 0.0D
   inMass                 = N_ELEMENTS(A) GT 5 ? DOUBLE(A[5])             : 5.6856602e-06 ;mass in eV/(km/s)^2
-  bulkAngle              = N_ELEMENTS(A) GT 6 ? DOUBLE(A[6])*!PI / 180.0 : 0
+  bulkAngle              = N_ELEMENTS(A) GT 6 ? DOUBLE(A[6])*!DPI / 180.0 : 0
   m                      = N_ELEMENTS(A) GT 7 ? DOUBLE(A[7])             : electron_mass
 
   helpMeNotBeZero        = 0.000001D
@@ -71,7 +71,7 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,A,F,pder
   Finv                   = n * ( m / 2.D ) ^ (1.5D) * DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
 
   ;;First chunk
-  FK1                    = (DOUBLE((!PI * T * (kappa - 1.5D + helpMeNotBeZero ) )))^(-1.5D)
+  FK1                    = (DOUBLE((!DPI * T * (kappa - 1.5D + helpMeNotBeZero ) )))^(-1.5D)
 
   ;;Second chunk
   FK2                    = GAMMA(kappa + 1.D) / GAMMA(kappa - 0.5D)
@@ -90,23 +90,23 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F,X,A,F,pder
   IF N_PARAMS() GE 4 THEN BEGIN
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 1: PDs wrt to E_b
-     ;; pdwrtE_b            = Finv * SQRT( !PI^(-3) * (T * (kappa - 1.5D)^(-5) ) ) * FK2 * (-1.D - kappa) * $
+     ;; pdwrtE_b            = Finv * SQRT( !DPI^(-3) * (T * (kappa - 1.5D)^(-5) ) ) * FK2 * (-1.D - kappa) * $
      ;;                       ( fk3_innard )^(-2.D - kappa) * ( 2.D*( SQRT(energy/E_b) - COS(bulkAngle) ) + (SIN(bulkAngle))^2 )
      ;;Pretty sure there are issues with the above
-     pdwrtE_b            = Finv * SQRT( !PI^(-3) * (T * (kappa - 1.5D + helpMeNotBeZero ) )^(-5) ) * FK2 * (-1.D - kappa) * $
+     pdwrtE_b            = Finv * SQRT( !DPI^(-3) * (T * (kappa - 1.5D + helpMeNotBeZero ) )^(-5) ) * FK2 * (-1.D - kappa) * $
                            ( fk3_innard )^(-2.D - kappa) * ( 1.D - SQRT(energy/E_b) * COS(bulkAngle) )
 
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 2: PDs wrt to T
-     ;; pdwrtT              = (-1.5D) * Finv * SQRT( (!PI * (kappa - 1.5D + helpMeNotBeZero ))^(-3) * T^(-5) ) * FK2 * ( -kappa - 1D) * $
+     ;; pdwrtT              = (-1.5D) * Finv * SQRT( (!DPI * (kappa - 1.5D + helpMeNotBeZero ))^(-3) * T^(-5) ) * FK2 * ( -kappa - 1D) * $
      ;;                       ( -1.D - kappa ) * ( fk3_innard )^(-2.D - kappa) * ( (-1.D / T ) * (fk3_innard - 1.D) )
      ;;Problems with the above
-     pdwrtT              = Finv * ( (-1.5D) * SQRT( (!PI * (kappa - 1.5D + helpMeNotBeZero ))^(-3) * T^(-5) ) * FK2 * FK3 + $
+     pdwrtT              = Finv * ( (-1.5D) * SQRT( (!DPI * (kappa - 1.5D + helpMeNotBeZero ))^(-3) * T^(-5) ) * FK2 * FK3 + $
                                     FK1 * FK2 * ( 1.D + kappa ) * ( fk3_innard )^(-2.D - kappa) * ( f_e / ( (kappa - 1.5D + helpMeNotBeZero ) * T^2)) )
      
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 3: PDs wrt to kappa--The worst of all, and the most important
-     dFK1_dkappa         = (-1.5D) * SQRT( (!PI * T )^(-3) * (kappa - 1.5D + helpMeNotBeZero )^(-5) )
+     dFK1_dkappa         = (-1.5D) * SQRT( (!DPI * T )^(-3) * (kappa - 1.5D + helpMeNotBeZero )^(-5) )
      dFK2_dkappa         = FK2 * ( REAL_DIGAMMA(kappa + 1) - REAL_DIGAMMA(kappa - 0.5D) )
 
      ;;The third chunk, which is the worst of the worst

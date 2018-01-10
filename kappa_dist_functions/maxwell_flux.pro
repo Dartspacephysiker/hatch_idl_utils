@@ -39,7 +39,7 @@ PRO MAXWELL_FLUX,X,A,F,pder, $
   T                 = DOUBLE(A[1])
   kappa             = DOUBLE(A[2])
   n                 = DOUBLE(A[3])
-  bulkAngle         = N_ELEMENTS(A) GT 4 ? DOUBLE(A[4])*!PI / 180.0 : 0
+  bulkAngle         = N_ELEMENTS(A) GT 4 ? DOUBLE(A[4])*!DPI / 180.0 : 0
   ;; inMass            = 5.6856602e-06 ;mass in eV/(km/s)^2
   ;; inMass            = TEMPORARY(electron_mass)
 
@@ -68,7 +68,7 @@ PRO MAXWELL_FLUX,X,A,F,pder, $
   ENDCASE
 
   ;;First chunk
-  FG1                = DOUBLE(( !PI * T  ))^(-1.5D)
+  FG1                = DOUBLE(( !DPI * T  ))^(-1.5D)
 
   ;;Second chunk
   FG2_innie          = SQRT(energy) - SQRT(E_b)
