@@ -25,6 +25,13 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
      mRat                = R_B
   ENDELSE
 
+  ;;Fitter, happier
+  ;; KAPPA_RB_SAFECHECK,kappa,R_B, $
+  ;;                    KAPPAMIN=kappaMin, $
+  ;;                    R_BMIN=R_BMin, $
+  ;;                    KAPPA_SAFE=kappaS, $
+  ;;                    R_B_SAFE=R_BS
+
   ;;a few constants
   IF KEYWORD_SET(mass) THEN BEGIN
      ;;Assume this is in eV/c^2 (with c in km/s instead of m/s)
@@ -48,13 +55,6 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
         potBar          *= eCharge
      ENDIF
   ENDELSE
-
-  ;;Fitter, happier
-  KAPPA_RB_SAFECHECK,kappa,R_B, $
-                     KAPPAMIN=kappaMin, $
-                     R_BMIN=R_BMin, $
-                     KAPPA_SAFE=kappaS, $
-                     R_B_SAFE=R_BS
 
   ;;Make sure kappa is fo' real
   ;; kappaS = DOUBLE(kappa)

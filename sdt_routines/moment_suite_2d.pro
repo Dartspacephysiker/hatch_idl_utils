@@ -84,6 +84,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                     ARANGE__DENS=aRange__dens, $
                     ARANGE__MOMENTS=aRange__moments, $
                     ARANGE__CHARE=aRange__charE, $
+                    TEMPERATURE_TYPE_INDEX=tTypeInd, $
                     SC_POT=sc_pot, $
                     EEB_OR_EES=eeb_or_ees, $
                     ERROR_ESTIMATES=error_estimates, $
@@ -382,6 +383,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
      ;; jerr     = MAKE_ARRAY(nHere,/FLOAT)
      ;; Terr     = MAKE_ARRAY(nHere,/FLOAT)
 
+     PRINT,"YOU NEED TO FIGURE OUT THE PARALLEL TEMPERATURE ERROR MOMENT THING"
+     STOP
      ERROR_CALC_2D,errors, $
                    N_=n, $
                    JF=j, $
@@ -397,7 +400,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                    JPERPEF=jePerp, $
                    JJEPERP_COVAR=jjePerp_coVar, $
                    PAR_ERRORS=parErrs, $
-                   PERP_ERRORS=perpErrs
+                   PERP_ERRORS=perpErrs, $
+                   TEMPERATURE_TYPE_INDEX=tTypeInd
                    
      jPerpErr     = perpErrs.j
      jePerpErr    = perpErrs.je
@@ -428,7 +432,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                       JEERR=jeErrSC, $
                       CHAREERR=charEErrSC, $
                       TERR=TerrSC, $
-                      PERP_ERRORS=perpErrsSC
+                      PERP_ERRORS=perpErrsSC, $
+                      TEMPERATURE_TYPE_INDEX=tTypeInd
 
         jPerpErrSC     = perpErrsSC.j
         jePerpErrSC    = perpErrsSC.je
