@@ -84,7 +84,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                     ARANGE__DENS=aRange__dens, $
                     ARANGE__MOMENTS=aRange__moments, $
                     ARANGE__CHARE=aRange__charE, $
-                    TEMPERATURE_TYPE_INDEX=tTypeInd, $
+                    ARANGE__TEMP=aRange__temp, $
+                    ERANGE__TEMP=eRange__temp, $
                     SC_POT=sc_pot, $
                     EEB_OR_EES=eeb_or_ees, $
                     ERROR_ESTIMATES=error_estimates, $
@@ -132,6 +133,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
   ;;check--is charE getting special treatment?
   specialC       = KEYWORD_SET(aRange__charE)
   specialN       = KEYWORD_SET(aRange__dens )
+  specialT       = KEYWORD_SET(eRange__temp ) OR KEYWORD_SET(aRange__temp )
   IF specialC THEN BEGIN
      
      ;;If aRange__charE is the same as aRange__moments, don't calculate charE quantities separately
@@ -141,10 +143,18 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
   IF specialN THEN BEGIN
      
-     ;;If aRange__dens is the same as aRange__moments, don't calculate charE quantities separately
-     specialN    = KEYWORD_SET(aRange__dens) ? ~ARRAY_EQUAL(aRange__dens,aRange__charE) : 1
+     ;;If aRange__dens is the same as aRange__moments, don't calculate density quantities separately
+     specialN    = KEYWORD_SET(aRange__dens) ? ~ARRAY_EQUAL(aRange__moments,aRange__dens) : 1
 
   ENDIF  
+
+  IF specialT THEN BEGIN
+     
+     ;;If eRange__temp is the same as energy and aRange__temp is the same as aRange__moments, don't calculate temperature quantities separately
+     specialT    = (KEYWORD_SET(aRange__temp) ? ~ARRAY_EQUAL(aRange__moments,aRange__temp) : 1)
+     IF ~specialT THEN specialT = (KEYWORD_SET(eRange__temp) ? ~ARRAY_EQUAL(energy,eRange__temp) : 0)
+
+  ENDIF
   CASE 1 OF
      KEYWORD_SET(new_moment_routine): BEGIN
 
@@ -242,6 +252,39 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
         ENDIF
 
+        IF specialT THEN BEGIN
+
+           moms_T = MOMENTS_2D_NEW__FROM_DIFF_EFLUX(diff_eFlux, $
+                                                   ENERGY=eRange__temp, $
+                                                   ANGLE=aRange__temp, $
+                                                   SC_POT=sc_pot, $
+                                                   EEB_OR_EES=eeb_or_ees, $
+                                                   QUIET=quiet)
+
+           n_T    = moms_T.y[*].n
+           T_T    = moms_T.y[*].T
+
+           j_T         = moms_T.y[*].j
+           je_T        = moms_T.y[*].je
+           jje_T       = moms_T.y[*].jje
+
+           jPerp_T     = moms_T.y[*].perp.j
+           jePerp_T    = moms_T.y[*].perp.je
+           jjePerp_T   = moms_T.y[*].perp.jje
+
+           jje_coVar_T = jje_T-je_T*j_T
+           charE_T     = CHAR_ENERGY(j_T,je_T)
+        
+           jjePerp_coVar_T = jjePerp_T-jePerp_T*jPerp_T
+           charEPerp_T     = CHAR_ENERGY(jPerp_T,jePerp_T)
+
+           jAll_T     = moms_T.y[*].all.j
+           jeAll_T    = moms_T.y[*].all.je
+           charEAll_T = moms_T.y[*].all.charE
+           speedAll_T = moms_T.y[*].all.speed
+
+        ENDIF
+
         time          = moms.x
      END
      ELSE: BEGIN
@@ -289,6 +332,12 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
            jC          = j 
            jeC         = je 
         ENDELSE
+
+        IF specialT THEN BEGIN
+
+           PRINT,"You've not progged this!"
+           STOP
+        ENDIF
 
         jje_coVar      = (TEMPORARY(JE_2D__FROM_DIFF_EFLUX(diff_eFlux, $
                                                            ENERGY=energy, $
@@ -383,8 +432,6 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
      ;; jerr     = MAKE_ARRAY(nHere,/FLOAT)
      ;; Terr     = MAKE_ARRAY(nHere,/FLOAT)
 
-     PRINT,"YOU NEED TO FIGURE OUT THE PARALLEL TEMPERATURE ERROR MOMENT THING"
-     STOP
      ERROR_CALC_2D,errors, $
                    N_=n, $
                    JF=j, $
@@ -400,8 +447,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                    JPERPEF=jePerp, $
                    JJEPERP_COVAR=jjePerp_coVar, $
                    PAR_ERRORS=parErrs, $
-                   PERP_ERRORS=perpErrs, $
-                   TEMPERATURE_TYPE_INDEX=tTypeInd
+                   PERP_ERRORS=perpErrs
                    
      jPerpErr     = perpErrs.j
      jePerpErr    = perpErrs.je
@@ -432,12 +478,44 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                       JEERR=jeErrSC, $
                       CHAREERR=charEErrSC, $
                       TERR=TerrSC, $
-                      PERP_ERRORS=perpErrsSC, $
-                      TEMPERATURE_TYPE_INDEX=tTypeInd
+                      PERP_ERRORS=perpErrsSC
 
         jPerpErrSC     = perpErrsSC.j
         jePerpErrSC    = perpErrsSC.je
         charEPerpErrSC = perpErrsSC.charE
+
+     ENDIF
+
+     IF specialT THEN BEGIN
+
+        errors_T      = MOMENTERRORS_2D__FROM_DIFF_EFLUX(diff_eFlux, $
+                                                        ENERGY=eRange__temp, $
+                                                        ANGLE=aRange__temp, $
+                                                        SC_POT=sc_pot, $
+                                                        EEB_OR_EES=eeb_or_ees, $
+                                                        /PRESSURE_COVAR_CALC, $
+                                                        /HEATFLUX_COVAR_CALC, $
+                                                        QUIET=quiet)
+
+        ;;NOTE, this uses the wrong j, je, and T! They correspond to aRange__moments, not aRange__dens!
+        ;;I'm not updating it because they won't affect nErr. They WOULD affect other the calculated uncertainty
+        ;; of other moments, of course.
+        ERROR_CALC_2D,errors_T, $
+                      N_=n_T, $
+                      JF=j_T, $
+                      JEF=je_T, $
+                      T_=T_T, $
+                      JJE_COVAR=jje_coVar_T, $ ;; , $
+                      NERR=nerr_T, $
+                      JERR=jerr_T, $
+                      JEERR=jeErr_T, $
+                      CHAREERR=charEErr_T, $
+                      TERR=Terr_T, $
+                      PERP_ERRORS=perpErrs_T
+
+        ;; jPerpErr_T     = perpErrs_T.j
+        ;; jePerpErr_T    = perpErrs_T.je
+        ;; charEPerpErr_T = perpErrs_T.charE
 
      ENDIF
 
@@ -523,6 +601,51 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
   ENDIF
 
+  IF specialT THEN BEGIN
+
+     FLIPCURRENTS,j_T,jPerp_T,je_T,jePerp_T,jerr_T,jeErr_T,jPerpErr_T,jePerpErr_T,flip,nFlip,mapRatio, $
+                  IONS=ions, $
+                  ERROR_ESTIMATES=error_estimates, $
+                  MAP_TO_100KM=map_to_100km, $
+                  OUT_CURRENT=cur_T, $
+                  OUT_CURERR=curErr_T, $
+                  OUT_CURPERP_=curPerp_T, $
+                  OUT_CURPERPERR=curPerpErr_T
+
+     all  = {j          : TEMPORARY(jAll_T), $
+             je         : TEMPORARY(jeAll_T     ) , $
+             charE      : TEMPORARY(charEAll_T  ), $
+             speed      : TEMPORARY(speedAll_T)}
+             ;; jjePerp_coVar  : TEMPORARY(jjePerp_coVar)}
+
+     perp = {j              : jPerp_T, $
+             jePerp         : TEMPORARY(jePerp_T     ) , $
+             charEPerp      : TEMPORARY(charEPerp_T  ) , $
+             curPerp        : TEMPORARY(curPerp_T    ) , $
+             jjePerp_coVar  : TEMPORARY(jjePerp_coVar_T) , $
+             jPerpErr       : TEMPORARY(jPerpErr_T   ) , $
+             jePerpErr      : TEMPORARY(jePerpErr_T  ) , $
+             curPerpErr     : TEMPORARY(curPerpErr_T ) , $
+             charEPerpErr   : TEMPORARY(charEPerpErr_T)}
+
+     moments_forT = {n              : TEMPORARY(n_T      ), $
+                     j              : TEMPORARY(j_T      ), $
+                     je             : TEMPORARY(je_T     ), $
+                     T              : TEMPORARY(T_T      ), $
+                     charE          : TEMPORARY(charE_T  ), $
+                     cur            : TEMPORARY(cur_T    ), $
+                     jje_coVar      : TEMPORARY(jje_coVar_T), $
+                     errors         : TEMPORARY(errors_T ), $
+                     nErr           : TEMPORARY(nErr_T   ), $
+                     jErr           : TEMPORARY(jErr_T   ), $
+                     jeErr          : TEMPORARY(jeErr_T  ), $
+                     TErr           : TEMPORARY(TErr_T   ), $
+                     curErr         : TEMPORARY(curErr_T ), $
+                     charEErr       : TEMPORARY(charEErr_T), $
+                     perp           : TEMPORARY(perp), $
+                     all            : TEMPORARY(all)}
+
+  ENDIF
   
   IF ARG_PRESENT(struct) THEN BEGIN
 
@@ -565,6 +688,12 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
      IF N_ELEMENTS(source) GT 0 THEN BEGIN
 
         STR_ELEMENT,struct,'source',TEMPORARY(source),/ADD_REPLACE
+
+     ENDIF
+
+     IF N_ELEMENTS(moments_forT) GT 0 THEN BEGIN
+
+        STR_ELEMENT,struct,'moments_forT',TEMPORARY(moments_forT),/ADD_REPLACE
 
      ENDIF
 

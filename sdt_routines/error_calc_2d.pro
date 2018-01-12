@@ -132,6 +132,7 @@ PRO ERROR_T,T,n,errors,Terr
                            ;; (Tavg/n.y*errors.n*n.y)^(2.D)
 
   Tpar             = REFORM(T[2,*])
+  Tperp            = REFORM(T[0,*])
 
   Tavg             = REFORM(T[3,*])
   PPar             = REFORM(T[2,*])*n*3.D
@@ -147,10 +148,11 @@ PRO ERROR_T,T,n,errors,Terr
   ;;other          = 2*pi*Tavg/N, and is also for convenience
   other            = 2.D*Tavg/(3.D*n*n)
 
-  Tperperr         = 0.D
-
   Tparerr          = Tpar * SQRT(errors.N^(2.D) + errors.Pzz^(2.D) $
                                  - 2.D * errors.N * errors.Pzz * errors.R[*,0,6])
+
+  Tperperr         = Tperp * SQRT(errors.N^(2.D) + errors.Pxx^(2.D) $
+                                 - 2.D * errors.N * errors.Pxx * errors.R[*,0,4])
 
   Tavgerr          = SQRT( piSq*((errors.Pzz*PPar)^2.D            $
                                  + 4.D*TEMPORARY(sigma_PPar_PPrp) $
@@ -162,7 +164,7 @@ PRO ERROR_T,T,n,errors,Terr
                            ;; ( (Tavg / n ) * ( errors.n * n ))^(2.D) = (Tavg*errors.n)^(2.D)
 
 
-  Terr             = [Tperperr,Tperperr,Tparerr,Tavgerr]
+  Terr             = [TRANSPOSE(Tperperr),TRANSPOSE(Tperperr),TRANSPOSE(Tparerr),TRANSPOSE(Tavgerr)]
 
 END
 
@@ -182,8 +184,7 @@ PRO ERROR_CALC_2D,errors, $
                   JPERPEF=jePerp, $
                   JJEPERP_COVAR=jjePerp_coVar, $
                   PAR_ERRORS=parErrs, $
-                  PERP_ERRORS=perpErrs, $
-                  TEMPERATURE_TYPE_INDEX=tTypeInd
+                  PERP_ERRORS=perpErrs
                ;; ENERGY_ERROR=enErr
 
   COMPILE_OPT IDL2,STRICTARRSUBS
