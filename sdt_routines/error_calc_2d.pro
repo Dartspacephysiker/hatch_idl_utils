@@ -168,7 +168,8 @@ PRO ERROR_CALC_2D,errors, $
                   JPERPEF=jePerp, $
                   JJEPERP_COVAR=jjePerp_coVar, $
                   PAR_ERRORS=parErrs, $
-                  PERP_ERRORS=perpErrs
+                  PERP_ERRORS=perpErrs, $
+                  TEMPERATURE_TYPE_INDEX=tTypeInd
                ;; ENERGY_ERROR=enErr
 
   COMPILE_OPT IDL2,STRICTARRSUBS

@@ -57,37 +57,37 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_11,kappa,T_m,dens_m,pot,R_B, $
   ENDELSE
 
   ;;Make sure kappa is fo' real
+  kappaS = DOUBLE(kappa)
+  CASE N_ELEMENTS(kappa) OF
+     1: BEGIN
+        IF kappa LE 1.5 THEN BEGIN
+           kappaS = 1.500001D
+           ;; PRINT,"Kappa must be GE 1.5D!"
+           ;; PRINT,"Returning..."
+           ;; RETURN,-1
+        ENDIF
+        ;;Still fo' real
+        IF kappa EQ 2.0 THEN kappaS = 2.00001D 
+
+     END
+     ELSE: BEGIN
+        IF (WHERE(kappa EQ 1.5))[0] NE -1 THEN BEGIN
+           kappaS[WHERE(kappa EQ 1.5)] = 1.500001D
+        ENDIF
+        IF (WHERE(kappa EQ 2.0))[0] NE -1 THEN BEGIN
+           kappaS[WHERE(kappa EQ 2.0)] = 2.000001D
+        ENDIF
+     END
+  ENDCASE
   ;; kappaS = DOUBLE(kappa)
-  ;; CASE N_ELEMENTS(kappa) OF
-  ;;    1: BEGIN
-  ;;       IF kappa LE 1.5 THEN BEGIN
-  ;;          kappaS = 1.500001D
-  ;;          ;; PRINT,"Kappa must be GE 1.5D!"
-  ;;          ;; PRINT,"Returning..."
-  ;;          ;; RETURN,-1
-  ;;       ENDIF
-  ;;       ;;Still fo' real
-  ;;       IF kappa EQ 2.0 THEN kappaS = 2.00001D 
+  ;; IF kappa LE 1.5 THEN BEGIN
+  ;;    kappaS = 1.50001D
+  ;;    ;; PRINT,"Kappa must be GE 1.5D!"
+  ;;    ;; PRINT,"Returning..."
+  ;;    ;; RETURN,-1
+  ;; ENDIF
 
-  ;;    END
-  ;;    ELSE: BEGIN
-  ;;       IF (WHERE(kappa EQ 1.5))[0] NE -1 THEN BEGIN
-  ;;          kappaS[WHERE(kappa EQ 1.5)] = 1.500001D
-  ;;       ENDIF
-  ;;       IF (WHERE(kappa EQ 2.0))[0] NE -1 THEN BEGIN
-  ;;          kappaS[WHERE(kappa EQ 2.0)] = 2.000001D
-  ;;       ENDIF
-  ;;    END
-  ;; ENDCASE
-  ;; ;; kappaS = DOUBLE(kappa)
-  ;; ;; IF kappa LE 1.5 THEN BEGIN
-  ;; ;;    kappaS = 1.50001D
-  ;; ;;    ;; PRINT,"Kappa must be GE 1.5D!"
-  ;; ;;    ;; PRINT,"Returning..."
-  ;; ;;    ;; RETURN,-1
-  ;; ;; ENDIF
-
-  ;; ;;Still fo' real
+  ;;Still fo' real
   ;; IF kappa EQ 2.0 THEN kappaS = 2.0001D 
 
   ;;Equation segments

@@ -226,8 +226,8 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   ;; density = n_2d_new(dat2,ENERGY=en,ERANGE=er,EBINS=ebins,ANGLE=an,ARANGE=ar,BINS=bins)
 
   ;;just flux
-  flux    = Const_j  * TOTAL(data*denergy  *energy        *domega   )
-  eflux   = Const_je * TOTAL(data*denergy  *energy^2      *domega   )
+  flux    = Const_j  * TOTAL(data*denergy  *energy        *domega,/NAN)
+  eflux   = Const_je * TOTAL(data*denergy  *energy^2      *domega,/NAN)
 
   ;;If you want angle stuff
   ;; wantAngleStuff = 0
@@ -262,13 +262,13 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
                               EBINS=ebins, $
                               ANGLE=[-180,180])
 
-     charEAngleResolved = Const_je*TOTAL(dat.data*denergy*energy^2*domega_all,1) / (Const_j*TOTAL(dat.data*denergy*energy*domega_all,1))*6.242*1.0e11
+     charEAngleResolved = Const_je*TOTAL(dat.data*denergy*energy^2*domega_all,1,/NAN) / (Const_j*TOTAL(dat.data*denergy*energy*domega_all,1,/NAN))*6.242*1.0e11
 
      pAngle = theta[0,*]*180/!PI
      sortie = SORT(pAngle)
      pAngle = pAngle[sortie]
      charEAngleResolved = charEAngleResolved[sortie]
-     ;; charEAngleResolved = Const_je*TOTAL(data*denergy*energy^2*domega,1) / (Const_j*TOTAL(data*denergy*energy*domega,1))*6.242*1.0e11
+     ;; charEAngleResolved = Const_je*TOTAL(data*denergy*energy^2*domega,1,/NAN) / (Const_j*TOTAL(data*denergy*energy*domega,1,/NAN))*6.242*1.0e11
      plot = PLOT(pAngle,charEAngleResolved,XTITLE='$\theta$ (deg)',YTITLE='Avg. energy (eV)',TITLE=TIME_TO_STR(dat.time),/CURRENT)
      splot = PLOT(pAngle,SMOOTH(charEAngleResolved,5),COLOR='red',/OVERPLOT)
 
@@ -282,15 +282,15 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   ENDIF
   
   ;;Par comps
-  fluxz   = Const_j  * TOTAL(data*denergy  *energy        *domega_zz)
-  efluxz  = Const_je * TOTAL(data*denergy  *energy^2      *domega_zz)
-  density = Const_n  * TOTAL(data*denergy  *(energy^(0.5))*domega   )
-  effluxz = Const_je * TOTAL(data*denergy^2*energy^3      *domega_zz)
+  fluxz   = Const_j  * TOTAL(data*denergy  *energy        *domega_zz,/NAN)
+  efluxz  = Const_je * TOTAL(data*denergy  *energy^2      *domega_zz,/NAN)
+  density = Const_n  * TOTAL(data*denergy  *(energy^(0.5))*domega   ,/NAN)
+  effluxz = Const_je * TOTAL(data*denergy^2*energy^3      *domega_zz,/NAN)
 
   ;;Perp comps
-  fluxx   = Const_j  * TOTAL(data*denergy  *energy  *domega*sin(theta))
-  efluxx  = Const_je * TOTAL(data*denergy  *energy^2*domega*sin(theta))
-  effluxx = Const_je * TOTAL(data*denergy^2*energy^3*domega*sin(theta))
+  fluxx   = Const_j  * TOTAL(data*denergy  *energy  *domega*SIN(theta),/NAN)
+  efluxx  = Const_je * TOTAL(data*denergy  *energy^2*domega*SIN(theta),/NAN)
+  effluxx = Const_je * TOTAL(data*denergy^2*energy^3*domega*SIN(theta),/NAN)
 
   ;;Vel comps
   speed   = flux /density
@@ -298,15 +298,15 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   velx    = fluxx/density
 
   ;;See just how much improvement we get for all those fancy field-aligned beam corrections
-  ;; testfluxz   = Const_j  * TOTAL(data*denergy*energy*domega*cos(theta))
-  ;; testefluxz  = Const_je * TOTAL(data*denergy*energy^2*domega*cos(theta))
+  ;; testfluxz   = Const_j  * TOTAL(data*denergy*energy*domega*COS(theta),/NAN)
+  ;; testefluxz  = Const_je * TOTAL(data*denergy*energy^2*domega*COS(theta),/NAN)
   ;; PRINT,(fluxz-testfluxz)/fluxz
   ;; PRINT,(efluxz-testefluxz)/efluxz
 
   ;; Pressure is in units of eV/cm**3
-  p2dxx = Const_p * TOTAL(data*denergy*energy^1.5*domega*(sin(theta))^2)/2. ;  Const_p  = (mass)^(-2.5)*(2.)^1.5
+  p2dxx = Const_p * TOTAL(data*denergy*energy^1.5*domega*(SIN(theta))^2,/NAN)/2. ;  Const_p  = (mass)^(-2.5)*(2.)^1.5
   p2dyy = p2dxx
-  p2dzz = Const_p * TOTAL(data*denergy*energy^1.5*domega*(cos(theta))^2)
+  p2dzz = Const_p * TOTAL(data*denergy*energy^1.5*domega*(COS(theta))^2,/NAN)
   p2dxy = 0.
   p2dxz = 0.
   p2dyz = 0.
