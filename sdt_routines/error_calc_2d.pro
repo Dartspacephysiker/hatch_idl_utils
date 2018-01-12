@@ -18,8 +18,15 @@ PRO ERROR_J,j,errors,jerr
   ;;In #/cm^2-s
   ;; jerr = SQRT((j.y)^(2.D) * $
   ;;                ( (errors.n)^(2.D) + (errors.Uz)^(2.D) + errors.n*errors.Uz*errors.R[*,0,3] ) )  
+
+  ;; OLD version as of 2018/01/12
+  ;; jerr = SQRT((j)^(2.D) * $
+  ;;                ( (errors.n)^(2.D) + (errors.Uz)^(2.D) + errors.n*errors.Uz*errors.R[*,0,3] ) )  
+
+  ;; NEW version as of 2018/01/12
   jerr = SQRT((j)^(2.D) * $
-                 ( (errors.n)^(2.D) + (errors.Uz)^(2.D) + errors.n*errors.Uz*errors.R[*,0,3] ) )  
+                 ( (errors.n)^(2.D) + (errors.Uz)^(2.D) + 2.D * errors.n*errors.Uz*errors.R[*,0,3] ) )  
+
 
 END
 
@@ -124,31 +131,38 @@ PRO ERROR_T,T,n,errors,Terr
                            ;; See? the n.y terms cancel each other. Hence the simplification above
                            ;; (Tavg/n.y*errors.n*n.y)^(2.D)
 
+  Tpar             = REFORM(T[2,*])
+
   Tavg             = REFORM(T[3,*])
   PPar             = REFORM(T[2,*])*n*3.D
   PPrp             = REFORM(T[0,*])*n*3.D
 
-  sigma_N_PPar     = errors.R[*,0,6]*(errors.N*N)*(errors.Pzz*PPar)
-  sigma_N_PPrp     = errors.R[*,0,4]*(errors.N*N)*(errors.Pxx*PPrp)
+  sigma_N_PPar     = errors.R[*,0,6]*(errors.N  *N   )*(errors.Pzz*PPar)
+  sigma_N_PPrp     = errors.R[*,0,4]*(errors.N  *N   )*(errors.Pxx*PPrp)
   sigma_PPar_PPrp  = errors.R[*,6,4]*(errors.Pzz*PPar)*(errors.Pxx*PPrp)
 
   ;;pi=1/3N, and is for convenience
-  piSq             = 1.D/(9.D*n*n)
+  piSq             = 1.D/(9.D*N*N)
 
   ;;other          = 2*pi*Tavg/N, and is also for convenience
   other            = 2.D*Tavg/(3.D*n*n)
 
-  Terr             = SQRT( piSq*((errors.Pzz*PPar)^2.D                                        + $
-                                 4.D*errors.R[*,6,4]*(errors.Pzz*PPar)*(errors.Pxx*PPrp)      + $
-                                 4.D*(errors.Pxx*PPrp)^2.D                                    ) $
-                           +                                                                    $
-                           (-1.D)*other*(sigma_N_PPar     + $
-                                         2.D*sigma_N_PPrp ) $
-                           + $
-                           (Tavg*errors.n)^(2.D)                                                )
-                           ;; See? the n terms cancel each other. Hence the simplification above
-                           ;; (Tavg/n*errors.n*n)^(2.D)
+  Tperperr         = 0.D
 
+  Tparerr          = Tpar * SQRT(errors.N^(2.D) + errors.Pzz^(2.D) $
+                                 - 2.D * errors.N * errors.Pzz * errors.R[*,0,6])
+
+  Tavgerr          = SQRT( piSq*((errors.Pzz*PPar)^2.D            $
+                                 + 4.D*TEMPORARY(sigma_PPar_PPrp) $
+                                 + 4.D*(errors.Pxx*PPrp)^2.D    ) $
+                           + (-1.D)*other*(TEMPORARY(sigma_N_PPar) $
+                                           + 2.D*sigma_N_PPrp )    $
+                           + (Tavg*errors.n)^(2.D)                   )
+                           ;; See? the n terms cancel each other. Hence the simplification above
+                           ;; ( (Tavg / n ) * ( errors.n * n ))^(2.D) = (Tavg*errors.n)^(2.D)
+
+
+  Terr             = [Tperperr,Tperperr,Tparerr,Tavgerr]
 
 END
 
