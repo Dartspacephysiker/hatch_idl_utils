@@ -80,6 +80,7 @@ FUNCTION DENSITY_FACTOR__BARBOSA_1977,E_b,T,kappa,n,R_B, $
      magicFac2O  = MAKE_ARRAY(nNeeded,/DOUBLE,VALUE=0.D)
      FOR k=0,nNeeded-1 DO BEGIN
 
+        ;; IF k EQ 81 THEN STOP
         alpha     = alpha2[k]
         integLims = integLims2[k,*]
         potBar    = potBar2[k]
@@ -114,28 +115,40 @@ FUNCTION DENSITY_FACTOR__BARBOSA_1977,E_b,T,kappa,n,R_B, $
 
         ENDIF
 
-        ;;MagicFac 1
-        magicFac1 = 2.D * (1.D - alpha) * EXP( -alpha * potBar ) * SQRT(potBar) / ERFC(-SQRT(potBar))
+        CASE 1 OF
+           (potBar*alpha) GE 100: BEGIN ;strict-compression limit
+              mFac = 1/alpha
 
-        ;;Using Simpson's rule
-        ;; magicFac2 = QSIMP('ONEYOUNEED',integLims[0],integLims[1])
+              magicFac1 = 0.D
+              magicFac2 = 0.D
 
-        ;;Using five-point Newton-Cotes integration
-        dx        = 0.005
-        nx        = (integLims[1]-integLims[0])/dx
-        in_x      = LINDGEN(nx)*dx + integLims[0]
-        in_y      = ONEYOUNEED(in_x)
-        magicFac2 = INT_TABULATED(TEMPORARY(in_x),TEMPORARY(in_y), $
-                                  /DOUBLE, $
-                                  /SORT)
-        
-        mFac      = 1.D + magicFac1 * magicFac2
+           END
+           ELSE: BEGIN          ;Intermediate cases
+              ;;MagicFac 1
+              magicFac1 = 2.D * (1.D - alpha) * EXP( DOUBLE(-alpha * potBar) ) * SQRT(potBar) / ERFC(-SQRT(potBar))
 
+              ;;Using Simpson's rule
+              ;; magicFac2 = QSIMP('ONEYOUNEED',integLims[0],integLims[1])
 
-        nOut[k]   = n2[k] / mFac
+              ;;Using five-point Newton-Cotes integration
+              dx        = 0.005
+              nx        = (integLims[1]-integLims[0])/dx
+              in_x      = LINDGEN(nx)*dx + integLims[0]
+              in_y      = ONEYOUNEED(in_x)
+              magicFac2 = INT_TABULATED(TEMPORARY(in_x),TEMPORARY(in_y), $
+                                        /DOUBLE, $
+                                        /SORT)
+              
+              mFac      = 1.D + magicFac1 * magicFac2
+
+           END
+        ENDCASE
 
         magicFac1O[k] = TEMPORARY(magicFac1)
         magicFac2O[k] = TEMPORARY(magicFac2)
+
+
+        nOut[k]   = n2[k] / mFac
 
      ENDFOR
 
