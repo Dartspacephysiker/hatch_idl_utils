@@ -513,9 +513,9 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                       TERR=Terr_T, $
                       PERP_ERRORS=perpErrs_T
 
-        ;; jPerpErr_T     = perpErrs_T.j
-        ;; jePerpErr_T    = perpErrs_T.je
-        ;; charEPerpErr_T = perpErrs_T.charE
+        jPerpErr_T     = perpErrs_T.j
+        jePerpErr_T    = perpErrs_T.je
+        charEPerpErr_T = perpErrs_T.charE
 
      ENDIF
 
