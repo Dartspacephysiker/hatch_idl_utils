@@ -52,6 +52,8 @@ FUNCTION KNIGHT_RELATION__DORS_KLETZING_4,T_m,dens_m,pot,R_B, $
      ENDIF
   ENDELSE
 
+  ;; Linearized
+  ;; JVLin = eCharge * n / SQRT(2.D * !DPI * inMass * T_m)
 
   ;;Equation segments
   ;; JVinv                  = (-1.D) * eCharge * n

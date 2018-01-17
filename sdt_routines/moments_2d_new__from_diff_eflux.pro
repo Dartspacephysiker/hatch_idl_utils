@@ -16,7 +16,8 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
   ex_start    = SYSTIME(1)
 
   max         = N_ELEMENTS(diff_eFlux.data_name)
-  time        = (diff_eFlux.time+diff_eFlux.end_time)/2.
+  ;; time        = (diff_eFlux.time+diff_eFlux.end_time)/2.
+  time        = diff_eFlux.time
   templar     = {n   : 0.0D, $
                  j   : 0.0D, $
                  je  : 0.0D, $

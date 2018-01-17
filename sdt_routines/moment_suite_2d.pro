@@ -350,8 +350,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
         ;; charE          = CHAR_ENERGY((TEMPORARY(jC)).y,(TEMPORARY(jeC)).y)
         charE          = CHAR_ENERGY(TEMPORARY(jC),TEMPORARY(jeC))
 
-        time           = (diff_eFlux.time+diff_eFlux.end_time)/2.
-
+        ;; time           = (diff_eFlux.time+diff_eFlux.end_time)/2.
+        time           = diff_eFlux.time
 
         jPerp          = 0.D
         jePerp         = 0.D
