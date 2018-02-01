@@ -20,7 +20,7 @@ FUNCTION ONEYOUNEED,X
 
   COMMON B77,alpha
 
-  RETURN,EXP(alpha * x^2) * ERFC(x)
+  RETURN,EXP(alpha * x^(2.D)) * ERFC(x)
 
 END
 
