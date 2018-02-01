@@ -149,6 +149,61 @@ FUNCTION NFACTOR_MAXWELLIAN_L_AND_K,E_b,T,kappa,n,R_B, $
 
      RETURN,nOut
 
-  ENDIF ELSE STOP
+  ENDIF ELSE BEGIN
+
+     R_Btmp     = R_B
+
+     potBar     = DOUBLE(E_b) / DOUBLE(T)
+
+     integLims  = [0.D,( SQRT( potBar/(R_Btmp-1) ) < 100.D)]
+
+     CASE 1 OF
+        SQRT(potBar/ (R_Btmp -1) ) LE 0.01: BEGIN ;Use R_B Inf limit?
+           
+           magicFac1 = 0.5D * ( EXP(potBar) * ERFC(SQRT(potBar)) )
+           magicFac2 = SQRT(potBar/!DPI)
+
+           mFac = magicFac1 + magicFac2
+
+        END
+        SQRT(potBar/ (R_Btmp -1) ) GE 200: BEGIN ;Use potBar >> R_B limit?
+           
+
+           magicFac1 = 0.5D * ( EXP(potBar) * ERFC(SQRT(potBar)) )
+           magicFac2 = 0.5D * (R_Btmp - 1.D) / SQRT(potBar * !DPI)
+
+           mFac = magicFac1 + magicFac2
+
+        END
+        ELSE: BEGIN             ;Intermediate cases
+           ;;MagicFac 1
+           magicFac1 = 0.5D * ( EXP(potBar) * ERFC(SQRT(potBar)) )
+
+           ;;Using Simpson's rule
+           ;; magicFac2 = QSIMP('ONEYOUNEED',integLims[0],integLims[1])
+
+           magicFac2a = SQRT(( R_Btmp - 1) / !DPI)
+           ;;Using five-point Newton-Cotes integration
+           dx         = 0.0001D
+           nx         = (integLims[1]-integLims[0])/dx
+           in_x       = LINDGEN(nx)*dx + integLims[0]
+           in_y       = DAWSONINTEGRAND(in_x)
+           magicFac2b = EXP(- (potBar / (R_Btmp - 1.D) ) ) * $
+                        INT_TABULATED(TEMPORARY(in_x),TEMPORARY(in_y), $
+                                      /DOUBLE, $
+                                      /SORT)
+           
+           mFac      = magicFac1 + magicFac2a * magicFac2b
+
+        END
+     ENDCASE
+
+     nOut   = n / mFac
+
+     IF KEYWORD_SET(msph_to_fast) THEN nOut = 1.D / nOut
+
+     RETURN,nOut
+
+  ENDELSE
 
 END
