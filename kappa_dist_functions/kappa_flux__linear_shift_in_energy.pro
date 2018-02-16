@@ -76,9 +76,10 @@ FUNCTION KAPPA_FLUX__LINEAR_SHIFT_IN_ENERGY,X,P,DP, $
         
         Finv     *= 2.D5 * energy^2 / inMass^2 
      END
+     
      'FLUX': BEGIN
         ;;Convert to differential number flux units, #/(cm^2-s-sr-eV)
-        Finv     *= 2.D5 * energy / inMass^2 ;/  inDT
+        Finv     *= 2.D5 * energy / inMass^(2.D) ;/  inDT
      END
      'DF': BEGIN                ; 'DF'     :  #/(km^3-(cm/s)^3)
         ;;Just leave 'er, Ted!
@@ -98,7 +99,12 @@ FUNCTION KAPPA_FLUX__LINEAR_SHIFT_IN_ENERGY,X,P,DP, $
   ;; IF KEYWORD_SET(take_stock_of_RB) THEN BEGIN
   ;;    f_e             = (energy - E_b))^2 + E_b * (SIN(pitchAngle))^2 : $
   ;; ENDIF ELSE BEGIN
-     f_e             = energy - E_b
+
+  ;; ORIGINAL
+  ;; f_e             = (SQRT(energy) - SQRT(E_b))^(2.D)
+
+  ;; DOESN'T WORK
+  f_e             = energy - E_b
   ;; ENDELSE
                     
   ;; fk3_innard      = 1.D + f_e / ( ( kappa - 1.5D + helpMeNotBeZero ) * T )
