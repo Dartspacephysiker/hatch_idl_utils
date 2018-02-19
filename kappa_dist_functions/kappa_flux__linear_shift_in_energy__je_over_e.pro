@@ -31,7 +31,6 @@ FUNCTION KAPPA_FLUX__LINEAR_SHIFT_IN_ENERGY__JE_OVER_E,X,P,DP, $
    TAKE_STOCK_OF_RB=take_stock_of_RB, $
    TAKE_STOCK__RB=RB
    
-
   COMPILE_OPT IDL2,STRICTARRSUBS
 
   energy                 = X
@@ -67,21 +66,23 @@ FUNCTION KAPPA_FLUX__LINEAR_SHIFT_IN_ENERGY__JE_OVER_E,X,P,DP, $
   ;;Still fo' real
   IF kappa EQ 2.0 THEN kappaS = 2.00001D 
 
+  ;;numConst is (speedOfLight)/(consts arising from specifying n in cm^-3, mass=511 keV/c^2
+  numConst = 29675347.D         ; 3.D8 / SQRT(102.2D)
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Chunks of the function
   ;;The whole thing is, as you see below, Finv*FK1*FK2*FK3
 
   ;;First chunk
-  Finv            = n / (DOUBLE((!DPI * T * (kappaS - 1.5D ) )))^(1.5D) * 29675347.D ; 3.D8 / SQRT(102.2D)
-  ;;The const at the end is (speedOfLight)/(consts arising from specifying n in cm^-3, mass=511 keV/c^2
+  Finv            = n / (DOUBLE((!DPI * T * (kappaS - 1.5D ) )))^(1.5D) * numConst
 
   ;;Second chunk
   FK1             = KAPPA_GAMMARAT(kappa)
 
   ;;Third chunk, in parts that become useful later for PDs
                     
-  fk2_innard      = 1.D + eMDPhi / ( ( kappaS - 1.5D ) * T )
-  FK2             = ( fk2_innard ) ^ ( -1.D - kappa )
+  fk2_innie      = 1.D + eMDPhi / ( ( kappaS - 1.5D ) * T )
+  FK2             = ( fk2_innie ) ^ ( -1.D - kappa )
 
   ;;Fini
   F               = TEMPORARY(Finv)*TEMPORARY(FK1)*TEMPORARY(FK2)
@@ -100,22 +101,34 @@ FUNCTION KAPPA_FLUX__LINEAR_SHIFT_IN_ENERGY__JE_OVER_E,X,P,DP, $
   ;;partial derivatives.
   IF N_PARAMS() GT 2 THEN BEGIN
 
-     PRINT,"None of this has been updated after ripping from KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC"
-     STOP
-
-     requested              = dp
-     dp                     = MAKE_ARRAY(N_ELEMENTS(x),N_ELEMENTS(p),VALUE=X[0]*0)
+     requested   = dp
+     dp          = MAKE_ARRAY(N_ELEMENTS(x),N_ELEMENTS(p),VALUE=X[0]*0)
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 1: PDs wrt to dPhi
-
+     IF requested[0] GT 0 THEN BEGIN
+        dp[*,0]  = Finv * FK1 * (kappa + 1) / (T * (kappaS - 1.5D)) * fk2_innie^(-1.D*((kappa+2.D)))
+     ENDIF
+     
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 2: PDs wrt to T
+     IF requested[0] GT 0 THEN BEGIN
+        dp[*,1]  = Finv / T * FK1 * ( (kappa+1.D) * (eMDPhi/(T * (kappaS-1.5D))) * ( fk2_innie ) ^ (-1.D*(kappa+2.D)) -1.5D * FK2 )
+     ENDIF
      
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 3: PDs wrt to kappa--The worst of all, and the most important
+     IF requested[0] GT 0 THEN BEGIN
+        dp[*,2]  = n / (!DPI * T)^(1.5D) * numConst * FK2 * $
+                   ( 2.D * SQRT(2.D) * KAPPA_GAMMARAT(kappa) * (REAL_DIGAMMA(kappa+1.D)-REAL_DIGAMMA(kappa-0.5D)-3.D) / ( 2.D * kappaS - 3.D)^(2.5D) + $
+                     KAPPA_GAMMARAT(kappa)/ (kappaS-1.5D)^(1.5D) * ( ( eMDPhi/ T)/fk2_innie / (kappaS-1.5D)^2 - ALOG(fk2_innie) ) $
+                   )
+     ENDIF     
 
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 4: PDs wrt to n
+     IF requested[0] GT 0 THEN BEGIN
+        dp[*,3]  = F/n
+     ENDIF
 
      
   ENDIF

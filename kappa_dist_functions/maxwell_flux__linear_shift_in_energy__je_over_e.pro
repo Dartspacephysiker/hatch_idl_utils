@@ -93,20 +93,31 @@ FUNCTION MAXWELL_FLUX__LINEAR_SHIFT_IN_ENERGY__JE_OVER_E,X,P,DP, $
   ;;partial derivatives.
   IF N_PARAMS() GT 2 THEN BEGIN
 
-     PRINT,"None of this has been updated after ripping from KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__CONV_TO_F__FUNC"
-     STOP
-
      requested              = dp
-     dp                     = MAKE_ARRAY(N_ELEMENTS(x),N_ELEMENTS(p),VALUE=X[0]*0)
+     dp                     = MAKE_ARRAY(N_ELEMENTS(x),N_ELEMENTS(p),VALUE=X[0]*0.D)
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 1: PDs wrt to dPhi
-
-     ;;;;;;;;;;;;;;;;;;;;;;;;;
-     ;;Slot 2: PDs wrt to T
+     IF requested[0] THEN BEGIN
+        dp[*,0] = F/T
+     ENDIF
      
      ;;;;;;;;;;;;;;;;;;;;;;;;;
-     ;;Slot 3: PDs wrt to n
+     ;;Slot 2: PDs wrt to T
+     IF requested[1] THEN BEGIN
+        dp[*,1] = F/ T * (eMDPhi/T - 1.5D)
+     ENDIF
+     
+     ;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;;Slot 3: PDs wrt to kappa
+     IF requested[2] THEN BEGIN
+        dp[*,2] = 0.D
+     ENDIF
 
+     ;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;;Slot 4: PDs wrt to n
+     IF requested[3] THEN BEGIN
+        dp[*,3] = F/n
+     ENDIF
      
   ENDIF
 
