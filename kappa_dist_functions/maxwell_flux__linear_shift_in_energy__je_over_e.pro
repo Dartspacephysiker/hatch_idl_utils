@@ -30,8 +30,9 @@
 FUNCTION MAXWELL_FLUX__LINEAR_SHIFT_IN_ENERGY__JE_OVER_E,X,P,DP, $
    NOTELECTRONS=notElectrons, $
    TAKE_STOCK_OF_RB=take_stock_of_RB, $
-   TAKE_STOCK__RB=RB
-   
+   TAKE_STOCK__RB=RB, $
+   UNITS=units, $ ;;dummy KW
+   MASS=mass ;;dummy KW
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 

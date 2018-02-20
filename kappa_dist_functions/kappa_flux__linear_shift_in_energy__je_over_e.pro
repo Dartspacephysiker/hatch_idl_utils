@@ -29,7 +29,9 @@
 FUNCTION KAPPA_FLUX__LINEAR_SHIFT_IN_ENERGY__JE_OVER_E,X,P,DP, $
    NOTELECTRONS=notElectrons, $
    TAKE_STOCK_OF_RB=take_stock_of_RB, $
-   TAKE_STOCK__RB=RB
+   TAKE_STOCK__RB=RB, $
+   UNITS=units, $ ;;dummy KW
+   MASS=mass;;dummy KW
    
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -85,7 +87,7 @@ FUNCTION KAPPA_FLUX__LINEAR_SHIFT_IN_ENERGY__JE_OVER_E,X,P,DP, $
   FK2             = ( fk2_innie ) ^ ( -1.D - kappa )
 
   ;;Fini
-  F               = TEMPORARY(Finv)*TEMPORARY(FK1)*TEMPORARY(FK2)
+  F               = Finv*FK1*FK2
 
   ;; Assume that this bad boy has been coming down the ol' field line, mirroring and whatnot with the first invariant conserved
   ;; IF KEYWORD_SET(take_stock_of_RB) THEN BEGIN
@@ -111,22 +113,26 @@ FUNCTION KAPPA_FLUX__LINEAR_SHIFT_IN_ENERGY__JE_OVER_E,X,P,DP, $
      
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 2: PDs wrt to T
-     IF requested[0] GT 0 THEN BEGIN
+     IF requested[1] GT 0 THEN BEGIN
         dp[*,1]  = Finv / T * FK1 * ( (kappa+1.D) * (eMDPhi/(T * (kappaS-1.5D))) * ( fk2_innie ) ^ (-1.D*(kappa+2.D)) -1.5D * FK2 )
      ENDIF
      
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 3: PDs wrt to kappa--The worst of all, and the most important
-     IF requested[0] GT 0 THEN BEGIN
-        dp[*,2]  = n / (!DPI * T)^(1.5D) * numConst * FK2 * $
-                   ( 2.D * SQRT(2.D) * KAPPA_GAMMARAT(kappa) * (REAL_DIGAMMA(kappa+1.D)-REAL_DIGAMMA(kappa-0.5D)-3.D) / ( 2.D * kappaS - 3.D)^(2.5D) + $
-                     KAPPA_GAMMARAT(kappa)/ (kappaS-1.5D)^(1.5D) * ( ( eMDPhi/ T)/fk2_innie / (kappaS-1.5D)^2 - ALOG(fk2_innie) ) $
-                   )
+     IF requested[2] GT 0 THEN BEGIN
+        ;; dp[*,2]  = n / (!DPI * T)^(1.5D) * numConst * FK2 * $
+        ;;            ( 2.D * SQRT(2.D) * KAPPA_GAMMARAT(kappa) * (REAL_DIGAMMA(kappa+1.D)-REAL_DIGAMMA(kappa-0.5D)-3.D) / ( 2.D * kappaS - 3.D)^(2.5D) + $
+        ;;              KAPPA_GAMMARAT(kappa)/ (kappaS-1.5D)^(1.5D) * ( ( eMDPhi/ T)/fk2_innie / (kappaS-1.5D)^2 - ALOG(fk2_innie) ) $
+        ;;            )
+        dp[*,2]  = n / (!DPI * T)^(1.5D) * numConst * FK2 / (kappaS-1.5D)^(1.5D) * KAPPA_GAMMARAT(kappa) $
+                   * ( REAL_DIGAMMA(kappa+1.D) - REAL_DIGAMMA(kappa-0.5D) - 1.5D / (kappaS-1.5D)         $
+                       + ( eMDPhi / T * (kappa + 1.0D) / fk2_innie / (kappaS-1.5D)^2 - ALOG(fk2_innie) ) $
+                     )
      ENDIF     
 
      ;;;;;;;;;;;;;;;;;;;;;;;;;
      ;;Slot 4: PDs wrt to n
-     IF requested[0] GT 0 THEN BEGIN
+     IF requested[3] GT 0 THEN BEGIN
         dp[*,3]  = F/n
      ENDIF
 
