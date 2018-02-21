@@ -73,7 +73,7 @@ FUNCTION NFACTOR_KAPPA_L_AND_K,E_b,T,kappa,n,R_B, $
      RESTORE,dir+file
 
      ;; User requests needs to match assumptions of file
-     IF (WHERE(ABS(potBar2-(LK.assumes.potAbove/LK.assumes.T)) GT 1))[0] NE -1 THEN STOP
+     ;; IF (WHERE(ABS(potBar2-(LK.assumes.potAbove/LK.assumes.T)) GT 1))[0] NE -1 THEN STOP
 
      ;; Should only ask for one kappa
      IF N_ELEMENTS(UNIQ(kappa2,SORT(kappa2))) GT 1 THEN STOP
