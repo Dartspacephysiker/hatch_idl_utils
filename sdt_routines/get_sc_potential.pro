@@ -154,7 +154,8 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
 
         sc_pot = {x:spacecraft_potential.time, $
                   y:spacecraft_potential.comp1, $
-                  notch:spacecraft_potential.notch}
+                  notch:spacecraft_potential.notch, $
+                  type:"from_fa_potential"}
         
         IF ARG_PRESENT(data) THEN data = sc_pot ELSE BEGIN
            STORE_DATA,'sc_pot',DATA=sc_pot ;note this is actually the negative of the s/c potential
@@ -203,7 +204,7 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
         ENDFOR
 
         pot[index_max+1:nV8-1] = pot[j_range[index_max]]
-        sc_pot        = {x:v8.x,y:pot}
+        sc_pot        = {x:v8.x,y:pot,type:"Chaston style"}
         STORE_DATA,'sc_pot',DATA=sc_pot ;note this is actually the negative of the s/c potential
 
         PRINT,'Spacecraft potential stored as ''sc_pot'''
