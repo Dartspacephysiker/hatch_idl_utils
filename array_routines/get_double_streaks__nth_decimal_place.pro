@@ -306,7 +306,7 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
            ENDFOR
         END
         KEYWORD_SET(print__include_current): BEGIN
-           PRINTF,printLun,FORMAT='(A5,T7,A4,T13,A4,T19,A4,T25,A19,T46,A8,T56,A8,T66,A5,T73,A6,T81)', $
+           PRINTF,printLun,FORMAT='(A5,T7,A4,T13,A4,T19,A4,T25,A19,T46,A8,T56,A8,T66,A5,T73,A6,T81,A8)', $
                   'Orbit', $
                   'MLT', $
                   'ILAT', $
@@ -319,7 +319,7 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
                   'Current'
            FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
               PRINTF,printLun, $
-                     FORMAT='(I05,T7,F04.1,T12,F05.1,T19,I4,T25,A19,T46,A8,T56,G-8.5,T66,I-5,T73,G-6.3,T81,G-0.5)', $
+                     FORMAT='(I05,T7,F04.1,T12,F05.1,T19,I4,T25,A19,T46,A8,T56,G-8.5,T66,I-5,T73,G-6.3,T81,G-8.4)', $
                      MEDIAN(pOrbit[start_i[k]:stop_i[k]]), $
                      MEDIAN(pMLT[start_i[k]:stop_i[k]]), $
                      MEDIAN(pILAT[start_i[k]:stop_i[k]]), $
