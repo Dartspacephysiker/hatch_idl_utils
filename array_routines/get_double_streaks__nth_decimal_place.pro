@@ -6,6 +6,10 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
    nums,decimal_place, $
    MAXIMUS=maximus, $
    CURRENT_FOR_PRINTING=pCurrent, $
+   ORBIT_FOR_PRINTING=pOrbit, $
+   ALT_FOR_PRINTING=pAlt, $
+   MLT_FOR_PRINTING=pMLT, $
+   ILAT_FOR_PRINTING=pILAT, $
    NPTS=n, $
    MIN_T_STREAKLEN=min_streakLen_t, $
    GAP_TIME=gap_time, $
@@ -302,7 +306,11 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
            ENDFOR
         END
         KEYWORD_SET(print__include_current): BEGIN
-           PRINTF,printLun,FORMAT='(A0,T25,A0,T50,A0,T62,A0,T72,A0,T82)', $
+           PRINTF,printLun,FORMAT='(A5,T7,A4,T13,A4,T19,A4,T25,A19,T46,A8,T56,A8,T66,A5,T73,A6,T81)', $
+                  'Orbit', $
+                  'MLT', $
+                  'ILAT', $
+                  'Alt', $
                   'Start T', $
                   'Stop T', $
                   'Len (s)', $
@@ -311,9 +319,13 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
                   'Current'
            FOR k=0,N_ELEMENTS(start_i)-1 DO BEGIN
               PRINTF,printLun, $
-                     FORMAT='(A0,T25,A0,T50,G-0.5,T62,I-10,T72,G-0.5,T82,G-0.5)', $
-                     TIME_TO_STR(nums[start_i[k]],/MSEC), $
-                     TIME_TO_STR(nums[stop_i[k]],/MSEC), $
+                     FORMAT='(I05,T7,F04.1,T12,F05.1,T19,I4,T25,A19,T46,A8,T56,G-8.5,T66,I-5,T73,G-6.3,T81,G-0.5)', $
+                     MEDIAN(pOrbit[start_i[k]:stop_i[k]]), $
+                     MEDIAN(pMLT[start_i[k]:stop_i[k]]), $
+                     MEDIAN(pILAT[start_i[k]:stop_i[k]]), $
+                     MEDIAN(pALT[start_i[k]:stop_i[k]]), $
+                     TIME_TO_STR(nums[start_i[k]]), $
+                     STRMID(TIME_TO_STR(nums[stop_i[k]]),11,12), $
                      nums[stop_i[k]]-nums[start_i[k]], $
                      streakLens[k], $
                      MEAN((nums[start_i[k]:stop_i[k]])[1:-1]- $
