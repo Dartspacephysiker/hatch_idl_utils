@@ -74,7 +74,7 @@ FUNCTION KAPPA_FLUX__LINEAR_SHIFT_IN_ENERGY,X,P,DP, $
      'EFLUX': BEGIN
         ;;Converts to differential energy flux units, eV/(cm^2-s-sr-eV)
         
-        Finv     *= 2.D5 * energy^2 / inMass^2 
+        Finv     *= 2.D5 * energy^2 / inMass^2.
      END
      
      'FLUX': BEGIN

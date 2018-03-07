@@ -4,8 +4,7 @@
 
 ;;To make things go, need to run @/home/spencerh/idl/lib/aacgm/compile_aacgm.pro
 
-;;Unneeded functions CHECK_EXISTS_AND_COMPLETENESS,
-;;CHECK_NEED_TO_RECALC_TSTAMPS, and
+;;Unneeded functions CHECK_EXISTS_AND_COMPLETENESS and
 ;;GET_TIMES_AND_DECIDE_ALTITUDE_OR_NOT_ALTITUDE at end of file
 PRO MAKE_GEO_AND_AACGM_SPHCOORD_ARRAYS,timeTmp,nTot,GEOSph,AACGMSph,doEm_ii, $
                                        GEOSTRUCT=GEOstruct, $
@@ -26,6 +25,63 @@ PRO CHOP_UTC_STRINGS_INTO_YMD_HMS,timeTmpStr,year,month,day,hour,min,sec
   min    = FIX(STRMID(timeTmpStr,14,2))
   sec    = FLOAT(STRMID(timeTmpStr,17,6))
 
+END
+FUNCTION CHECK_NEED_TO_RECALC_TSTAMPS,timeFile,timeTmp,nTot, $
+                                      ALTITUDE_MAX=altitude_max, $
+                                      R_E=R_E, $
+                                      ALLOW_FL_TRACE=allow_fl_trace, $
+                                      OUT_TIMETMPSTR=timeTmpStr, $
+                                      TIMESTRNAME=timeStrName, $
+                                      CONVERT_VARNAMES_AND_RESAVE_OUTFILES=convert_varnames_and_resave_outFiles
+
+  nTot          = N_ELEMENTS(timeTmp)
+
+  defTimeStrName = 'timeTmpStr'
+
+  ;;Do we already have them?
+  IF FILE_TEST(timeFile) THEN BEGIN
+     RESTORE,timeFile
+
+     IF KEYWORD_SET(convert_varnames_and_resave_outFiles) THEN BEGIN
+        IF ~EXECUTE(defTimeStrName + ' = TEMPORARY(' + timeStrName + ')') THEN STOP
+        PRINT,"Re-saving "  + timeFile + " ..."
+        SAVE,timeTmpStr,savedAltitude_max,savedR_E,savedAllow_fl_trace,FILENAME=timeFile
+     ENDIF
+
+     IF N_ELEMENTS(timeTmpStr) NE nTot THEN BEGIN
+        PRINT,'Wrong number of elements!! Re-converting time stamps ...'
+        recalcTime       = 1
+     ENDIF ELSE BEGIN
+        hateIt           = 0
+        IF savedAltitude_max NE altitude_max THEN BEGIN
+           PRINT,"Saved altmax (" + STRCOMPRESS(savedAltitude_max,/REMOVE_ALL) + " doesn't match! Recalculating timestamps..."
+           recalcTime    = 1
+           hateIt        = 1
+        ENDIF
+        IF savedR_E NE R_E THEN BEGIN
+           PRINT,"Saved R_E (" + STRCOMPRESS(savedR_E,/REMOVE_ALL) + " doesn't match! Recalculating timestamps..."
+           recalcTime    = 1
+           hateIt        = 1
+        ENDIF
+        IF savedAllow_fl_trace NE allow_fl_trace THEN BEGIN
+           PRINT,"Saved allow_fl_trace (" + STRCOMPRESS(savedAllow_fl_trace,/REMOVE_ALL) + " doesn't match! Recalculating timestamps..."
+           recalcTime    = 1
+           hateIt        = 1
+        ENDIF
+
+        PRINT,'Using already-converted timestamps from ' + timeFile + ' ...'
+        ;; PRINT,"Kidding! Continuing ..."
+        ;; CONTINUE
+        IF ~KEYWORD_SET(hateIt) THEN BEGIN
+           recalcTime    = 0 
+        ENDIF
+
+     ENDELSE
+  ENDIF ELSE BEGIN
+     recalcTime          = 1
+  ENDELSE
+
+  RETURN,recalcTime
 END
 FUNCTION CONVERT_GEO_TO_AACGM__SINGLE_SET, $
    timeTmp,geoStruct, $
@@ -56,12 +112,12 @@ FUNCTION CONVERT_GEO_TO_AACGM__SINGLE_SET, $
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
+  @defaults__fastdb_coordinate_conversion.pro
+
   tmpFile = '/tmp/garbage.sav'
 
   IF KEYWORD_SET(restore_lastConv) THEN BEGIN
 
-     PRINT,"Not functioning. Need to decide what it's supposed to do."
-     
      lastOutDir = '/SPENCEdata/Research/Satellites/FAST/kappa_dists/saves_output_etc/'
 
      output__timeFileNameLast = 'last_conv_geo_to_aacgm__single_set__tStamps.sav'
@@ -159,87 +215,98 @@ FUNCTION CONVERT_GEO_TO_AACGM__SINGLE_SET, $
         ENDELSE
      ENDIF
 
-     CHOP_UTC_STRINGS_INTO_YMD_HMS,timeTmpStr,year,month,day,hour,min,sec
+     dontBother = 0
+     IF KEYWORD_SET(restore_lastConv) THEN BEGIN
+        RESTORE,outDir+output__saveFileNameLast
 
-     PRINT,"Feeding it to AACGM ..."
-     ;; IF FILE_TEST(tmpFiles[i]) THEN BEGIN
-     ;;    PRINT,"Restoring " + tmpFiles[i] + ' ...'
-     ;;    RESTORE,tmpFiles[i]
-     ;;    PRINT,'Restored params'
-     ;;    PRINT,'==============='
-     ;;    PRINT,"nGotEm        : " + STRCOMPRESS(nGotEm,/REMOVE_ALL)
-     ;;    PRINT,"lastCheck     : " + STRCOMPRESS(lastCheck,/REMOVE_ALL)
-     ;;    PRINT,"checkInterval : " + STRCOMPRESS(checkInterval,/REMOVE_ALL)
+        IF N_ELEMENTS(AACGMStruct) GT 0 THEN IF N_ELEMENTS(AACGMStruct.mlt) EQ N_ELEMENTS(timeTmpStr) THEN dontBother = 1
+     ENDIF
+
+     IF ~dontBother THEN BEGIN
+
+        CHOP_UTC_STRINGS_INTO_YMD_HMS,timeTmpStr,year,month,day,hour,min,sec
+
+        PRINT,"Feeding it to AACGM ..."
+        ;; IF FILE_TEST(tmpFiles[i]) THEN BEGIN
+        ;;    PRINT,"Restoring " + tmpFiles[i] + ' ...'
+        ;;    RESTORE,tmpFiles[i]
+        ;;    PRINT,'Restored params'
+        ;;    PRINT,'==============='
+        ;;    PRINT,"nGotEm        : " + STRCOMPRESS(nGotEm,/REMOVE_ALL)
+        ;;    PRINT,"lastCheck     : " + STRCOMPRESS(lastCheck,/REMOVE_ALL)
+        ;;    PRINT,"checkInterval : " + STRCOMPRESS(checkInterval,/REMOVE_ALL)
         
-     ;;    IF N_ELEMENTS(eEphem_AACGMSph_arr) GT 0 THEN BEGIN
-     ;;       AACGMSph = TEMPORARY(eEphem_AACGMSph_arr)
-     ;;    ENDIF
+        ;;    IF N_ELEMENTS(eEphem_AACGMSph_arr) GT 0 THEN BEGIN
+        ;;       AACGMSph = TEMPORARY(eEphem_AACGMSph_arr)
+        ;;    ENDIF
 
-     ;;    IF KEYWORD_SET(force_newCheckItvl) THEN BEGIN
-     ;;       PRINT,"Forcing new check interval: " + STRCOMPRESS(force_newCheckItvl,/REMOVE_ALL)
-     ;;       checkInterval = force_newCheckItvl
-     ;;    ENDIF
+        ;;    IF KEYWORD_SET(force_newCheckItvl) THEN BEGIN
+        ;;       PRINT,"Forcing new check interval: " + STRCOMPRESS(force_newCheckItvl,/REMOVE_ALL)
+        ;;       checkInterval = force_newCheckItvl
+        ;;    ENDIF
 
-     ;;    startK        = k
+        ;;    startK        = k
 
-     ;;    PRINT,""
-     ;;    PRINT,"Starting from k = " + STRCOMPRESS(startK,/REMOVE_ALL) + " ..."
-     ;; ENDIF ELSE BEGIN
+        ;;    PRINT,""
+        ;;    PRINT,"Starting from k = " + STRCOMPRESS(startK,/REMOVE_ALL) + " ..."
+        ;; ENDIF ELSE BEGIN
         nGotEm        = 0
         lastCheck     = 0
         checkInterval = 10000
         startK        = 0
-     ;; ENDELSE
+        ;; ENDELSE
 
 
-     TIC
-     runCName = "AACGM Clock"
-     runC     = TIC(runCName)
-     FOR k=startK,nTot-1 DO BEGIN 
+        TIC
+        runCName = "AACGM Clock"
+        runC     = TIC(runCName)
+        FOR k=startK,nTot-1 DO BEGIN 
 
-        e = AACGM_V2_SETDATETIME(year[k],month[k],day[k], $
-                                 hour[k],min[k],sec[k])
+           e = AACGM_V2_SETDATETIME(year[k],month[k],day[k], $
+                                    hour[k],min[k],sec[k])
 
-        tmpAACGM                  = CNVCOORD_V2(geoSph[*,k], $
-                                                ALLOW_TRACE=allow_fl_trace)
-        AACGM_MLT                 = MLT_V2(tmpAACGM[1,*])
-        AACGMSph[*,k]  = [tmpAACGM,AACGM_MLT]
+           tmpAACGM                  = CNVCOORD_V2(geoSph[*,k], $
+                                                   ALLOW_TRACE=allow_fl_trace)
+           AACGM_MLT                 = MLT_V2(tmpAACGM[1,*])
+           AACGMSph[*,k]  = [tmpAACGM,AACGM_MLT]
 
-        nGotEm++
-        
-        IF nGotEm GE (lastCheck+checkInterval) THEN BEGIN
-           PRINT,"N completed : " + STRCOMPRESS(nGotEm,/REMOVE_ALL)
-           TOC,runC
-           lastCheck += checkInterval
+           nGotEm++
+           
+           IF nGotEm GE (lastCheck+checkInterval) THEN BEGIN
+              PRINT,"N completed : " + STRCOMPRESS(nGotEm,/REMOVE_ALL)
+              TOC,runC
+              lastCheck += checkInterval
 
-           SAVE,AACGMSph,lastCheck,checkInterval,nGotEm,k,FILENAME=tmpFile
-        ENDIF
+              SAVE,AACGMSph,lastCheck,checkInterval,nGotEm,k,FILENAME=tmpFile
+           ENDIF
 
-     ENDFOR
-     TOC
+        ENDFOR
+        TOC
 
-     AACGMSph[2,*]     = (AACGMSph[2,*]*R_E-R_E) ;convert back to altitude above sea level
+        AACGMSph[2,*]     = (AACGMSph[2,*]*R_E-R_E) ;convert back to altitude above sea level
 
-     AACGMStruct   = {ALT:REFORM(AACGMSph[2,*]), $
-                      MLT:REFORM(AACGMSph[3,*]), $
-                      LAT:REFORM(AACGMSph[0,*])}
+        AACGMStruct   = {ALT:REFORM(AACGMSph[2,*]), $
+                         MLT:REFORM(AACGMSph[3,*]), $
+                         LAT:REFORM(AACGMSph[0,*])}
 
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     ;;Save it
-     IF KEYWORD_SET(output__saveFileName) THEN BEGIN
-        PRINT,'Saving ' + outDir + output__saveFileName + '...'
+        ;;Save it
+        IF KEYWORD_SET(output__saveFileName) THEN BEGIN
+           PRINT,'Saving ' + outDir + output__saveFileName + '...'
 
-        IF N_ELEMENTS(outDir) EQ 0 THEN BEGIN
-           SPAWN,'pwd',outDir
-           PRINT,"Setting outDir to " + outDir + ' ...'
+           IF N_ELEMENTS(outDir) EQ 0 THEN BEGIN
+              SPAWN,'pwd',outDir
+              PRINT,"Setting outDir to " + outDir + ' ...'
+           ENDIF
+           SAVE,AACGMStruct,AACGMSph,FILENAME=outDir+output__saveFileName
+           SAVE,AACGMStruct,AACGMSph,FILENAME=outDir+output__saveFileNameLast
+
         ENDIF
-        SAVE,AACGMStruct,AACGMSph,FILENAME=outDir+output__saveFileName
-        SAVE,AACGMStruct,AACGMSph,FILENAME=outDir+output__saveFileName
 
      ENDIF
      TOC
 
-     PRINT,"Did it! Finished converting " + STRCOMPRESS(nTot,/REMOVE_ALL) + "GEO coordinates to AACGMSph"
+     PRINT,"Did it! Finished converting " + STRCOMPRESS(nTot,/REMOVE_ALL) + " GEO coordinates to AACGMSph"
 
      RETURN,AACGMStruct
 
@@ -369,61 +436,3 @@ END
 ;;   RETURN,0
 
 ;; END
-
-FUNCTION CHECK_NEED_TO_RECALC_TSTAMPS,timeFile,timeTmp,nTot, $
-                                      ALTITUDE_MAX=altitude_max, $
-                                      R_E=R_E, $
-                                      ALLOW_FL_TRACE=allow_fl_trace, $
-                                      OUT_TIMETMPSTR=timeTmpStr, $
-                                      TIMESTRNAME=timeStrName, $
-                                      CONVERT_VARNAMES_AND_RESAVE_OUTFILES=convert_varnames_and_resave_outFiles
-
-  nTot          = N_ELEMENTS(timeTmp)
-
-  defTimeStrName = 'timeTmpStr'
-
-  ;;Do we already have them?
-  IF FILE_TEST(timeFile) THEN BEGIN
-     RESTORE,timeFile
-
-     IF KEYWORD_SET(convert_varnames_and_resave_outFiles) THEN BEGIN
-        IF ~EXECUTE(defTimeStrName + ' = TEMPORARY(' + timeStrName + ')') THEN STOP
-        PRINT,"Re-saving "  + timeFile + " ..."
-        SAVE,timeTmpStr,savedAltitude_max,savedR_E,savedAllow_fl_trace,FILENAME=timeFile
-     ENDIF
-
-     IF N_ELEMENTS(timeTmpStr) NE nTot THEN BEGIN
-        PRINT,'Wrong number of elements!! Re-converting time stamps ...'
-        recalcTime       = 1
-     ENDIF ELSE BEGIN
-        hateIt           = 0
-        IF savedAltitude_max NE altitude_max THEN BEGIN
-           PRINT,"Saved altmax (" + STRCOMPRESS(savedAltitude_max,/REMOVE_ALL) + " doesn't match! Recalculating timestamps..."
-           recalcTime    = 1
-           hateIt        = 1
-        ENDIF
-        IF savedR_E NE R_E THEN BEGIN
-           PRINT,"Saved R_E (" + STRCOMPRESS(savedR_E,/REMOVE_ALL) + " doesn't match! Recalculating timestamps..."
-           recalcTime    = 1
-           hateIt        = 1
-        ENDIF
-        IF savedAllow_fl_trace NE allow_fl_trace THEN BEGIN
-           PRINT,"Saved allow_fl_trace (" + STRCOMPRESS(savedAllow_fl_trace,/REMOVE_ALL) + " doesn't match! Recalculating timestamps..."
-           recalcTime    = 1
-           hateIt        = 1
-        ENDIF
-
-        PRINT,'Using already-converted timestamps from ' + timeFile + ' ...'
-        ;; PRINT,"Kidding! Continuing ..."
-        ;; CONTINUE
-        IF ~KEYWORD_SET(hateIt) THEN BEGIN
-           recalcTime    = 0 
-        ENDIF
-
-     ENDELSE
-  ENDIF ELSE BEGIN
-     recalcTime          = 1
-  ENDELSE
-
-  RETURN,recalcTime
-END

@@ -53,11 +53,11 @@ FUNCTION MAXWELL_FLUX__LINEAR_SHIFT_IN_ENERGY,X,P,DP, $
   CASE STRUPCASE(units) OF
      'EFLUX': BEGIN
         ;;Converts to differential energy flux units, eV/(cm^2-s-sr-eV)
-        Finv     *= DOUBLE(2e5) * energy^2 / inMass^2 ;/  inDT
+        Finv     *= DOUBLE(2e5) * energy^2 / inMass^2. ;/  inDT
      END
      'FLUX': BEGIN
         ;;Convert to differential number flux units, #/(cm^2-s-sr-eV)
-        Finv     *= DOUBLE(2e5) * energy / inMass^2 ;/  inDT
+        Finv     *= DOUBLE(2e5) * energy / inMass^2. ;/  inDT
      END
      'DF': BEGIN                ; 'DF'     :  #/(km^3-(cm/s)^3)
         ;;Just leave 'er, Ted!
