@@ -5,7 +5,8 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
    INTERP_TO_COMMON_TS=interp_to_common_TS, $
    ONESEC_TS=tS_1s, $
    NO_SEPARATE_DC_AC=no_separate_DC_AC, $
-   USE_DOUBLE_STREAKER=use_double_streaker
+   USE_DOUBLE_STREAKER=use_double_streaker, $
+   EXIT_ON_PROBLEMS=exit_on_problems
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -86,7 +87,7 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
 
      IF (strt_i[0] EQ 0) AND (stop_i[0] EQ 0) THEN BEGIN
         PRINT,"Can't Strangeway-decimate or Strangeway-smooth these data! They can't be chunked into buffers ..."
-
+        IF KEYWORD_SET(exit_on_problems) THEN RETURN,{x: data.x, y:MAKE_ARRAY(N_ELEMENTS(data.x),/FLOAT,VALUE=!VALUES.F_NAN)}
      ENDIF
   ENDELSE
 

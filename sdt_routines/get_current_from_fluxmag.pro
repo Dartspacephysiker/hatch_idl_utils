@@ -1,12 +1,13 @@
 ;2016/07/11
 FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
-                             magStr,velocityStr, $
-                             USE_DESPUN=use_despun, $
-                             SDTNAME__JMAG=jMagName, $
-                             INFERRED_E_NUMFLUX=inferred_e_numFlux, $
-                             SDTNAME__INFERRED_E_NUMFLUX=e_numFluxName, $
+                                  magStr,velocityStr, $
+                                  USE_DESPUN=use_despun, $
+                                  SDTNAME__JMAG=jMagName, $
+                                  INFERRED_E_NUMFLUX=inferred_e_numFlux, $
+                                  SDTNAME__INFERRED_E_NUMFLUX=e_numFluxName, $
                                   STRANGEWAY_DECIMATE=strangeWay_decimate, $
-                             QUIET=quiet
+                                  EXIT_ON_PROBLEMS=exit_on_problems, $
+                                  QUIET=quiet
   
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -141,7 +142,9 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
   STORE_DATA,jMagName,DATA={x:magz.x,y:jMag}
 
   IF KEYWORD_SET(strangeway_decimate) THEN BEGIN
-     this = STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS(jmag,/NO_SEPARATE_DC_AC)
+     this = STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS(jmag, $
+                                                  /NO_SEPARATE_DC_AC, $
+                                                  EXIT_ON_PROBLEMS=exit_on_problems)
      jMag = {x:this.x, $
              y:this.y, $
              units:jMag.units}

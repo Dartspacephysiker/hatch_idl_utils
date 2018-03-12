@@ -514,8 +514,13 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         
         IF nKeep NE nHere THEN BEGIN
 
-           IF nKeep EQ 0 THEN STOP
-           
+           IF nKeep EQ 0 THEN BEGIN
+              PRINT,"No matching " + eeb_or_ees + " data for selected interval: " + $
+                    T2S(t1,/MS) + '–' + T2S(t2,/MS) + '!'
+              diff_eFlux = -1
+              RETURN
+           ENDIF
+
            PRINT,FORMAT='("Dropping ",I0,A0)',nHere-nKeep," stinker" + ((nHere-nKeep) GT 1 ? 's' : '')
            dat_eFlux            = dat_eFlux[keep]
 
