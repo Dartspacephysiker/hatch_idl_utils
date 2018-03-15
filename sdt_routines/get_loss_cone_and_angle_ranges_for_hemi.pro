@@ -50,7 +50,7 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
 
   ENDELSE
   
-  north_south       = FLOAT(ABS(struc.ilat)/struc.ilat)
+  north_south       = LONG(ABS(struc.ilat)/struc.ilat)
   
   ;;Loss cone stuff
   lc_angleRange     = !NULL
