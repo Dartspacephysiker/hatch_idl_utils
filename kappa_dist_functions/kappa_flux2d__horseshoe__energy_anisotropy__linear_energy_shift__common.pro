@@ -7,6 +7,8 @@
 ;2018/02/01
 ;Blog, that Referee #1 has really done us in.
 ;
+;2018/03/16 Permanently banishing bFunc and gFunc
+;
 ;Previously only one parameter in P, and that was density
 ;As for A, well ... we retired him.
 ; P[0]: E_b,       Plasma bulk energy (eV)
@@ -39,16 +41,16 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__LINEAR_ENERGY_SHIFT__COMMON
   ;; IF nAngles NE N_ELEMENTS(K_EA__angles) THEN BEGIN
   ;;    PRINT,'Trouble!'
   ;; ENDIF
-  sortKEA = SORT(k_ea__angles)
+  ;; sortKEA = SORT(k_ea__angles)
   ;; sortA   = SORT(Y[0,*])
 
   ;; unsortKEA = VALUE_CLOSEST2(k_ea__angles[sortKEA],k_ea__angles)
   ;; unsortA   = VALUE_CLOSEST2((Y[0,*])[sortKEA],Y[0,*])
 
-  smallAngle = MIN(ABS(MEAN(Y,DIMENSION=1)),fa_i)
-  k_ea_ii    = sortKEA[VALUE_CLOSEST2(K_EA__angles[sortKEA],REFORM(Y[0,*]),/CONSTRAINED)]
+  ;; smallAngle = MIN(ABS(MEAN(Y,DIMENSION=1)),fa_i)
+  ;; K_EA__ii    = sortKEA[VALUE_CLOSEST2(K_EA__angles[sortKEA],REFORM(Y[0,*]),/CONSTRAINED)]
 
-  ;; k_ea_ii      = INDGEN(N_ELEMENTS(k_ea__angles))
+  ;; K_EA__ii      = INDGEN(N_ELEMENTS(k_ea__angles))
 
   mu_vals          = COS(Y/180.D*!DPI)
 
@@ -92,19 +94,19 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__LINEAR_ENERGY_SHIFT__COMMON
   CASE 1 OF
      KEYWORD_SET(is_maxwellian_fit): BEGIN
 
-        IF nAngles NE N_ELEMENTS(k_ea_ii) THEN STOP
+        IF nAngles NE N_ELEMENTS(K_EA__ii) THEN STOP
 
         FOR i=0,nAngles-1 DO BEGIN
 
            tempEn   = X[*,i]
            tempP    = P
-           tempP[0] = tempP[0]*K_EA__bFunc[k_ea_ii[i]]
+           tempP[0] = tempP[0] ;*K_EA__bFunc[K_EA__ii[i]]
            ;; tempP[0] = tempP[0]*K_EA__bFunc[i]
 
            ;; MAXWELL_FLUX,tempEn,tempP,angleSlice,UNITS=units,MASS=mass
            angleSlice = MAXWELL_FLUX__LINEAR_SHIFT_IN_ENERGY(tempEn,tempP,UNITS=units,MASS=mass)
 
-           Zmodel[*,i]  = angleSlice * K_EA__gFunc[k_ea_ii[i]] ; Bingham and Cairns [2000]
+           Zmodel[*,i]  = angleSlice ;* K_EA__gFunc[K_EA__ii[i]] ; Bingham and Cairns [2000]
            ;; Zmodel[*,i]  = angleSlice * K_EA__gFunc[i]          ; Bingham and Cairns [2000]
 
         ENDFOR
@@ -115,12 +117,12 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__LINEAR_ENERGY_SHIFT__COMMON
 
            tempEn   = X[*,i]
            tempP    = P
-           tempP[0] = tempP[0]*K_EA__bFunc[k_ea_ii[i]]
+           tempP[0] = tempP[0] ;*K_EA__bFunc[K_EA__ii[i]]
            ;; tempP[0] = tempP[0]*K_EA__bFunc[i]
 
            ;; PRINT,FORMAT='("tempP, factor, angle, aIntended ",T35,": ",F0.2,T50,F0.2,T65,F0.2,T80,F0.2)', $
            ;;       tempP[0], $
-           ;;       K_EA__bFunc[k_ea_ii[i]], $
+           ;;       K_EA__bFunc[K_EA__ii[i]], $
            ;;       MEAN(Y[*,i]), $
            ;;       bulk_e_angle[i]
 
@@ -131,7 +133,7 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__LINEAR_ENERGY_SHIFT__COMMON
            
            ;; Zmodel[*,i]  = angleSlice                          ; No horseshoe nothin.
            
-           Zmodel[*,i]  = angleSlice * K_EA__gFunc[k_ea_ii[i]] ; Bingham and Cairns [2000]
+           Zmodel[*,i]  = angleSlice ; * K_EA__gFunc[K_EA__ii[i]] ; Bingham and Cairns [2000]
            ;; Zmodel[*,i]  = angleSlice * K_EA__gFunc[i] ; Bingham and Cairns [2000]
            ;; Zmodel[*,i]  = angleSlice * ( mu_vals[*,i] + 1 )^2 ; Bingham and Cairns [2000]
            
