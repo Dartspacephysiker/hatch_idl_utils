@@ -28,12 +28,15 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
   IF KEYWORD_SET(loadFile) AND KEYWORD_SET(diff_eFlux_file) THEN BEGIN
 
      IF N_ELEMENTS(loadDir) EQ 0 THEN BEGIN
-        loadDir = ''
-     ENDIF
+        ;; loadDir = ''
+        diffEFluxDir = ''
+     ENDIF ELSE BEGIN
+        diffEFluxDir = loadDir + '/diff_eFlux/'
+     ENDELSE
 
-     IF (FILE_TEST(loadDir+diff_eFlux_file) OR FILE_TEST(diff_eFlux_file)) AND ~KEYWORD_SET(overwrite_existing) THEN BEGIN
+     IF (FILE_TEST(diffEFluxDir+diff_eFlux_file) OR FILE_TEST(diff_eFlux_file)) AND ~KEYWORD_SET(overwrite_existing) THEN BEGIN
         PRINT,'Restoring ' + diff_eFlux_file + '...'
-        realFile = FILE_TEST(loadDir+diff_eFlux_file) ? loadDir+diff_eFlux_file : diff_eFlux_file
+        realFile = FILE_TEST(diffEFluxDir+diff_eFlux_file) ? diffEFluxDir+diff_eFlux_file : diff_eFlux_file
         RESTORE,realFile
         ;; got_restored = (N_ELEMENTS(dat_eFlux) GT 0) OR (N_ELEMENTS(diff_eFlux) GT 0)
         got_restored = (SIZE(dat_eFlux,/TYPE) EQ 8) OR (SIZE(diff_eFlux,/TYPE) EQ 8)
@@ -597,7 +600,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
      IF (N_ELEMENTS(diff_eFlux_file) GT 0) AND ~got_restored THEN BEGIN
         save_diff_eFlux_to_file = diff_eFlux_file
         PRINT,"Saving diff_eFlux to file: " + save_diff_eFlux_to_file
-        SAVE,diff_eFlux,FILENAME=loadDir + save_diff_eFlux_to_file
+        SAVE,diff_eFlux,FILENAME=diffEFluxDir + save_diff_eFlux_to_file
      ENDIF ELSE BEGIN
         ;; PRINT,"Sorry, no save for you"
      ENDELSE

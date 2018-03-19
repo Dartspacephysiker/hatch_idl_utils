@@ -29,11 +29,14 @@ PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
 
      IF N_ELEMENTS(loadDir) EQ 0 THEN BEGIN
         loadDir = ''
-     ENDIF
+        diffEFluxDir = ''
+     ENDIF ELSE BEGIN
+        diffEFluxDir = loadDir + '/diff_eFlux/'
+     ENDELSE
 
-     IF FILE_TEST(loadDir+oneCount_file) THEN BEGIN
+     IF FILE_TEST(diffEFluxDir+oneCount_file) THEN BEGIN
         PRINT,'Restoring ' + oneCount_file + '...'
-        RESTORE,loadDir+oneCount_file
+        RESTORE,diffEFluxDir+oneCount_file
         got_restored = (N_ELEMENTS(dat_eFlux) GT 0) OR (N_ELEMENTS(dEF_oneCount) GT 0)
      ENDIF ELSE BEGIN
         PRINT,"Couldn't find " + oneCount_file + "!!!"
@@ -212,7 +215,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
      IF (KEYWORD_SET(couldntfindload) OR (N_ELEMENTS(oneCount_file) GT 0)) THEN BEGIN
         save_dEF_oneCount_to_file = oneCount_file
         PRINT,"Saving dEF_oneCount to file: " + save_dEF_oneCount_to_file
-        SAVE,dEF_oneCount,FILENAME=loadDir + save_dEF_oneCount_to_file
+        SAVE,dEF_oneCount,FILENAME=diffEFluxDir + save_dEF_oneCount_to_file
      ENDIF ELSE BEGIN
         PRINT,"Sorry, no save for you"
      ENDELSE
