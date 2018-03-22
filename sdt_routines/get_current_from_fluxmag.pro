@@ -43,7 +43,10 @@ FUNCTION GET_CURRENT_FROM_FLUXMAG,t1,t2, $
 
   IF SIZE(magStr,/TYPE) NE 8 THEN BEGIN
      IF KEYWORD_SET(use_despun) THEN BEGIN
-        UCLA_MAG_DESPIN,QUIET=quiet
+
+        GET_DATA,'dB_fac_v',data=data
+        IF SIZE(data,/TYPE) NE 8 THEN $
+           UCLA_MAG_DESPIN,QUIET=quiet
 
         GET_DATA,'dB_fac_v',DATA=db_fac
         IF N_ELEMENTS(time1) NE 0 AND N_ELEMENTS(time2) NE 0 THEN BEGIN
