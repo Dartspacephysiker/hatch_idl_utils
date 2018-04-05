@@ -16,6 +16,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
                                 MANUAL_ANGLE_CORRECTION=manual_angle_correction, $
                                 ALLEXCLATM_ARANGE=allExclAtm_aRange, $
+                                EARTHWARD_ARANGE=earthward_aRange, $
                                 ANGLESTR=angleStr, $
                                 ;; ESPECUNITS=eSpecUnits, $
                                 ;; ELECTRON_ENERGY_LIMS=energy_electrons, $
@@ -70,6 +71,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                           i_angle,i_angle_up, $
                                           north_south, $
                                           ALLEXCLATM_ARANGE=allExclAtm_aRange, $
+                                          EARTHWARD_ARANGE=earthward_aRange, $
                                           CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
                                           UPGOING=upgoing, $
                                           OUT_E_ANGLE=e_angle, $
