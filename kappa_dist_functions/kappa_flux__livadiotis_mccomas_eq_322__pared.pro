@@ -24,7 +24,7 @@ PRO KAPPA_FLUX__LIVADIOTIS_MCCOMAS_EQ_322__PARED,X,A,F,pder, $
                       5.1099891D5/speedOfLight^2 ;eV/c^2
 
   IF N_ELEMENTS(units) EQ 0 THEN BEGIN
-     units               = 'eFlux'
+     units               = 'Eflux'
   ENDIF
   
   IF N_ELEMENTS(A) LT 4 THEN BEGIN

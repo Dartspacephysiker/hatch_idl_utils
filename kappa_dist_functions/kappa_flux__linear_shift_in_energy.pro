@@ -42,7 +42,7 @@ FUNCTION KAPPA_FLUX__LINEAR_SHIFT_IN_ENERGY,X,P,DP, $
   ENDIF
 
   IF N_ELEMENTS(units) EQ 0 THEN BEGIN
-     units               = 'eFlux'
+     units               = 'Eflux'
   ENDIF
 
   energy                 = DOUBLE(energy)
