@@ -134,7 +134,7 @@ FUNCTION GET_EN_SPEC__SINGLE_STRUCT,dat,  $
      normArr      = norm
 
      IF KEYWORD_SET(bkg  ) THEN dat = SUB3D(dat,bkg)
-     IF KEYWORD_SET(units) THEN dat = CONV_UNITS(dat,units)
+     IF KEYWORD_SET(units) THEN IF STRUPCASE(dat.units_name) NE STRUPCASE(units) THEN dat = CONV_UNITS(dat,units)
 
      nvar = dat.nenergy
      IF nvar GT nmax THEN nmax = nvar

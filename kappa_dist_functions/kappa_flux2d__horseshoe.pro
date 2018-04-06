@@ -4,6 +4,9 @@
 ;     ZMOD = ... computed model values at (X,Y) ...
 ;     return, ZMOD
 ;    END
+
+;2018/04/06 Basically … it's deprecated. Just don't use it. Now I use routines with unimaginable titles like KAPPA_FLUX2D__HORSESHOE__ENERGY_ANISOTROPY__LINEAR_ENERGY_SHIFT__COMMON
+
 ;2016/09/01 
 ;Now we include a functional form for the horseshoe that depends on mu = v_par/v_tot,
 ; after work by folks like like Bingham et al. [1999] or Bingham and Cairns [2000]
@@ -22,7 +25,10 @@ FUNCTION KAPPA_FLUX2D__HORSESHOE,X,Y,P, $
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
-  @kappa_unitconversion_common.pro
+  ;; @kappa_unitconversion_common.pro
+
+  PRINT,"DEPRECATED, DUDE!"
+  STOP
 
   ;;Structure of each is [energies,angles]
   nEnergies        = N_ELEMENTS(X[*,0])
