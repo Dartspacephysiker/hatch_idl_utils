@@ -21,6 +21,11 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
         WHILE curInd LT nInds DO BEGIN
            nextInd = VALUE_CLOSEST2(times-times[curInd],enforce_diff_eFlux_sRate,/CONSTRAINED)
 
+           IF ((times[-1] - times[curInd]) LT enforce_diff_eFlux_sRate) $
+              OR curInd GE nInds $
+           THEN BREAK
+
+           IF nextInd EQ curInd THEN nextInd++
            ;; PRINT,FORMAT='(A25,TR5,I06,":",F8.3)',T2S(times[curInd],/MS),curInd,times[nextInd]-times[curInd]
 
            startIndArr = [startIndArr,curInd        ]
@@ -28,8 +33,6 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
            diffArr     = [diffArr    ,nextInd-curInd]
            curInd      = nextInd
            
-           IF (times[-1] - times[curInd]) LT enforce_diff_eFlux_sRate THEN BREAK
-
         ENDWHILE
 
         tmpdat_eFlux = !NULL
@@ -49,7 +52,11 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
            ;; tmpdat_eFlux = [tmpdat_eFlux,AVERAGE_SUM3D(dat_eFlux[ind1:ind2],diffArr)]
 
            ;; PRODUCTION MODE
-           tmpdat_eFlux = [tmpdat_eFlux,AVERAGE_SUM3D(dat_eFlux[startIndArr[k]:endIndArr[k]],5)]
+           IF startIndArr[k] EQ endIndArr[k] THEN BEGIN
+              tmpdat_eFlux = [tmpdat_eFlux,dat_eFlux[startIndArr[k]]]
+           ENDIF ELSE BEGIN
+              tmpdat_eFlux = [tmpdat_eFlux,AVERAGE_SUM3D(dat_eFlux[startIndArr[k]:endIndArr[k]],5)]
+           ENDELSE
         ENDFOR
 
         dat_eFlux = TEMPORARY(tmpdat_eFlux)
