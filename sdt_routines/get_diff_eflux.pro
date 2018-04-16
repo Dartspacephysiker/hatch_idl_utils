@@ -41,6 +41,13 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         RESTORE,realFile
         ;; got_restored = (N_ELEMENTS(dat_eFlux) GT 0) OR (N_ELEMENTS(diff_eFlux) GT 0)
         got_restored = (SIZE(dat_eFlux,/TYPE) EQ 8) OR (SIZE(diff_eFlux,/TYPE) EQ 8)
+
+        ;; But if we missed most of the data, redo it!
+        IF t2-diff_eflux.time[-1] GT 5. THEN BEGIN
+           PRINT,"Apparently junk diff_eFlux! Remaking ..."
+           got_restored = 0
+           diff_eFlux = !NULL
+        ENDIF
         IF ~got_restored AND N_ELEMENTS(diff_eFlux) GT 0 THEN BEGIN
            IF diff_eFlux EQ 0 THEN diff_eFlux = !NULL
         ENDIF
@@ -506,15 +513,29 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
      ENDIF ELSE BEGIN
 
-        t1Tmp                   = t1
-        t2Tmp                   = t2
+        t1Tmp            = t1
+        t2Tmp            = t2
 
-        dat_eFlux               = CALL_FUNCTION(routine,t1Tmp,t2Tmp, $
-                                                CALIB=calc_geom_factors)
-        ;; tmpT                    = (dat_eFlux[*].time+dat_eFlux[*].end_time)/2.D
-        tmpT                    = dat_eFlux[*].time
-        nHere                   = N_ELEMENTS(tmpT)
-        keep                    = WHERE(tmpT GE t1 AND tmpT LE t2 AND dat_eFlux.valid,nKeep)
+        dat_eFlux        = CALL_FUNCTION(routine,t1Tmp,t2Tmp, $
+                                         CALIB=calc_geom_factors)
+        ;; tmpT          = (dat_eFlux[*].time+dat_eFlux[*].end_time)/2.D
+        WHILE t2-t2Tmp GT 5 DO BEGIN
+           t2Old         = t2Tmp
+           t2Tmp         = t2
+           tmpdat_eFlux  = CALL_FUNCTION(routine,t2Old,t2Tmp, $
+                                         CALIB=calc_geom_factors)
+           IF ARRAY_EQUAL(SIZE(dat_eFlux[0].energy,/DIMENSIONS), $
+                          SIZE(tmpdat_eFlux[0].energy,/DIMENSIONS)) $
+           THEN BEGIN
+              dat_eFlux  = [dat_eFlux,TEMPORARY(tmpdat_eFlux)]
+           ENDIF ELSE BEGIN
+              dat_eFlux  = TEMPORARY(tmpdat_eFlux)
+           ENDELSE
+
+        ENDWHILE
+        tmpT             = dat_eFlux[*].time
+        nHere            = N_ELEMENTS(tmpT)
+        keep             = WHERE(tmpT GE t1 AND tmpT LE t2 AND dat_eFlux.valid,nKeep)
         
         IF nKeep NE nHere THEN BEGIN
 

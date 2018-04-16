@@ -25,6 +25,7 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
               OR curInd GE nInds $
            THEN BREAK
 
+           IF nextInd LT curInd THEN STOP
            IF nextInd EQ curInd THEN nextInd++
            ;; PRINT,FORMAT='(A25,TR5,I06,":",F8.3)',T2S(times[curInd],/MS),curInd,times[nextInd]-times[curInd]
 
