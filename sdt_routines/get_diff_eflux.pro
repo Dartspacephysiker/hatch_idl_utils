@@ -1,6 +1,7 @@
 PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    EEB_OR_EES=eeb_or_ees, $
                    SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                   ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $
                    MANUAL_ANGLE_CORRECTION=manual_angle_correction, $
                    SC_POT=sc_pot, $
                    NAME__DIFF_EFLUX=name__diff_eFlux, $
@@ -533,6 +534,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
                                 ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                                 FIT_EACH_ANGLE=fit_each_angle, $
+                                ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $
                                 SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                                 TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct, $
                                 CALC_GEOM_FACTORS=calc_geom_factors

@@ -2,10 +2,12 @@
 PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 LOAD_DAT_FROM_FILE=loadFile, $
                                 LOAD_DIR=loadDir, $
+                                MCFADDEN_DIFF_EFLUX=McFadden_diff_eFlux, $
                                 EEB_OR_EES=eeb_or_ees, $
                                 DIFF_EFLUX=diff_eFlux, $
                                 UPGOING=upgoing, $
                                 SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                                ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $
                                 DEF__INCLUDE_SC_POT=dEF__include_sc_pot, $
                                 SC_POT=sc_pot, $
                                 OUT_ORB=orb, $
@@ -108,8 +110,10 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                     NAME__DIFF_EFLUX=name__diff_eFlux, $
                     /CALC_GEOM_FACTORS, $
                     ;; UNITS=eSpecUnits, $          
+                    CLEAN_THE_MCFADDEN_WAY=McFadden_diff_eFlux, $
                     FIT_EACH_ANGLE=fit_each_angle, $
                     SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                    ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $
                     MANUAL_ANGLE_CORRECTION=manual_angle_correction, $
                     OUT_DIFF_EFLUX=diff_eflux, $
                     SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $

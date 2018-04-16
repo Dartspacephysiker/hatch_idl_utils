@@ -2,6 +2,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
                             ;; LOAD_DAT_FROM_FILE=loadFile, $
                             EEB_OR_EES=eeb_or_ees, $
                             SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
+                            ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $
                             SC_POT=sc_pot, $
                             IN_PROTOSTRUCT=in_protoStruct, $
                             SDT_NAME=name, $
@@ -69,6 +70,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
      ENDIF ELSE BEGIN
         dat                                            = CALL_FUNCTION(routine,t1,t2,CALIB=calib)
         
+        IF KEYWORD_SET(enforce_diff_eFlux_sRate) THEN STOP
         IF KEYWORD_SET(spectra_average_interval) THEN BEGIN
            dat                                         = AVERAGE_SUM3D(dat,spectra_average_interval)
         ENDIF
