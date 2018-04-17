@@ -518,20 +518,71 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
         dat_eFlux        = CALL_FUNCTION(routine,t1Tmp,t2Tmp, $
                                          CALIB=calc_geom_factors)
+        nGot = N_ELEMENTS(dat_eFlux)
         ;; tmpT          = (dat_eFlux[*].time+dat_eFlux[*].end_time)/2.D
+        nCalls           = 0
+        t2SuperOld       = 0
+        t2Old            = 0
         WHILE t2-t2Tmp GT 5 DO BEGIN
+
+           dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
+                               CALIB=calc_geom_factors)
+           ;; skipTime = (dat.end_time-dat.time) $
+           ;;            * (STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2)
+           skipTime = STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2
+           WHILE skipTime GT 0 DO BEGIN
+              dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
+                                  CALIB=calc_geom_factors,/AD)
+              skipTime--
+           ENDWHILE
+           ;; dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
+           ;;                     CALIB=calc_geom_factors,/AD)
+           
+           IF ~dat.valid THEN BEGIN
+              ;; skipTime = (dat.end_time-dat.time) $
+              ;;            * (STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2)
+              skipTime = STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2
+              WHILE skipTime GT 0 DO BEGIN
+                 dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
+                                     CALIB=calc_geom_factors,/AD)
+                 skipTime--
+              ENDWHILE
+              ;; t2Tmp += skipTime
+              ;; dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
+              ;;                     CALIB=calc_geom_factors,/AD)
+
+              IF ~dat.valid THEN BREAK
+           ENDIF
+
            t2Old         = t2Tmp
            t2Tmp         = t2
+           
            tmpdat_eFlux  = CALL_FUNCTION(routine,t2Old,t2Tmp, $
                                          CALIB=calc_geom_factors)
+
            IF ARRAY_EQUAL(SIZE(dat_eFlux[0].energy,/DIMENSIONS), $
                           SIZE(tmpdat_eFlux[0].energy,/DIMENSIONS)) $
            THEN BEGIN
+                    ;; tmpClose = VALUE_CLOSEST2((tmpdat_eFlux.time),(dat_eFlux.time),/CONSTRAINED)
+                    ;; tmpCheckers = WHERE(ABS(tmpdat_eFlux[tmpClose].time-(dat_eFlux.time)) LT 0.03, $
+                    ;;                     COMPLEMENT=notDupe, $
+                    ;;                     NCOMPLEMENT=nNotDupe)
+                    ;; IF tmpCheckers[0] NE -1 THEN tmpdat_eFlux = (nNotDupe GT 0 ? tmpdat_eFlux[notDupe] : !NULL)
+
               dat_eFlux  = [dat_eFlux,TEMPORARY(tmpdat_eFlux)]
            ENDIF ELSE BEGIN
               dat_eFlux  = TEMPORARY(tmpdat_eFlux)
+              BREAK
            ENDELSE
 
+           ;; IF t2SuperOld EQ t2Old AND t2Old NE 0 THEN STOP
+
+           nCalls++
+
+           IF nCalls GT 50 THEN BEGIN
+              PRINT,"THIS IS BOGGART"
+              STOP
+           ENDIF
         ENDWHILE
         tmpT             = dat_eFlux[*].time
         nHere            = N_ELEMENTS(tmpT)
