@@ -123,8 +123,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                     OUT_ERR_PERPJ_=jPerpErr, $
                     OUT_ERR_PERPJE=jePerpErr, $
                     OUT_ERR_PERPCURRENT=curPerpErr, $
-                    OUT_ERR_PERPCHARE=charEPerpErr
-
+                    OUT_ERR_PERPCHARE=charEPerpErr, $
+                    BATCH_MODE=batch_mode
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -538,7 +538,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                                       OUT_MAPRATIO=mapRatio, $
                                       OUT_NEVENTS=nEvents, $
                                       LOGLUN=logLun
-     IF N_ELEMENTS(tSort_i) GT 0 THEN STOP
+     IF N_ELEMENTS(tSort_i) GT 0 THEN IF ~KEYWORD_SET(batch_mode) THEN STOP
 
   ENDIF
 
