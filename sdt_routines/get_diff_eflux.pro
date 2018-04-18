@@ -523,7 +523,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         nCalls           = 0
         t2SuperOld       = 0
         t2Old            = 0
-        WHILE t2-t2Tmp GT 5 DO BEGIN
+        WHILE t2-t2Tmp GT 50 DO BEGIN
 
            dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
                                CALIB=calc_geom_factors)
