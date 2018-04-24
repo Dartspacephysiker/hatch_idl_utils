@@ -1,4 +1,5 @@
-PRO PREPARE_IDENTIFIED_DIFF_EFLUXES_FOR_TPLOT,evts,TPLOT_NAME=tPlot_name, $
+PRO PREPARE_IDENTIFIED_DIFF_EFLUXES_FOR_TPLOT,evts,ioneVts, $
+   TPLOT_NAME=tPlot_name, $
    NO_STRICT_TYPES=no_strict_types, $
    CONVERT_TO_NEWELL_INTERP=convert_to_Newell_interp, $
    FAVOR_BROADSTRICT_OVER_MONO=favor_broadStrict_over_mono, $

@@ -76,6 +76,10 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
 
   nSpectra       = N_ELEMENTS(events.x)
 
+  junk = !NULL
+  STR_ELEMENT,events,'ionBeam',VALUE=ionBeam
+  haveIonBeam = N_ELEMENTS(ionBeam) GT 0
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;PLOT PRELIMS
   ;; mVal        = 2
@@ -88,12 +92,14 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   bVal           = 3
   bSVal          = 4
   dVal           = 5
+  iBeamVal       = 7
 
   mCol           = 'blue'
   mSCol          = 'green'
   bCol           = 'red'
   bSCol          = 'purple'
   dCol           = 'black'
+  iBeamCol       = 'blue'
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;SORT EVENTS
@@ -103,6 +109,7 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   broad          = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
   broadS         = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
   diffuse        = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
+  iBeam          = MAKE_ARRAY(nSpectra,/INTEGER,VALUE=-1)
 
   m_i            = WHERE(events.mono    EQ 1,nM,/NULL)
   mS_i           = WHERE(events.mono    EQ 2,nMS,/NULL)
@@ -151,6 +158,13 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   ;; x                   = [[events.time_e],[events.time_e],[events.time_e],[events.time_e],[events.time_e]]
   x                   = [[events.x],[events.x],[events.x],[events.x],[events.x]]
   y                   = [[mono]    ,[monoS]   ,[broad]   ,[broadS]  ,[diffuse] ]
+
+  IF haveIonBeam THEN BEGIN
+     iB_i        = WHERE(events.ionBeam EQ 1 OR events.ionBeam EQ 2,nIB,/NULL)
+     iBeam[iB_i] = iBeamVal
+     x                = [[x], [events.x]]
+     y                = [[y], [iBeam   ]]
+  ENDIF
 
   if keyword_set(overplot) then oplot=overplot
   overplot = 1
@@ -228,7 +242,7 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;For my purposes, yrange is [0.5,5.5]
-  yrange = [0.5,5.5]
+  yrange = [0.5,5.5 + haveIonBeam*2]
   add_str_element,plotstuff,'yrange',yrange,/REPLACE
   add_str_element,oplotstuff,'yrange',yrange,/REPLACE
 
@@ -246,23 +260,30 @@ pro plot_spectral_type__newell_et_al_2009__tplot,x,y,dy,    $
   ;; names = ['Monoenergetic','Strict Mono','Broadband','Strict Broad','Diffuse' ]
   IF KEYWORD_SET(no_strict_types) THEN BEGIN
      names = ['Mono','Broad','Diffuse' ]
-     add_str_element,plotstuff ,'ytickname',names
-     add_str_element,oplotstuff,'ytickname',names
-     add_str_element,plotstuff,'yticks',2,/REPLACE
-     add_str_element,oplotstuff,'yticks',2,/REPLACE
-     add_str_element,plotstuff,'ytickv',[1,3,5],/REPLACE
-     add_str_element,oplotstuff,'ytickv',[1,3,5],/REPLACE
-     col  =   [ 100      ,235   ,!p.color]
+     nYTicks = 2
+     yTickV = [1,3,5]
+     col  =   [ 100      ,235   ,!p.color]     
   ENDIF ELSE BEGIN
      names = ['Mono','Strict Mono','Broad','Strict Broad','Diffuse' ]
-     add_str_element,plotstuff ,'ytickname',names
-     add_str_element,oplotstuff,'ytickname',names
-     add_str_element,plotstuff,'yticks',4,/REPLACE
-     add_str_element,oplotstuff,'yticks',4,/REPLACE
-     add_str_element,plotstuff,'ytickv',[1,2,3,4,5],/REPLACE
-     add_str_element,oplotstuff,'ytickv',[1,2,3,4,5],/REPLACE
+     yTickV = [1,2,3,4,5]
+     nYTicks = 4
      col  =   [ 100      ,120   ,235   ,30    ,!p.color]
   ENDELSE
+
+  IF haveIonBeam THEN BEGIN ;We've got ion beam stuff
+     names = [names, 'IonBm']
+     col  = [col, 40 ]
+     nYTicks += 1
+     yTickV = [yTickV, 7]
+  ENDIF
+
+     add_str_element,plotstuff ,'ytickname',names
+     add_str_element,oplotstuff,'ytickname',names
+     add_str_element,plotstuff,'yticks',nYTicks,/REPLACE
+     add_str_element,oplotstuff,'yticks',nYTicks,/REPLACE
+     add_str_element,plotstuff,'ytickv',yTickV,/REPLACE
+     add_str_element,oplotstuff,'ytickv',yTickV,/REPLACE
+
   ;; add_str_element,plotstuff,'ytickv',[2,3,4,5,6],/REPLACE
   ;; add_str_element,oplotstuff,'ytickv',[2,3,4,5,6],/REPLACE
 

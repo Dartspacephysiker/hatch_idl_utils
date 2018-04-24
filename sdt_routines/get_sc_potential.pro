@@ -144,7 +144,8 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
   CASE 1 OF
      KEYWORD_SET(from_fa_potential): BEGIN
 
-        spacecraft_potential = GET_FA_POTENTIAL(t1,t2,REPAIR=repair, $;STORE=~ARG_PRESENT(data), $
+        spacecraft_potential = GET_FA_POTENTIAL(t1,t2, $
+                                                REPAIR=repair, $ ;STORE=~ARG_PRESENT(data), $
                                                 ALL=all)
 
         IF ~spacecraft_potential.valid THEN BEGIN
@@ -155,7 +156,8 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
         sc_pot = {x:spacecraft_potential.time, $
                   y:spacecraft_potential.comp1, $
                   notch:spacecraft_potential.notch, $
-                  type:"from_fa_potential"}
+                  type:"from_fa_potential", $
+                  isNeg: 0}
         
         IF ARG_PRESENT(data) THEN data = sc_pot ELSE BEGIN
            STORE_DATA,'sc_pot',DATA=sc_pot ;note this is actually the negative of the s/c potential
@@ -178,6 +180,13 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
 
      END
      KEYWORD_SET(Chaston_style): BEGIN
+
+        PRINT,'2018/04/24'
+        PRINT,"There is currently some ambiguity as to which routines are using Chaston-style potential"
+        PRINT,"and which are using GET_FA_POTENTIAL-style potential."
+        PRINT,"You may wish to investigate. (For example, is this choice currently affecting your Newell"
+        PRINT,"identification stuff in SINGLE_RJS_SUMMARY?)"
+        STOP
 
         spacecraft_potential = GET_FA_FIELDS('V8_S',t1,t2)
         ;;get the spacecraft potential per spin
@@ -204,7 +213,7 @@ PRO GET_SC_POTENTIAL,T1=t1,T2=t2,DATA=data, $
         ENDFOR
 
         pot[index_max+1:nV8-1] = pot[j_range[index_max]]
-        sc_pot        = {x:v8.x,y:pot,type:"Chaston style"}
+        sc_pot        = {x:v8.x,y:pot,type:"Chaston style",isNeg: 1}
         STORE_DATA,'sc_pot',DATA=sc_pot ;note this is actually the negative of the s/c potential
 
         PRINT,'Spacecraft potential stored as ''sc_pot'''
