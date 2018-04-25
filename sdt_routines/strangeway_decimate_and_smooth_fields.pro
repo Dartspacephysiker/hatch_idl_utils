@@ -6,7 +6,10 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
    ONESEC_TS=tS_1s, $
    NO_SEPARATE_DC_AC=no_separate_DC_AC, $
    USE_DOUBLE_STREAKER=use_double_streaker, $
-   EXIT_ON_PROBLEMS=exit_on_problems
+   EXIT_ON_PROBLEMS=exit_on_problems, $
+   DO_UNIQ_CHECK=do_uniq_check, $
+   QUIET=quiet, $
+   VERBOSE=verbose
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -81,12 +84,12 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
      four = 4.D
      
   ENDIF ELSE BEGIN
-     PRINT,"Strangeway-decimating and smoothing ..."
+     IF ~KEYWORD_SET(quiet) THEN PRINT,"Strangeway-decimating and smoothing ..."
 
      FA_FIELDS_BUFS,{time:data.x},BUF_STARTS=strt_i,BUF_ENDS=stop_i
 
      IF (strt_i[0] EQ 0) AND (stop_i[0] EQ 0) THEN BEGIN
-        PRINT,"Can't Strangeway-decimate or Strangeway-smooth these data! They can't be chunked into buffers ..."
+        IF ~KEYWORD_SET(quiet) THEN PRINT,"Can't Strangeway-decimate or Strangeway-smooth these data! They can't be chunked into buffers ..."
         IF KEYWORD_SET(exit_on_problems) THEN RETURN,{x: data.x, y:MAKE_ARRAY(N_ELEMENTS(data.x),/FLOAT,VALUE=!VALUES.F_NAN)}
      ENDIF
   ENDELSE
@@ -111,7 +114,7 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
                              y:tmpDat.y[tmpI]}
            nCurrent       = N_ELEMENTS(tmp.x)
 
-           PRINT,k,', ',curSampRate,', ',nCurrent
+           IF KEYWORD_SET(verbose) AND ~KEYWORD_SET(quiet) THEN PRINT,k,', ',curSampRate,', ',nCurrent
 
            earlyBreak     = 0
            WHILE curSampRate GT sampRateInQuestion DO BEGIN
@@ -222,7 +225,7 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
 
         sRates = FIX(sRates)
 
-        PRINT,'Buf, CurSampRate, nPoints'
+        IF KEYWORD_SET(verbose) AND ~KEYWORD_SET(quiet) THEN PRINT,'Buf, CurSampRate, nPoints'
         FOR k=0,nBufs-1 DO BEGIN
 
            ;; curSampPeriod  = sPeriods[k]
@@ -237,7 +240,7 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
               
               nCurrent       = N_ELEMENTS(tmp.x)
 
-              PRINT,k,', ',curSampRate,', ',nCurrent
+              IF KEYWORD_SET(verbose) AND ~KEYWORD_SET(quiet) THEN PRINT,k,', ',curSampRate,', ',nCurrent
 
 
               CASE 1 OF
@@ -490,6 +493,28 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
      ENDCASE
 
   ENDELSE
+
+  IF KEYWORD_SET(do_uniq_check) THEN BEGIN
+     
+     uniqPot = UNIQ(final.x,SORT(final.x))
+     IF N_ELEMENTS(uniqPot) NE N_ELEMENTS(final.x) THEN BEGIN
+        IF ~KEYWORD_SET(quiet) THEN PRINT,"Dropping some dupes ..."
+
+        CASE 1 OF
+           KEYWORD_SET(no_separate_DC_AC): BEGIN
+              final      = {x : final.x[uniqPot], $
+                            y : final.y[uniqPot]}
+           END
+           ELSE: BEGIN
+              final      = {x : final.x[uniqPot], $
+                            DC: final.DC[uniqPot], $
+                            AC: final.AC[uniqPot]}
+           END
+        ENDCASE
+
+     ENDIF
+
+  ENDIF
 
   RETURN,final
 
