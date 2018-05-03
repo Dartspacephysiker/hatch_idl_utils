@@ -76,9 +76,9 @@ PRO GET_STREAKS,input, $
      END
   ENDCASE
 
+  gapLens = input[start_i[1:-1]]-input[stop_i[0:-2]]
   IF (nKeep GT 0) AND KEYWORD_SET(allowable_gap) THEN BEGIN
      IF ~KEYWORD_SET(quiet) THEN PRINTF,lun,'Allowable gap between start and stop: ' + STRCOMPRESS(allowable_gap,/REMOVE_ALL)
-     gapLens = start_i[1:-1]-stop_i[0:-2]
 
      stitchTheseGaps_ii = WHERE(gapLens LE allowable_gap,nGapsToStitch)
      IF nGapsToStitch GT 0 THEN BEGIN
@@ -114,6 +114,8 @@ PRO GET_STREAKS,input, $
         start_i = TEMPORARY(newStart_i)
         stop_i  = TEMPORARY(newStop_i)
 
+        gapLens = input[start_i[1:-1]]-input[stop_i[0:-2]]
+
      ENDIF ELSE BEGIN
 
      ENDELSE
@@ -140,6 +142,7 @@ PRO GET_STREAKS,input, $
   ENDELSE
 
   streakLens                        = stop_i-start_i
+  gapLens                           = input[start_i[1:-1]]-input[stop_i[0:-2]]
 
   n_streaks                         = N_ELEMENTS(WHERE(streakLens GT 0,/NULL))
   IF ~(no_print_summary OR KEYWORD_SET(quiet)) THEN BEGIN
