@@ -12,6 +12,7 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
    ILAT_FOR_PRINTING=pILAT, $
    NPTS=n, $
    MIN_T_STREAKLEN=min_streakLen_t, $
+   MAX_T_STREAKLEN=max_streakLen_t, $
    GAP_TIME=gap_time, $
    START_I=start_i, $
    STOP_I=stop_i, $
@@ -139,6 +140,23 @@ PRO GET_DOUBLE_STREAKS__NTH_DECIMAL_PLACE, $
   IF KEYWORD_SET(min_streakLen_t) AND ~KEYWORD_SET(doQuit) THEN BEGIN
      
      goodTStreak_ii = WHERE(streakLens_t GE min_streakLen_t,nGoodStreaks)
+
+     IF nGoodStreaks EQ 0 THEN BEGIN
+        doQuit      = 1
+     ENDIF ELSE BEGIN
+
+        goodStreak_ii = CGSETINTERSECTION(goodStreak_ii,goodTStreak_ii,COUNT=nStreaks)
+
+        IF nStreaks EQ 0 THEN BEGIN
+           doQuit = 1
+        ENDIF
+     ENDELSE
+
+  ENDIF
+
+  IF KEYWORD_SET(max_streakLen_t) AND ~KEYWORD_SET(doQuit) THEN BEGIN
+     
+     goodTStreak_ii = WHERE(streakLens_t LE max_streakLen_t,nGoodStreaks)
 
      IF nGoodStreaks EQ 0 THEN BEGIN
         doQuit      = 1
