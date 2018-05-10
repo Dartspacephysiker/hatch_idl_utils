@@ -16,14 +16,14 @@ FUNCTION HISTOGRAM_BINSTATS,histoData,refData, $
                             LOCATIONS=locations, $
                             REVERSE_INDICES=reverse_indices, $
                             HISTOGRAM=histogram, $
-                            BINMINFORINCLUSION=binMinforInclusion, $
+                            NMINBINFORINCLUSION=NMinBinForInclusion, $
                             GIVE_DECILES=give_deciles, $
                             GIVE_VENTILES=give_ventiles
                             
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
-  binMinForI = N_ELEMENTS(binMinforInclusion) GT 0 ? binMinforInclusion : 1
+  NMinBinForI = N_ELEMENTS(NMinBinForInclusion) GT 0 ? NMinBinForInclusion : 1
 
   histogram = HISTOGRAM(histoData, $
                         BINSIZE=binSize, $
@@ -96,7 +96,7 @@ FUNCTION HISTOGRAM_BINSTATS,histoData,refData, $
 
         tmpCount = N_ELEMENTS(tmpInds)
 
-        IF tmpCount LT binMinForI THEN BEGIN
+        IF tmpCount LT NMinBinForI THEN BEGIN
            stats[k].N       = tmpCount
            stats[k].min     = !VALUES.F_NaN
            stats[k].max     = !VALUES.F_NaN
