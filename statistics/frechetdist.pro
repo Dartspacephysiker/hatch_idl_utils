@@ -19,8 +19,8 @@ FUNCTION FRECHETDIST,x,alpha,s,pM, $
      mean = m + s * GAMMA(1.-1./alpha)
      median = m + s / (ALOG(2.))^(1./alpha)
      mode   = m + s * (alpha/(1.+alpha))^(1./alpha)
-     variance = alpha GT 2 ? $
-                s^2 * (GAMMA(1. - 2./alpha) - (GAMMA(1.-1./alpha))^2.) : !VALUES.INF
+     var = alpha GT 2 ? $
+                s^2 * (GAMMA(1. - 2./alpha) - (GAMMA(1.-1./alpha))^2.) : !VALUES.F_INFINITY
 
      stats = {mean   : mean  , $
               median : median, $
@@ -37,6 +37,6 @@ FUNCTION FRECHETDIST,x,alpha,s,pM, $
 
   RETURN,alpha / s $
          * ((x-m)/s)^(-1.-alpha) $
-         * EXP((-1.)((x-m)/s)^((-1.)*alpha))
+         * EXP((-1.)*((x-m)/s)^((-1.)*alpha))
 
 END
