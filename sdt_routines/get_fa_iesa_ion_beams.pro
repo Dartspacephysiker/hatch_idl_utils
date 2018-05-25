@@ -110,7 +110,7 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
 
   pot = MAKE_ARRAY(N_ELEMENTS(sc_potRed.x),/DOUBLE)
   FOR j=0L,index_max DO BEGIN
-     spin_range = j+FINDGEN(CEIL(spin_period/SC_POT_dt[j]))
+     spin_range = j+FINDGEN(CEIL(spin_period/SC_POT_dt[j])) & spin_range = ROUND(spin_range) < index_max
      pot[j]     = MAX(ABS(sc_potRed.y[spin_range]),ind)
      sign       = sc_potRed.y[spin_range[ind]]/ABS(sc_potRed.y[spin_range[ind]])
      pot[j]     = sign*pot[j]
