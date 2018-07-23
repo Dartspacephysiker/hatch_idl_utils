@@ -39,6 +39,7 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
         tmpdat_eFlux = !NULL
         
         thisMany = N_ELEMENTS(startIndArr)
+        nToAvg = endIndArr-startIndArr+1
         FOR k=0,thisMany-1 DO BEGIN
            ;; DIAGNOSTIC MODE
            ;; ind1 = startIndArr[k]
@@ -56,7 +57,7 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
            IF startIndArr[k] EQ endIndArr[k] THEN BEGIN
               tmpdat_eFlux = [tmpdat_eFlux,dat_eFlux[startIndArr[k]]]
            ENDIF ELSE BEGIN
-              tmpdat_eFlux = [tmpdat_eFlux,AVERAGE_SUM3D(dat_eFlux[startIndArr[k]:endIndArr[k]],5)]
+              tmpdat_eFlux = [tmpdat_eFlux,AVERAGE_SUM3D(dat_eFlux[startIndArr[k]:endIndArr[k]],nToAvg[k])]
            ENDELSE
         ENDFOR
 

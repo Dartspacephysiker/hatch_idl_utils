@@ -54,6 +54,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
                                       RETRACE=retrace, $
                                       STORE=store, $
                                       NAME=name, $
+                                      IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux, $
                                       OUT_AVGFACTORARR=avgFactorArr, $
                                       OUT_NORMARR=normArr
 
@@ -72,10 +73,12 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   nmaxvar = diff_eFlux.nenergy
 
   default_gap_time = 200.
-  IF diff_eFlux.project_name[0] EQ 'FAST' THEN BEGIN
+  projName = ""
+  ;; STR_ELEMENT,diff_eFlux,"project_name",projName
+  ;; IF projName[0] EQ 'FAST' THEN BEGIN
      nmaxvar = 96
      default_gap_time = 8.
-  ENDIF
+  ;; ENDIF
   IF NOT KEYWORD_SET(gap_time) THEN gap_time = default_gap_time
 
   time   = DBLARR(max)
@@ -83,19 +86,19 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   ddata  = FLTARR(max,nmaxvar)
   var    = FLTARR(max,nmaxvar)
   dvar   = FLTARR(max,nmaxvar)
-  nvar   = diff_eFlux.nenergy
+  nvar   = is_McFadden_diff_eFlux ? diff_eFlux[0].nenergy : diff_eFlux.nenergy
   nmax   = nvar
 
   avgFactorArr = LONARR(max)
   normArr      = LONARR(max)
 
   IF NOT KEYWORD_SET(units) THEN BEGIN
-     units  = diff_eFlux.units_name
+     units  = is_McFadden_diff_eFlux ? diff_eFlux[0].units_name : diff_eFlux[0].units_name[0] ;Added [0] on 2018/07/20 because of McFadden-style cleaning
      ;; units = 'Counts'
   ENDIF
   IF NOT KEYWORD_SET(missing) THEN missing = !VALUES.F_NaN
 
-  last_time = diff_eFlux.time[0]
+  last_time = (is_McFadden_diff_eFlux ? diff_eFlux[0].time : diff_eFlux.time[0])
 
   ;; avgFactorArr = !NULL
   ;; normArr  = !NULL
@@ -103,10 +106,13 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   ;; n = 0
   FOR k=0,max-1 DO BEGIN
 
-     dat = MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k)
+     dat = MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX( $
+           diff_eFlux,k, $
+           IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux)
 
      ;; IF diff_eFlux.valid[k] EQ 0 THEN BEGIN
      IF dat.valid EQ 0 THEN BEGIN
+        IF k GE 2 THEN dbadtime = time[k-1] - time[k-2] else dbadtime = gap_time/2.
         time[k]    = (last_time) + dbadtime
         data[k,*]  = missing
         ddata[k,*] = missing
