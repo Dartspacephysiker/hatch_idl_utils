@@ -16,11 +16,59 @@ PRO GET_FA_RATIO_OF_ION_SPECTROGRAMS, $
    OUT_UPESPEC=eSpecUp, $
    OUT_ALLANGLEESPEC=eSpec, $
    OUT_UPDOWNRATIOSPEC=upDownRatioSpec, $
-   OUT_UPALLRATIOSPEC=upAllRatioSpec
+   OUT_UPALLRATIOSPEC=upAllRatioSpec, $
+   USE_DIFF_EFLUX=use_diff_eFlux, $
+   DIFF_EFLUX=diff_eFlux, $
+   IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
   uniter = KEYWORD_SET(units) ? units : 'eflux'
+
+  IF KEYWORD_SET(use_diff_eflux) THEN BEGIN
+
+     varName = upVarName
+     eSpecUp = GET_EN_SPEC__FROM_DIFF_EFLUX( $
+               diff_eFlux, $
+               T1=t1, $
+               T2=t2, $
+               /RETRACE, $
+               ANGLE=up_aRange, $
+               UNITS=eSpecUnits, $
+               NAME=varName, $
+               OUT_AVGFACTORARR=avgFactorArr, $
+               OUT_NORMARR=normArr, $
+               IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux)
+     STORE_DATA,varName,DATA=eSpecUp
+
+     varName = downVarName
+     eSpecDown = GET_EN_SPEC__FROM_DIFF_EFLUX( $
+                 diff_eFlux, $
+                 T1=t1, $
+                 T2=t2, $
+                 /RETRACE, $
+                 ANGLE=down_aRange, $
+                 UNITS=eSpecUnits, $
+                 NAME=varName, $
+                 OUT_AVGFACTORARR=avgFactorArr, $
+                 OUT_NORMARR=normArr, $
+                 IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux)
+     STORE_DATA,varName,DATA=eSpecDown
+
+     varName = allAngleVarName
+     eSpec = GET_EN_SPEC__FROM_DIFF_EFLUX( $
+             diff_eFlux, $
+             T1=t1, $
+             T2=t2, $
+             /RETRACE, $
+             UNITS=eSpecUnits, $
+             NAME=varName, $
+             OUT_AVGFACTORARR=avgFactorArr, $
+             OUT_NORMARR=normArr, $
+             IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux)
+     STORE_DATA,varName,DATA=eSpec
+     
+  ENDIF ELSE BEGIN
 
      varName = upVarName
      GET_EN_SPEC,get_en_spec_pro, $
@@ -46,13 +94,15 @@ PRO GET_FA_RATIO_OF_ION_SPECTROGRAMS, $
                  NAMe=varName,retrace=1,CALIB=calib
      GET_DATA,varName,DATA=eSpec
 
-     upAllRatioSpec = {x : eSpec.x, $
-                        y : eSpecUp.y / eSpec.y, $
-                        v : eSpec.v}
+  ENDELSE
 
-     upDownRatioSpec = {x : eSpec.x, $
-                       y : eSpecUp.y / eSpecDown.y, $
-                       v : eSpec.v}
+  upAllRatioSpec = {x : eSpecUp.x, $
+                    y : eSpecUp.y / eSpec.y, $
+                    v : eSpecUp.v}
+
+  upDownRatioSpec = {x : eSpecUp.x, $
+                     y : eSpecUp.y / eSpecDown.y, $
+                     v : eSpecUp.v}
 
   makeZero = WHERE(eSpecUp.y LT makeZeroThreshEFlux,/NULL)
   ;; upAllRatioSpec.y[makeZero] = !VALUES.F_NaN

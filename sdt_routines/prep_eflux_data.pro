@@ -35,6 +35,7 @@ FUNCTION PREP_EFLUX_DATA, $
    ANGLE=an, $
    ARANGE=ar, $
    BINS=bins,     $
+   DONT_ALTER_DIMS=dont_alter_dims, $
    NO_SORT=no_sort, $
    SC_POTVAL=sc_potVal
   
@@ -94,7 +95,9 @@ FUNCTION PREP_EFLUX_DATA, $
      xdat                     = data3d.energy
   endelse
 
-  bins2                       = REPLICATE(1b,data3d.nbins)
+  bins2                       = KEYWORD_SET(dont_alter_dims) ? $
+                                REPLICATE(1b,N_ELEMENTS(data3d.theta[0,*]))   : $
+                                REPLICATE(1b,data3d.nbins)
 
   ;;Handle angle ranges
   IF KEYWORD_SET(an) THEN BEGIN
@@ -263,7 +266,7 @@ FUNCTION PREP_EFLUX_DATA, $
                            time:data3d.time, $
                            end_time:data3d.end_time, $
                            integ_t:data3d.integ_t, $
-                           nbins:N_ELEMENTS(bins2), $
+                           nbins:data3d.nbins, $
                            nenergy:data3d.nenergy, $
                            data:ydat, $
                            ddata:dydat, $

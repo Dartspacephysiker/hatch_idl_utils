@@ -69,7 +69,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   all_same = 1
 
   ;; ytitle  = data_str + '_en_spec'
-  nbins   = diff_eFlux.nbins[0]
+  ;; nbins   = diff_eFlux.nbins[0]
   nmaxvar = diff_eFlux.nenergy
 
   default_gap_time = 200.
@@ -86,19 +86,19 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   ddata  = FLTARR(max,nmaxvar)
   var    = FLTARR(max,nmaxvar)
   dvar   = FLTARR(max,nmaxvar)
-  nvar   = is_McFadden_diff_eFlux ? diff_eFlux[0].nenergy : diff_eFlux.nenergy
+  nvar   = KEYWORD_SET(is_McFadden_diff_eFlux) ? diff_eFlux[0].nenergy : diff_eFlux.nenergy
   nmax   = nvar
 
   avgFactorArr = LONARR(max)
   normArr      = LONARR(max)
 
   IF NOT KEYWORD_SET(units) THEN BEGIN
-     units  = is_McFadden_diff_eFlux ? diff_eFlux[0].units_name : diff_eFlux[0].units_name[0] ;Added [0] on 2018/07/20 because of McFadden-style cleaning
+     units  = KEYWORD_SET(is_McFadden_diff_eFlux) ? diff_eFlux[0].units_name : diff_eFlux[0].units_name[0] ;Added [0] on 2018/07/20 because of McFadden-style cleaning
      ;; units = 'Counts'
   ENDIF
   IF NOT KEYWORD_SET(missing) THEN missing = !VALUES.F_NaN
 
-  last_time = (is_McFadden_diff_eFlux ? diff_eFlux[0].time : diff_eFlux.time[0])
+  last_time = (KEYWORD_SET(is_McFadden_diff_eFlux) ? diff_eFlux[0].time : diff_eFlux.time[0])
 
   ;; avgFactorArr = !NULL
   ;; normArr  = !NULL

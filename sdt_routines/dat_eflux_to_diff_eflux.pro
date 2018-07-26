@@ -5,7 +5,9 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
                             SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                             ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $
                             TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct, $
-                            CALC_GEOM_FACTORS=calc_geom_factors
+                            DONT_ALTER_DIMS=dont_alter_dims, $
+                            CALC_GEOM_FACTORS=calc_geom_factors, $
+                            ARRAY_OF_STRUCTS_INSTEAD=array_of_structs_instead
                             
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -40,6 +42,9 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
         
         thisMany = N_ELEMENTS(startIndArr)
         nToAvg = endIndArr-startIndArr+1
+
+        tmpdat_eflux = dat_eflux
+        count = 0
         FOR k=0,thisMany-1 DO BEGIN
            ;; DIAGNOSTIC MODE
            ;; ind1 = startIndArr[k]
@@ -55,13 +60,16 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
 
            ;; PRODUCTION MODE
            IF startIndArr[k] EQ endIndArr[k] THEN BEGIN
-              tmpdat_eFlux = [tmpdat_eFlux,dat_eFlux[startIndArr[k]]]
+              ;; tmpdat_eFlux = [tmpdat_eFlux,dat_eFlux[startIndArr[k]]]
+              tmpdat_eFlux[count] = dat_eFlux[startIndArr[k]]
            ENDIF ELSE BEGIN
-              tmpdat_eFlux = [tmpdat_eFlux,AVERAGE_SUM3D(dat_eFlux[startIndArr[k]:endIndArr[k]],nToAvg[k])]
+              ;; tmpdat_eFlux = [tmpdat_eFlux,AVERAGE_SUM3D(dat_eFlux[startIndArr[k]:endIndArr[k]],nToAvg[k])]
+              tmpdat_eFlux[count] = AVERAGE_SUM3D(dat_eFlux[startIndArr[k]:endIndArr[k]],nToAvg[k])
            ENDELSE
+           count++
         ENDFOR
 
-        dat_eFlux = TEMPORARY(tmpdat_eFlux)
+        dat_eFlux = (TEMPORARY(tmpdat_eFlux))[0:count-1]
         ;; STOP
         
      END
@@ -71,9 +79,16 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
      ELSE: STOP
   ENDCASE
      
+  IF KEYWORD_SET(array_of_structs_instead) THEN BEGIN
+     diff_eFlux = TEMPORARY(dat_eFlux)
+     RETURN
+  ENDIF
+
   shiftVals      = !NULL
   FOR i=0,N_ELEMENTS(dat_eFlux)-1 DO BEGIN
      tempDat     = dat_eFlux[i]
+
+     ;; IF tempDat.nbins EQ 32 THEN STOP
 
      CASE 1 OF
         KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0): BEGIN
@@ -85,6 +100,7 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
                                             ANGLE=an, $
                                             ARANGE=ar, $
                                             BINS=bins, $
+                                            DONT_ALTER_DIMS=dont_alter_dims, $
                                             NO_SORT=no_sort)
         END
         KEYWORD_SET(try_synthetic_SDT_struct): BEGIN

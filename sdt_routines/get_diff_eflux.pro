@@ -8,7 +8,8 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    CALC_GEOM_FACTORS=calc_geom_factors, $
                    CLEAN_THE_MCFADDEN_WAY=clean_the_McFadden_way, $
                    MCFADDEN_GAP_TIME=gap_time, $
-                   ;; UNITS=units, $          
+                   ARRAY_OF_STRUCTS_INSTEAD=array_of_structs_instead, $
+                   ;; UNITS=units, $
                    ;; ANGLE=angle, $
                    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
                    FIT_EACH_ANGLE=fit_each_angle, $
@@ -20,7 +21,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                    LOAD_DAT_FROM_FILE=loadFile, $
                    LOAD_DIR=loadDir, $
                    NO_DATA=no_data
-                   
+
   ;; QUIET=quiet
 
   COMPILE_OPT IDL2,STRICTARRSUBS
@@ -80,7 +81,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
      IF KEYWORD_SET(clean_the_McFadden_way) THEN BEGIN
 
-        routine = 'get_fa_ees_c'
+        routine = 'get_fa_'+eeb_or_ees+'_c'
 
         if keyword_set(t1) then begin
            t=t1
@@ -119,7 +120,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
         ;;;;;;;;;;;;;;;;;;;;
         ;; ALDER (2017/12/05)
-        ;; data=fltarr(nenergy,nbins) 
+        ;; data=fltarr(nenergy,nbins)
         ;; energy=fltarr(nenergy)
         ;; angle=fltarr(nenergy,nbins)
 
@@ -183,7 +184,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         if not keyword_set(units) then units = 'Eflux'
 
         ;;	Collect the data - Main Loop
-        
+
         nNanned = 0
         ;; if routine eq 'fa_ees_c' then nskip=2 else nskip=3
         ;; if fast to slow, skip two or three arrays
@@ -194,7 +195,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         while (dat.valid ne 0) and (n lt max) do begin
            if (dat.valid eq 1) then begin
 
-              ;; Test to see if a transition between fast and slow survey occurs, 
+              ;; Test to see if a transition between fast and slow survey occurs,
               ;; ie delta_time changes, and skip some data if it does.
               if (abs((dat.end_time-dat.time) - last_delta_time) gt 1. ) then begin
                  if (dat.end_time-dat.time) gt last_delta_time then begin
@@ -207,7 +208,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                     endwhile
                  endelse
               endif
-              
+
               ;; Test for data gaps and add NAN if gaps are present.
               if abs((dat.time+dat.end_time)/2.-last_time) ge gap_time then begin
                  if n ge 2 then dbadtime = cdfdat[n-1].time - cdfdat[n-2].time else dbadtime = gap_time/2.
@@ -279,18 +280,18 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
               ;; angle[0:dat.nenergy-1,0:dat.nbins-1]=dat.theta
 
               ;; if n lt max then begin
-                 
+
               ;;    cdfdat[n].time = (dat.time+dat.end_time)/2.
               ;;    cdfdat[n].delta_time = dat.end_time-dat.time
               ;;    cdfdat[n].data[*,*] = data
-              ;;    ;;	  cdfdat[n].energy[*,*] = energy
+              ;;    ;;    cdfdat[n].energy[*,*] = energy
               ;;    cdfdat[n].energy[*] = energy
               ;;    cdfdat[n].angle[*,*] = angle
               ;;    cdfdat[n].n_energy = dat.nenergy
               ;;    cdfdat[n].n_angle = dat.nbins
 
               ;;    last_time = cdfdat[n].time
-              ;;    last_delta_time = cdfdat[n].delta_time 
+              ;;    last_delta_time = cdfdat[n].delta_time
               ;;    n=n+1
               ;; endif
 
@@ -308,29 +309,29 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
               ;; angle[0:dat.nenergy-1,0:dat.nbins-1]=dat.theta
 
               if n lt max then begin
-                 
+
                  ;; cdfdat[n].time             = (dat.time+dat.end_time)/2.
-                 cdfdat[n].time             = dat.time                  
-                 cdfdat[n].data_name        = dat.data_name             
-                 cdfdat[n].valid            = dat.valid                 
-                 cdfdat[n].project_name     = dat.project_name          
-                 cdfdat[n].units_name       = dat.units_name            
-                 cdfdat[n].units_procedure  = dat.units_procedure       
-                 cdfdat[n].end_time         = dat.end_time              
-                 cdfdat[n].integ_t          = dat.integ_t               
-                 cdfdat[n].nbins            = dat.nbins                 
-                 cdfdat[n].nenergy          = dat.nenergy               
-                 cdfdat[n].data[0:dat.nenergy-1,0:dat.nbins-1]    = dat.data                  
-                 cdfdat[n].energy[0:dat.nenergy-1,0:dat.nbins-1]  = dat.energy                
-                 cdfdat[n].theta[0:dat.nenergy-1,0:dat.nbins-1]   = dat.theta                 
-                 cdfdat[n].geom[0:dat.nenergy-1,0:dat.nbins-1]    = dat.geom                  
-                 cdfdat[n].denergy[0:dat.nenergy-1,0:dat.nbins-1] = dat.denergy               
-                 cdfdat[n].dtheta[0:dat.nenergy-1,0:dat.nbins-1]  = dat.dtheta                
-                 cdfdat[n].eff[0:dat.nenergy-1]                   = dat.eff                   
-                 cdfdat[n].mass             = dat.mass                  
-                 cdfdat[n].geomfactor       = dat.geomfactor            
-                 cdfdat[n].header_bytes     = dat.header_bytes          
-                 cdfdat[n].index            = dat.index                 
+                 cdfdat[n].time             = dat.time
+                 cdfdat[n].data_name        = dat.data_name
+                 cdfdat[n].valid            = dat.valid
+                 cdfdat[n].project_name     = dat.project_name
+                 cdfdat[n].units_name       = dat.units_name
+                 cdfdat[n].units_procedure  = dat.units_procedure
+                 cdfdat[n].end_time         = dat.end_time
+                 cdfdat[n].integ_t          = dat.integ_t
+                 cdfdat[n].nbins            = dat.nbins
+                 cdfdat[n].nenergy          = dat.nenergy
+                 cdfdat[n].data[0:dat.nenergy-1,0:dat.nbins-1]    = dat.data
+                 cdfdat[n].energy[0:dat.nenergy-1,0:dat.nbins-1]  = dat.energy
+                 cdfdat[n].theta[0:dat.nenergy-1,0:dat.nbins-1]   = dat.theta
+                 cdfdat[n].geom[0:dat.nenergy-1,0:dat.nbins-1]    = dat.geom
+                 cdfdat[n].denergy[0:dat.nenergy-1,0:dat.nbins-1] = dat.denergy
+                 cdfdat[n].dtheta[0:dat.nenergy-1,0:dat.nbins-1]  = dat.dtheta
+                 cdfdat[n].eff[0:dat.nenergy-1]                   = dat.eff
+                 cdfdat[n].mass             = dat.mass
+                 cdfdat[n].geomfactor       = dat.geomfactor
+                 cdfdat[n].header_bytes     = dat.header_bytes
+                 cdfdat[n].index            = dat.index
 
                  last_time = cdfdat[n].time
                  last_delta_time = cdfdat[n].end_time-cdfdat[n].time
@@ -388,7 +389,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         cdfdat[*].foot_lat=tmp.y[*]
         get_data,'FLNG',data=tmp
         cdfdat[*].foot_lng=tmp.y[*]
-        
+
         diff_eFlux = TEMPORARY(cdfDat)
 
 
@@ -425,10 +426,10 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
 ;;            IF (dat_eFlux[ind].valid) THEN BEGIN
 
-;;               ;; Test to see if a transition between fast and slow survey occurs, 
+;;               ;; Test to see if a transition between fast and slow survey occurs,
 ;;               ;; ie delta_time changes, and skip some data if it does.
 ;;               IF (abs((dat_eFlux[ind].end_time-dat_eFlux[ind].time) - last_delta_time) GT 1. ) THEN BEGIN
-                 
+
 ;;                  ;; if fast to slow, skip two or three arrays
 ;;                  IF (dat_eFlux[ind].end_time-dat_eFlux[ind].time) GT last_delta_time THEN BEGIN
 ;;                     ;; FOR i=1,nskip DO BEGIN
@@ -464,7 +465,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 ;;                     ENDWHILE
 ;;                  ENDELSE
 ;;               ENDIF
-              
+
 ;;               ;; Test for data gaps and add NAN if gaps are present.
 ;;               IF abs((dat_eFlux[ind].time+dat_eFlux[ind].end_time)/2.-last_time) GE gap_time THEN BEGIN
 ;;                  IF ind GE 2 THEN dbadtime = dat_eFlux[ind-1].time - dat_eFlux[ind-2].time ELSE dbadtime = gap_time/2.
@@ -516,91 +517,452 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         t1Tmp            = t1
         t2Tmp            = t2
 
-        dat_eFlux        = CALL_FUNCTION(routine,t1Tmp,t2Tmp, $
-                                         CALIB=calc_geom_factors)
-        nGot = N_ELEMENTS(dat_eFlux)
-        ;; tmpT          = (dat_eFlux[*].time+dat_eFlux[*].end_time)/2.D
-        nCalls           = 0
-        t2SuperOld       = 0
-        t2Old            = 0
-        WHILE t2-t2Tmp GT 50 DO BEGIN
+        units = "eFlux"
+        nenergy = 48
+        nbins   = 64
+        blankArr = MAKE_ARRAY(nenergy,nbins,/FLOAT,VALUE=0.)
+        tmplt = { $
+                data_name       :    '', $
+                valid           :       0B, $
+                project_name    :    'FAST', $
+                units_name      :    'eFlux', $
+                units_procedure :    'convert_esa_units2', $
+                time            :       0.D, $
+                end_time        :       0.D, $
+                integ_t         :       0.D, $
+                nbins           :       nbins, $
+                nenergy         :       nenergy, $
+                data            : blankArr, $
+                ddata           : blankArr, $
+                energy          : blankArr, $
+                theta           : blankArr, $
+                geom            : blankArr, $
+                denergy         : blankArr, $
+                ;; dtheta          : MAKE_ARRAY(nbins,/FLOAT,VALUE=0.), $
+                dtheta          : blankArr, $
+                eff             : MAKE_ARRAY(nenergy,/FLOAT,VALUE=0.), $
+                mass            : 0., $
+                geomfactor      : 0., $
+                header_bytes    : MAKE_ARRAY(44,/FLOAT,VALUE=0.), $
+                st_index        : 0L, $
+                en_index        : 0L, $
+                npts            : 0L, $
+                index           : 0L $
+                }
 
-           dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
-                               CALIB=calc_geom_factors)
-           ;; skipTime = (dat.end_time-dat.time) $
-           ;;            * (STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2)
-           skipTime = STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2
-           WHILE skipTime GT 0 DO BEGIN
-              dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
-                                  CALIB=calc_geom_factors,/AD)
-              skipTime--
-           ENDWHILE
-           ;; dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
-           ;;                     CALIB=calc_geom_factors,/AD)
-           
-           IF ~dat.valid THEN BEGIN
-              ;; skipTime = (dat.end_time-dat.time) $
-              ;;            * (STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2)
-              skipTime = STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2
-              WHILE skipTime GT 0 DO BEGIN
-                 dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
-                                     CALIB=calc_geom_factors,/AD)
-                 skipTime--
-              ENDWHILE
-              ;; t2Tmp += skipTime
-              ;; dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
-              ;;                     CALIB=calc_geom_factors,/AD)
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;; BEGIN NYE VEI, 2018/07/26
 
-              IF ~dat.valid THEN BREAK
-           ENDIF
+        ;; TRY MCFADDEN
+        routine = 'get_fa_'+eeb_or_ees+'_c'
+        if keyword_set(t1) then begin
+           t=t1
+           dat = CALL_FUNCTION(routine,t,/calib)
+        endif else begin
+           t = 1000             ; get first sample
+           dat = CALL_FUNCTION(routine,t,/calib,/start)
+        endelse
 
-           t2Old         = t2Tmp
-           t2Tmp         = t2
-           
-           tmpdat_eFlux  = CALL_FUNCTION(routine,t2Old,t2Tmp, $
-                                         CALIB=calc_geom_factors)
+        n = 0
+        max = 10000             ; this could be improved (increased from 2000 - KRB)
 
-           IF ARRAY_EQUAL(SIZE(dat_eFlux[0].energy,/DIMENSIONS), $
-                          SIZE(tmpdat_eFlux[0].energy,/DIMENSIONS)) $
-           THEN BEGIN
-                    ;; tmpClose = VALUE_CLOSEST2((tmpdat_eFlux.time),(dat_eFlux.time),/CONSTRAINED)
-                    ;; tmpCheckers = WHERE(ABS(tmpdat_eFlux[tmpClose].time-(dat_eFlux.time)) LT 0.03, $
-                    ;;                     COMPLEMENT=notDupe, $
-                    ;;                     NCOMPLEMENT=nNotDupe)
-                    ;; IF tmpCheckers[0] NE -1 THEN tmpdat_eFlux = (nNotDupe GT 0 ? tmpdat_eFlux[notDupe] : !NULL)
+        cdfdat = REPLICATE(tmplt,max)
 
-              dat_eFlux  = [dat_eFlux,TEMPORARY(tmpdat_eFlux)]
-           ENDIF ELSE BEGIN
-              dat_eFlux  = TEMPORARY(tmpdat_eFlux)
-              BREAK
-           ENDELSE
+        last_time = (dat.time+dat.end_time)/2.
+        last_delta_time=dat.end_time-dat.time
+        if not keyword_set(gap_time) then gap_time = 4. ; for burst data gap_time should be 0.1
 
-           ;; IF t2SuperOld EQ t2Old AND t2Old NE 0 THEN STOP
 
-           nCalls++
 
-           IF nCalls GT 50 THEN BEGIN
-              PRINT,"THIS IS BOGGART"
-              STOP
-           ENDIF
-        ENDWHILE
-        tmpT             = dat_eFlux[*].time
-        nHere            = N_ELEMENTS(tmpT)
-        keep             = WHERE(tmpT GE t1 AND tmpT LE t2 AND dat_eFlux.valid,nKeep)
-        
-        IF nKeep NE nHere THEN BEGIN
+        if not keyword_set(units) then units = 'Eflux'
 
-           IF nKeep EQ 0 THEN BEGIN
-              PRINT,"No matching " + eeb_or_ees + " data for selected interval: " + $
-                    T2S(t1,/MS) + '–' + T2S(t2,/MS) + '!'
-              diff_eFlux = -1
-              RETURN
-           ENDIF
+        ;;	Collect the data - Main Loop
 
-           PRINT,FORMAT='("Dropping ",I0,A0)',nHere-nKeep," stinker" + ((nHere-nKeep) GT 1 ? 's' : '')
-           dat_eFlux            = dat_eFlux[keep]
+        nNanned = 0
+        ;; if routine eq 'fa_ees_c' then nskip=2 else nskip=3
+        ;; if fast to slow, skip two or three arrays
+        nskip = 3
 
-        ENDIF
+        if keyword_set(t2) then tmax=t2 else tmax=1.e30
+
+        while (dat.valid ne 0) and (n lt max) do begin
+           if (dat.valid eq 1) then begin
+
+              ;; Test to see if a transition between fast and slow survey occurs,
+              ;; ie delta_time changes, and skip some data if it does.
+              if (abs((dat.end_time-dat.time) - last_delta_time) gt 1. ) then begin
+                 if (dat.end_time-dat.time) gt last_delta_time then begin
+                    for i=1,nskip do begin
+                       dat = call_function(routine,t,/calib,/ad)
+                    endfor
+                 endif else begin
+                    while dat.time lt last_time+7.5 do begin
+                       dat = call_function(routine,t,/calib,/ad)
+                    endwhile
+                 endelse
+              endif
+
+              ;; Test for data gaps and add NAN if gaps are present.
+              if abs((dat.time+dat.end_time)/2.-last_time) ge gap_time then begin
+                 if n ge 2 then dbadtime = cdfdat[n-1].time - cdfdat[n-2].time else dbadtime = gap_time/2.
+
+                 ;;;;;;;;;;;;;;;;;;;;
+                 ;; ALDER (2017/12/05)
+                 ;; cdfdat[n].time = (last_time) + dbadtime
+                 ;; cdfdat[n].delta_time = !values.f_nan
+                 ;; cdfdat[n].data[*,*] = !values.f_nan
+                 ;; ;;		cdfdat[n].energy[*,*] = !values.f_nan
+                 ;; cdfdat[n].energy[*] = !values.f_nan
+                 ;; cdfdat[n].angle[*,*] = !values.f_nan
+                 ;; cdfdat[n].n_energy = !values.f_nan
+                 ;; cdfdat[n].n_angle = !values.f_nan
+
+                 ;;;;;;;;;;;;;;;;;;;;
+                 ;; NYE
+                 if n ge 2 then dbadtime = cdfdat[n-1].time - cdfdat[n-2].time else dbadtime = gap_time/2.
+                 cdfdat[n].time = (last_time) + dbadtime
+                 cdfdat[n].end_time = !values.f_nan
+                 cdfdat[n].data[*,*] = !values.f_nan
+                 cdfdat[n].energy[*] = !values.f_nan
+                 cdfdat[n].theta[*,*] = !values.f_nan
+                 cdfdat[n].nenergy = !values.f_nan
+                 cdfdat[n].nbins = !values.f_nan
+
+                 n=n+1
+                 nNanned++
+
+                 if ((dat.time+dat.end_time)/2. gt cdfdat[n-1].time + gap_time) and (n lt max) then begin
+
+                    ;;;;;;;;;;;;;;;;;;;;
+                    ;; ALDER (2017/12/05)
+                    ;; cdfdat[n].time = (dat.time+dat.end_time)/2. - dbadtime
+                    ;; cdfdat[n].delta_time = !values.f_nan
+                    ;; cdfdat[n].data[*,*] = !values.f_nan
+                    ;; ;; cdfdat[n].energy[*,*] = !values.f_nan
+                    ;; cdfdat[n].energy[*] = !values.f_nan
+                    ;; cdfdat[n].angle[*,*] = !values.f_nan
+                    ;; cdfdat[n].n_energy = !values.f_nan
+                    ;; cdfdat[n].n_angle = !values.f_nan
+
+                    ;;;;;;;;;;;;;;;;;;;;
+                    ;; NYE
+                    cdfdat[n].time = (dat.time+dat.end_time)/2. - dbadtime
+                    cdfdat[n].end_time = !values.f_nan
+                    cdfdat[n].data[*,*] = !values.f_nan
+                    cdfdat[n].energy[*] = !values.f_nan
+                    cdfdat[n].theta[*,*] = !values.f_nan
+                    cdfdat[n].nenergy = !values.f_nan
+                    cdfdat[n].nbins = !values.f_nan
+                    n=n+1
+                    nNanned++
+
+                 endif
+              endif
+
+              ;;;;;;;;;;;;;;;;;;;;
+              ;; ALDER (2017/12/05)
+              ;; dat = conv_units(dat,units)
+              ;; data[*,*]=0.
+              ;; ;;	data(0:nenergy-1,0:dat.nbins-1)=dat.data(retrace:nenergy-1+retrace,0:dat.nbins-1)
+              ;; data[0:dat.nenergy-1,0:dat.nbins-1]=dat.data
+              ;; energy[*,*]=0.
+              ;; ;;	energy(0:nenergy-1,0:dat.nbins-1)=dat.energy(retrace:nenergy-1+retrace,0:dat.nbins-1)
+              ;; energy[0:dat.nenergy-1]=reform(dat.energy[*,0])
+              ;; angle[*,*]=0.
+              ;; ;; angle(0:nenergy-1,0:dat.nbins-1)=dat.theta(retrace:nenergy-1+retrace,0:dat.nbins-1)
+              ;; angle[0:dat.nenergy-1,0:dat.nbins-1]=dat.theta
+
+              ;; if n lt max then begin
+
+              ;;    cdfdat[n].time = (dat.time+dat.end_time)/2.
+              ;;    cdfdat[n].delta_time = dat.end_time-dat.time
+              ;;    cdfdat[n].data[*,*] = data
+              ;;    ;;    cdfdat[n].energy[*,*] = energy
+              ;;    cdfdat[n].energy[*] = energy
+              ;;    cdfdat[n].angle[*,*] = angle
+              ;;    cdfdat[n].n_energy = dat.nenergy
+              ;;    cdfdat[n].n_angle = dat.nbins
+
+              ;;    last_time = cdfdat[n].time
+              ;;    last_delta_time = cdfdat[n].delta_time
+              ;;    n=n+1
+              ;; endif
+
+              ;;;;;;;;;;;;;;;;;;;;
+              ;; NYE
+              dat                   = CONV_UNITS(dat,'counts')
+              ADD_STR_ELEMENT,dat,'ddata',SQRT(dat.data)
+              dat = conv_units(dat,units)
+              ;; data[*,*]=0.
+              ;;	data(0:nenergy-1,0:dat.nbins-1)=dat.data(retrace:nenergy-1+retrace,0:dat.nbins-1)
+              ;; data[0:dat.nenergy-1,0:dat.nbins-1]=dat.data
+              ;; energy[*,*]=0.
+              ;;	energy(0:nenergy-1,0:dat.nbins-1)=dat.energy(retrace:nenergy-1+retrace,0:dat.nbins-1)
+              ;; energy[0:dat.nenergy-1]=reform(dat.energy[*,0])
+              ;; angle[*,*]=0.
+              ;; angle(0:nenergy-1,0:dat.nbins-1)=dat.theta(retrace:nenergy-1+retrace,0:dat.nbins-1)
+              ;; angle[0:dat.nenergy-1,0:dat.nbins-1]=dat.theta
+
+              if n lt max then begin
+
+                 ;; cdfdat[n].time             = (dat.time+dat.end_time)/2.
+                 cdfdat[n].time             = dat.time
+                 cdfdat[n].data_name        = dat.data_name
+                 cdfdat[n].valid            = dat.valid
+                 cdfdat[n].project_name     = dat.project_name
+                 cdfdat[n].units_name       = dat.units_name
+                 cdfdat[n].units_procedure  = dat.units_procedure
+                 cdfdat[n].end_time         = dat.end_time
+                 cdfdat[n].integ_t          = dat.integ_t
+                 cdfdat[n].nbins            = dat.nbins
+                 cdfdat[n].nenergy          = dat.nenergy
+                 cdfdat[n].data[0:dat.nenergy-1,0:dat.nbins-1]    = dat.data
+                 cdfdat[n].energy[0:dat.nenergy-1,0:dat.nbins-1]  = dat.energy
+                 cdfdat[n].theta[0:dat.nenergy-1,0:dat.nbins-1]   = dat.theta
+                 cdfdat[n].geom[0:dat.nenergy-1,0:dat.nbins-1]    = dat.geom
+                 cdfdat[n].denergy[0:dat.nenergy-1,0:dat.nbins-1] = dat.denergy
+                 cdfdat[n].dtheta[0:dat.nenergy-1,0:dat.nbins-1]  = dat.dtheta
+                 cdfdat[n].eff[0:dat.nenergy-1]                   = dat.eff
+                 cdfdat[n].mass             = dat.mass
+                 cdfdat[n].geomfactor       = dat.geomfactor
+                 cdfdat[n].header_bytes     = dat.header_bytes
+                 cdfdat[n].index            = dat.index
+
+                 last_time = cdfdat[n].time
+                 last_delta_time = cdfdat[n].end_time-cdfdat[n].time
+                 n=n+1
+              endif
+
+           endif else begin
+              print,'Invalid packet, dat.valid ne 1, at: ',time_to_str(dat.time)
+           endelse
+
+           dat = call_function(routine,t,/calib,/ad)
+           if dat.valid ne 0 then if dat.time gt tmax then dat.valid=0
+
+        endwhile
+
+        if n ge max then print, 'warning: reached maximum allocation -- data set returned may not be complete'
+
+        cdfdat=cdfdat[0:n-1]
+        time = cdfdat.time
+
+        cdfdat = cdfdat[SORT(time)]
+        time   = time[SORT(time)]
+
+        print,FORMAT='(A0,I0)','n NaNned: ',nNanned
+
+
+        dat_eFlux = TEMPORARY(cdfdat)
+
+        ;; END NYE VEI, 2018/07/26
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;; BEGIN ALD VEI, PRE-2018/07/26
+
+        ;; tmpDat_eFlux        = CALL_FUNCTION(routine,t1Tmp,t2Tmp, $
+        ;;                                     /CALIB)
+        ;; count = N_ELEMENTS(tmpDat_eFlux)
+        ;; rem   = count
+
+        ;; max = 4000
+        ;; dat_eFlux = REPLICATE(tmplt,max)
+        ;; k = 0
+
+        ;; WHILE rem GT 0 DO BEGIN
+
+        ;; ;; FOR k=0,nGot-1 DO BEGIN
+        ;;    nNRG = tmpdat_eFlux[k].nenergy
+        ;;    nBins = tmpdat_eFlux[k].nbins
+
+        ;;    data3d                   = CONV_UNITS(tmpdat_eFlux[k],'counts')
+        ;;    ADD_STR_ELEMENT,data3d,'ddata',SQRT(data3d.data)
+        ;;    data3d                   = CONV_UNITS(data3d,units)
+
+        ;;    dat_eFlux[k].data_name                    = data3d.data_name
+        ;;    dat_eFlux[k].valid                        = data3d.valid
+        ;;    dat_eFlux[k].project_name                 = data3d.project_name
+        ;;    dat_eFlux[k].units_name                   = data3d.units_name
+        ;;    dat_eFlux[k].units_procedure              = data3d.units_procedure
+        ;;    dat_eFlux[k].time                         = data3d.time
+        ;;    dat_eFlux[k].end_time                     = data3d.end_time
+        ;;    dat_eFlux[k].integ_t                      = data3d.integ_t
+        ;;    dat_eFlux[k].nbins                        = data3d.nbins
+        ;;    dat_eFlux[k].nenergy                      = data3d.nenergy
+        ;;    dat_eFlux[k].data[0:nNRG-1,0:nBins-1]     = data3d.data
+        ;;    dat_eFlux[k].ddata[0:nNRG-1,0:nBins-1]    = data3d.ddata
+        ;;    dat_eFlux[k].energy[0:nNRG-1,0:nBins-1]   = data3d.energy
+        ;;    dat_eFlux[k].theta[0:nNRG-1,0:nBins-1]    = data3d.theta
+        ;;    dat_eFlux[k].geom[0:nNRG-1,0:nBins-1]     = data3d.geom
+        ;;    dat_eFlux[k].denergy[0:nNRG-1,0:nBins-1]  = data3d.denergy
+        ;;    dat_eFlux[k].dtheta[0:nBins-1]            = data3d.dtheta
+        ;;    dat_eFlux[k].eff[0:nNRG-1]                = data3d.eff
+        ;;    dat_eFlux[k].mass                         = data3d.mass
+        ;;    dat_eFlux[k].geomfactor                   = data3d.geomfactor
+        ;;    dat_eFlux[k].header_bytes                 = data3d.header_bytes
+        ;;    dat_eFlux[k].st_index                     = data3d.st_index
+        ;;    dat_eFlux[k].en_index                     = data3d.en_index
+        ;;    dat_eFlux[k].npts                         = data3d.npts
+        ;;    dat_eFlux[k].index                        = data3d.index
+        ;; ;; ENDFOR
+        ;;    k++
+        ;;    rem--
+        ;; ENDWHILE
+
+        ;; tmpdat_eFlux = !NULL
+
+        ;; ;; tmpT          = (dat_eFlux[*].time+dat_eFlux[*].end_time)/2.D
+        ;; nCalls           = 0
+        ;; t2SuperOld       = 0
+        ;; t2Old            = 0
+        ;; WHILE t2-t2Tmp GT 50 DO BEGIN
+
+        ;;    dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
+        ;;                        /CALIB)
+        ;;    ;; skipTime = (dat.end_time-dat.time) $
+        ;;    ;;            * (STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2)
+        ;;    skipTime = STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2
+        ;;    WHILE skipTime GT 0 DO BEGIN
+        ;;       dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
+        ;;                           /CALIB,/AD)
+        ;;       skipTime--
+        ;;    ENDWHILE
+        ;;    ;; dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
+        ;;    ;;                     CALIB=calc_geom_factors,/AD)
+
+        ;;    IF ~dat.valid THEN BEGIN
+        ;;       ;; skipTime = (dat.end_time-dat.time) $
+        ;;       ;;            * (STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2)
+        ;;       skipTime = STRMATCH(eeb_or_ees,'*eb',/FOLD_CASE) ? 3 : 2
+        ;;       WHILE skipTime GT 0 DO BEGIN
+        ;;          dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
+        ;;                              /CALIB,/AD)
+        ;;          skipTime--
+        ;;       ENDWHILE
+        ;;       ;; t2Tmp += skipTime
+        ;;       ;; dat = CALL_FUNCTION(routine.Replace("_ts",""),t2Tmp, $
+        ;;       ;;                     CALIB=calc_geom_factors,/AD)
+
+        ;;       IF ~dat.valid THEN BREAK
+        ;;    ENDIF
+
+        ;;    t2Old         = t2Tmp
+        ;;    t2Tmp         = t2
+
+        ;;    tmpdat_eFlux  = CALL_FUNCTION(routine,t2Old,t2Tmp, $
+        ;;                                  /CALIB)
+
+        ;;    count = N_ELEMENTS(tmpdat_eFlux)
+        ;;    rem   = count
+
+        ;;    ;; dat_eFlux = REPLICATE(tmplt,nTmpGot)
+
+        ;;    WHILE rem GT 0 DO BEGIN
+
+        ;;    ;; FOR k=0,nTmpGot-1 DO BEGIN
+        ;;       tmpI = count-rem
+        ;;       nNRG = tmpdat_eFlux[tmpI].nenergy
+        ;;       nBins = tmpdat_eFlux[tmpI].nbins
+
+        ;;       data3d                   = CONV_UNITS(tmpdat_eFlux[tmpI],'counts')
+        ;;       ADD_STR_ELEMENT,data3d,'ddata',SQRT(data3d.data)
+        ;;       data3d                   = CONV_UNITS(data3d,units)
+
+        ;;       dat_eFlux[k].data_name                    = data3d.data_name
+        ;;       dat_eFlux[k].valid                        = data3d.valid
+        ;;       dat_eFlux[k].project_name                 = data3d.project_name
+        ;;       dat_eFlux[k].units_name                   = data3d.units_name
+        ;;       dat_eFlux[k].units_procedure              = data3d.units_procedure
+        ;;       dat_eFlux[k].time                         = data3d.time
+        ;;       dat_eFlux[k].end_time                     = data3d.end_time
+        ;;       dat_eFlux[k].integ_t                      = data3d.integ_t
+        ;;       dat_eFlux[k].nbins                        = data3d.nbins
+        ;;       dat_eFlux[k].nenergy                      = data3d.nenergy
+        ;;       dat_eFlux[k].data[0:nNRG-1,0:nBins-1]     = data3d.data
+        ;;       dat_eFlux[k].ddata[0:nNRG-1,0:nBins-1]    = data3d.ddata
+        ;;       dat_eFlux[k].energy[0:nNRG-1,0:nBins-1]   = data3d.energy
+        ;;       dat_eFlux[k].theta[0:nNRG-1,0:nBins-1]    = data3d.theta
+        ;;       dat_eFlux[k].geom[0:nNRG-1,0:nBins-1]     = data3d.geom
+        ;;       dat_eFlux[k].denergy[0:nNRG-1,0:nBins-1]  = data3d.denergy
+        ;;       dat_eFlux[k].dtheta[0:nBins-1]            = data3d.dtheta
+        ;;       dat_eFlux[k].eff[0:nNRG-1]                = data3d.eff
+        ;;       dat_eFlux[k].mass                         = data3d.mass
+        ;;       dat_eFlux[k].geomfactor                   = data3d.geomfactor
+        ;;       dat_eFlux[k].header_bytes                 = data3d.header_bytes
+        ;;       dat_eFlux[k].st_index                     = data3d.st_index
+        ;;       dat_eFlux[k].en_index                     = data3d.en_index
+        ;;       dat_eFlux[k].npts                         = data3d.npts
+        ;;       dat_eFlux[k].index                        = data3d.index
+        ;;    ;; ENDFOR
+        ;;       k++
+        ;;       rem--
+        ;;       ENDWHILE
+
+
+        ;;       ;; ALD
+        ;;    ;; IF ARRAY_EQUAL(SIZE(dat_eFlux[0].energy,/DIMENSIONS), $
+        ;;    ;;                SIZE(tmpdat_eFlux[0].energy,/DIMENSIONS)) $
+        ;;    ;; THEN BEGIN
+
+        ;;       ;; dat_eFlux  = [dat_eFlux,TEMPORARY(tmpdat_eFlux)]
+        ;;    ;; ENDIF ELSE BEGIN
+
+        ;;    ;; tmpClose = VALUE_CLOSEST2((tmpdat_eFlux.time),(dat_eFlux.time),/CONSTRAINED)
+        ;;    ;; tmpCheckers = WHERE(ABS(tmpdat_eFlux[tmpClose].time-(dat_eFlux.time)) LT 0.03, $
+        ;;    ;;                     COMPLEMENT=notDupe, $
+        ;;    ;;                     NCOMPLEMENT=nNotDupe)
+        ;;    ;; IF tmpCheckers[0] NE -1 THEN tmpdat_eFlux = (nNotDupe GT 0 ? tmpdat_eFlux[notDupe] : !NULL)
+        ;;    ;;    dat_eFlux  = TEMPORARY(tmpdat_eFlux)
+
+        ;;    ;;    BREAK
+        ;;    ;; ENDELSE
+        ;;       ;; NYE
+        ;;    ;; IF ARRAY_EQUAL(SIZE(dat_eFlux[0].energy,/DIMENSIONS), $
+        ;;    ;;                SIZE(tmpdat_eFlux[0].energy,/DIMENSIONS)) $
+        ;;    ;; THEN BEGIN
+        ;;    ;;    dat_eFlux  = [dat_eFlux,TEMPORARY(tmpdat_eFlux)]
+        ;;    ;; ENDIF ELSE BEGIN
+
+        ;;    ;;    STOP
+        ;;    ;;    ;; dat_eFlux  = TEMPORARY(tmpdat_eFlux)
+        ;;    ;;    BREAK
+        ;;    ;; ENDELSE
+
+        ;;    ;; IF t2SuperOld EQ t2Old AND t2Old NE 0 THEN STOP
+
+        ;;    nCalls++
+
+        ;;    IF nCalls GT 50 THEN BEGIN
+        ;;       PRINT,"THIS IS BOGGART"
+        ;;       STOP
+        ;;    ENDIF
+        ;; ENDWHILE
+        ;; tmpT             = dat_eFlux[*].time
+        ;; nHere            = N_ELEMENTS(tmpT)
+        ;; keep             = WHERE(tmpT GE t1 AND tmpT LE t2 AND dat_eFlux.valid,nKeep)
+
+        ;; IF nKeep NE nHere THEN BEGIN
+
+        ;;    IF nKeep EQ 0 THEN BEGIN
+        ;;       PRINT,"No matching " + eeb_or_ees + " data for selected interval: " + $
+        ;;             T2S(t1,/MS) + '–' + T2S(t2,/MS) + '!'
+        ;;       diff_eFlux = -1
+        ;;       RETURN
+        ;;    ENDIF
+
+        ;;    PRINT,FORMAT='("Dropping ",I0,A0)',nHere-nKeep," stinker" + ((nHere-nKeep) GT 1 ? 's' : '')
+        ;;    dat_eFlux            = dat_eFlux[keep]
+
+        ;; ENDIF
+
+        ;; END ALD VEI, PRE-2018/07/26
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
         ;;Turn it into the tangly mess of arrays
         DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
@@ -609,8 +971,10 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                                 ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $
                                 SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                                 TRY_SYNTHETIC_SDT_STRUCT=try_synthetic_SDT_struct, $
-                                CALC_GEOM_FACTORS=calc_geom_factors
-        
+                                /DONT_ALTER_DIMS, $
+                                CALC_GEOM_FACTORS=calc_geom_factors, $
+                                ARRAY_OF_STRUCTS_INSTEAD=array_of_structs_instead
+
         IF KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
 
            diff_eFlux           =  {x:        TRANSPOSE(diff_eFlux.x), $
@@ -618,43 +982,43 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                                     angles:   diff_eFlux.angles, $
                                     time:     diff_eFlux.time, $
                                     shiftVals:shiftVals}
-           
+
         ENDIF ELSE BEGIN
 
            IF ~(KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0)) THEN BEGIN
-              diff_eFlux                            =  {x:        TRANSPOSE(diff_eFlux.x), $
-                                                        y:        TRANSPOSE(diff_eFlux.y), $
-                                                        angles:   TRANSPOSE(diff_eFlux.angles), $
-                                                        time:     diff_eFlux.time, $
-                                                        shiftVals:shiftVals}
+              diff_eFlux = {x:        TRANSPOSE(diff_eFlux.x), $
+                            y:        TRANSPOSE(diff_eFlux.y), $
+                            angles:   TRANSPOSE(diff_eFlux.angles), $
+                            time:     diff_eFlux.time, $
+                            shiftVals:shiftVals}
 
               IF KEYWORD_SET(try_synthetic_SDT_struct) THEN BEGIN
-                 diff_eFluxSDT                         = {data_name:diff_eFluxSDT.data_name, $
-                                                          valid:diff_eFluxSDT.valid, $
-                                                          project_name:diff_eFluxSDT.project_name, $
-                                                          units_name:diff_eFluxSDT.units_name, $
-                                                          units_procedure:diff_eFluxSDT.units_procedure, $
-                                                          time:diff_eFluxSDT.time, $
-                                                          end_time:diff_eFluxSDT.end_time, $
-                                                          integ_t:diff_eFluxSDT.integ_t, $
-                                                          nbins:diff_eFluxSDT.nbins, $
-                                                          nenergy:diff_eFluxSDT.nenergy, $
-                                                          data:TRANSPOSE(diff_eFluxSDT.data), $
-                                                          ddata:TRANSPOSE(diff_eFluxSDT.ddata), $
-                                                          energy:TRANSPOSE(diff_eFluxSDT.energy), $
-                                                          denergy: TRANSPOSE(diff_eFluxSDT.denergy), $
-                                                          theta:TRANSPOSE(diff_eFluxSDT.theta), $
-                                                          dtheta: TRANSPOSE(diff_eFluxSDT.dtheta), $
-                                                          geom: TRANSPOSE(diff_eFluxSDT.geom), $
-                                                          eff: TRANSPOSE(diff_eFluxSDT.eff), $
-                                                          mass:diff_eFluxSDT.mass, $
-                                                          geomfactor:diff_eFluxSDT.geomfactor, $
-                                                          header_bytes: diff_eFluxSDT.header_bytes, $
-                                                          st_index:diff_eFluxSDT.st_index, $
-                                                          en_index:diff_eFluxSDT.en_index, $
-                                                          npts:diff_eFluxSDT.npts, $
-                                                          index:diff_eFluxSDT.index, $
-                                                          shiftVals:shiftVals}
+                 diff_eFluxSDT = {data_name:diff_eFluxSDT.data_name, $
+                                  valid:diff_eFluxSDT.valid, $
+                                  project_name:diff_eFluxSDT.project_name, $
+                                  units_name:diff_eFluxSDT.units_name, $
+                                  units_procedure:diff_eFluxSDT.units_procedure, $
+                                  time:diff_eFluxSDT.time, $
+                                  end_time:diff_eFluxSDT.end_time, $
+                                  integ_t:diff_eFluxSDT.integ_t, $
+                                  nbins:diff_eFluxSDT.nbins, $
+                                  nenergy:diff_eFluxSDT.nenergy, $
+                                  data:TRANSPOSE(diff_eFluxSDT.data), $
+                                  ddata:TRANSPOSE(diff_eFluxSDT.ddata), $
+                                  energy:TRANSPOSE(diff_eFluxSDT.energy), $
+                                  denergy: TRANSPOSE(diff_eFluxSDT.denergy), $
+                                  theta:TRANSPOSE(diff_eFluxSDT.theta), $
+                                  dtheta: TRANSPOSE(diff_eFluxSDT.dtheta), $
+                                  geom: TRANSPOSE(diff_eFluxSDT.geom), $
+                                  eff: TRANSPOSE(diff_eFluxSDT.eff), $
+                                  mass:diff_eFluxSDT.mass, $
+                                  geomfactor:diff_eFluxSDT.geomfactor, $
+                                  header_bytes: diff_eFluxSDT.header_bytes, $
+                                  st_index:diff_eFluxSDT.st_index, $
+                                  en_index:diff_eFluxSDT.en_index, $
+                                  npts:diff_eFluxSDT.npts, $
+                                  index:diff_eFluxSDT.index, $
+                                  shiftVals:shiftVals}
               ENDIF
            ENDIF
 
@@ -669,7 +1033,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
      ENDELSE
 
   ENDIF
-  
+
   IF KEYWORD_SET(save_diff_eFlux_to_file) OR KEYWORD_SET(couldntfindLoad) THEN BEGIN
      IF (N_ELEMENTS(diff_eFlux_file) GT 0) AND ~got_restored THEN BEGIN
         save_diff_eFlux_to_file = diff_eFlux_file
