@@ -127,25 +127,25 @@ PRO TPLOT_UP_VS_DOWN_ION_FLUXES, $
   pNameList = LIST()
   saveTStrList = LIST()
 
-  IF KEYWORD_SET(plot_ascN) THEN BEGIN
+  IF KEYWORD_SET(plot_ascN) AND N_ELEMENTS(tLimNAscend) GT 0 THEN BEGIN
      nPlots++
      tLimList.Add,tLimNAscend
      pNameList.Add,fNameAscendN
      saveTStrList.Add,saveTStrNAscend
   ENDIF
-  IF KEYWORD_SET(plot_descN) THEN BEGIN
+  IF KEYWORD_SET(plot_descN) AND N_ELEMENTS(tLimNDescend) GT 0 THEN BEGIN
      nPlots++
      tLimList.Add,tLimNDescend
      pNameList.Add,fNameDescendN
      saveTStrList.Add,saveTStrNDescend
   ENDIF
-  IF KEYWORD_SET(plot_ascS) THEN BEGIN
+  IF KEYWORD_SET(plot_ascS) AND N_ELEMENTS(tLimSAscend) GT 0 THEN BEGIN
      nPlots++
      tLimList.Add,tLimSAscend
      pNameList.Add,fNameAscendS
      saveTStrList.Add,saveTStrSAscend
   ENDIF
-  IF KEYWORD_SET(plot_descS) THEN BEGIN
+  IF KEYWORD_SET(plot_descS) AND N_ELEMENTS(tLimSDescend) GT 0 THEN BEGIN
      nPlots++
      tLimList.Add,tLimSDescend
      pNameList.Add,fNameDescendS
@@ -227,6 +227,7 @@ PRO TPLOT_UP_VS_DOWN_ION_FLUXES, $
 END
 
 PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
+   UPDOWNMINRATIO=upDownMinRatio, $
    SAVE_PS=save_ps, $
    NO_PLOTS=no_plots, $
    QUIT_IF_FILE_EXISTS=quit_if_file_exists, $
@@ -243,7 +244,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
-  remake_file = 0
+  remake_file = 1
 
   loadDir = "/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/"
 
@@ -273,7 +274,12 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   nHere = N_ELEMENTS(times)
   GET_DATA,"ORBIT",DATA=orbit
   orbit = orbit.y[nHere/2]
-  savePref = "orb_" + STRING(FORMAT='(I0)',orbit)+"-conic_vs_flux_ratios-"
+  ;; upDownRatioStr = ''
+  upDownMinRatio = KEYWORD_SET(upDownMinRatio) ? upDownMinRatio : 10
+  IF KEYWORD_SET(upDownMinRatio) THEN BEGIN
+     upDownRatioStr = STRING(FORMAT='("-upDownRatio_",I0)',upDownMinRatio)
+  ENDIF
+  savePref = "orb_" + STRING(FORMAT='(I0)',orbit)+"-conic_vs_flux_ratios"+upDownRatioStr
   saveSuff = ".sav"
 
   DIFF_EFLUX_FNAME, $
@@ -333,7 +339,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   IF N_ELEMENTS(saveTStrN) GT 0 THEN BEGIN
      ;; fNameN = savePref+saveTStrN+saveSuff
-     fNameN = savePref.Replace("ratios-","ratios")+saveSuff
+     fNameN = savePref+saveSuff
      PRINT,fNameN
   ENDIF
   IF N_ELEMENTS(saveTStrNAscend) GT 0 THEN BEGIN
@@ -459,6 +465,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   ENDELSE
 
   IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
+     UPDOWNMINRATIO=upDownMinRatio, $
      DOWNESPEC=eSpecDownN, $
      UPESPEC=eSpecUpN, $
      ALLANGLEESPEC=eSpecN, $
@@ -511,13 +518,12 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
                    COMPLEMENT=notUpflow_i, $
                    NCOMPLEMENT=nNotUpflow)
 
+  ionupJ = {x  : eBound.x, $
+            y  :  ionMomStruct.j}
+  ionupJ.y[notUpflow_i] = !VALUES.F_NaN
+  ionupJ.y[where(FINITE(ionupj.y),/NULL)] = -1. * ionupJ.y[where(FINITE(ionupj.y),/NULL)]
+
   ylim,varName,6e6,6e9,1
-  options,varName,'ytitle','Ion flux'
-  options,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
-  options,varName,'x_no_interp',1
-  options,varName,'y_no_interp',1
-  options,varName,'panel_size',1
-  IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
   
   PRINT,"Saving " + fNameN + " ..."
   SAVE, $
@@ -603,11 +609,13 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   OPTIONS,eBoundVarName,'thick',3.0
 
   varName = "ion_upJ"
-  ionupJ = {x  : eBound.x, $
-            y  :  ionMomStruct.j}
-  ionupJ.y[notUpflow_i] = !VALUES.F_NaN
-  ionupJ.y[where(FINITE(ionupj.y),/NULL)] = -1. * ionupJ.y[where(FINITE(ionupj.y),/NULL)]
   STORE_DATA,varName,DATA=ionupJ
+  options,varName,'ytitle','Ion flux'
+  options,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
+  options,varName,'x_no_interp',1
+  options,varName,'y_no_interp',1
+  options,varName,'panel_size',1
+  IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
   
   IF ~KEYWORD_SET(no_plots) THEN BEGIN
      TPLOT_UP_VS_DOWN_ION_FLUXES, $
@@ -637,6 +645,4 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         SAVEPREF=savePref
   ENDIF
   
-  STOP
-
 END
