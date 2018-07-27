@@ -13,6 +13,8 @@ PRO GET_N_S_ASCENDING_DESCENDING_TIME_LIMITS, $
      NS=nS, $
      NASCENDS=nSAscend, $
      NDESCENDS=nSDescend, $
+     NORTHI=northI, $
+     SOUTHI=southI, $
      SAVETSTRN=saveTStrN, $
      SAVETSTRS=saveTStrS, $
      SAVETSTRASCENDN=saveTStrNAscend, $
@@ -232,16 +234,18 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    SAVE_PS=save_ps, $
    NO_PLOTS=no_plots, $
    QUIT_IF_FILE_EXISTS=quit_if_file_exists, $
-   ESPECN=eSpecN, $
-   ESPECUPN=eSpecUpN, $
-   ESPECDOWNN=eSpecDownN, $
-   UPDOWNRATIOSPECN=upDownRatioSpecN, $
-   UPALLRATIOSPECN=upAllRatioSpecN, $
+   ESPECALL=eSpec, $
+   ESPECUP=eSpecUp, $
+   ESPECDOWN=eSpecDown, $
+   UPDOWNRATIOSPEC=upDownRatioSpec, $
+   UPALLRATIOSPEC=upAllRatioSpec, $
    EBOUND=eBound, $
    IONMOMSTRUCT=ionMomStruct, $
    IONUPJ=ionUpJ, $
    UP_ARANGEN=up_aRangeN, $
-   DOWN_ARANGEN=down_aRangeN
+   DOWN_ARANGEN=down_aRangeN, $
+   UP_ARANGES=up_aRangeS, $
+   DOWN_ARANGES=down_aRangeS
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -250,22 +254,26 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   loadDir = "/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/"
 
   ieb_or_ies = "ies"
-  enforce_diff_eFlux_sRate = 2.5
+  enforce_diff_eFlux_sRate = 1.25
   calc_geom_factors      = 0
   clean_the_McFadden_way = 0
 
   deFlux__array_of_structs  = 1
-  save_diff_eFlux_to_file   = 0
+  save_diff_eFlux_to_file   = 1
   load_diff_eFlux_from_file = 1
 
   plot_ascN = 1
   plot_descN = 1
+  plot_ascS = 1
+  plot_descS = 1
 
   makeZeroThreshEFlux = 1e6
   makeZeroVal = 0.001
 
   up_aRangeN = [90,270]
   down_aRangeN = [270,90]
+  up_aRangeS = [-90,90]
+  down_aRangeS = [90,270]
   calib = 1
 
   tRange = GET_ESA_TIMERANGES__RASKT(/IONS,OUT_TIME_ARRAY=times)
@@ -336,6 +344,8 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      NASCENDN=nNAscend, $
      NDESCENDN=nNDescend, $
      NS=nS, $
+     NORTHI=northI, $
+     SOUTHI=southI, $
      NASCENDS=nSAscend, $
      NDESCENDS=nSDescend, $
      SAVETSTRN=saveTStrN, $
@@ -345,9 +355,12 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      SAVETSTRASCENDS=saveTStrSAscend, $
      SAVETSTRDESCENDS=saveTStrSDescend
 
+  ;; Ze filenames
+  fName = savePref+saveSuff
+
   IF N_ELEMENTS(saveTStrN) GT 0 THEN BEGIN
-     ;; fNameN = savePref+saveTStrN+saveSuff
-     fNameN = savePref+saveSuff
+     fNameN = savePref+saveTStrN+saveSuff
+     ;; fNameN = savePref+saveSuff
      PRINT,fNameN
   ENDIF
   IF N_ELEMENTS(saveTStrNAscend) GT 0 THEN BEGIN
@@ -383,103 +396,174 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   ;;            + (STRMID(t2Str,11,8)).Replace(":","_")
   ;; fName = savePref+saveTStr+saveSuff
 
+  upVarName = 'eSpecUp'
+  downVarName = 'eSpecDown'
+  allAngleVarName = 'eSpec'
+
+  needN = N_ELEMENTS(tLimN) GT 0 
+  needS = N_ELEMENTS(tLimS) GT 0 
+
+  restoredN = 0
+  restoredS = 0
+
+  ;; BEGIN POSSIBLY UNNECESSARY LINES
   upVarNameN = 'eSpecUpN'
   downVarNameN = 'eSpecDownN'
   allAngleVarNameN = 'eSpecN'
+  upVarNameS = 'eSpecUpS'
+  downVarNameS = 'eSpecDownS'
+  allAngleVarNameS = 'eSpecS'
 
-  IF FILE_TEST(loadDir+fNameN) AND ~KEYWORD_SET(remake_file) THEN BEGIN
-     PRINT,"Restoring " + fNameN + "..."
-     RESTORE,loadDir+fNameN
+  IF needN AND ~KEYWORD_SET(remake_file) THEN BEGIN
+     IF FILE_TEST(loadDir+fNameN) THEN BEGIN
+        PRINT,"Restoring " + fNameN + "..."
+        RESTORE,loadDir+fNameN
 
-     IF KEYWORD_SET(quit_if_file_exists) THEN BEGIN
-        IF N_ELEMENTS(ionMomStruct) GT 0 AND N_ELEMENTS(eBound) GT 0 AND N_ELEMENTS(ionupJ) GT 0 THEN RETURN
+        varName = upVarNameN
+        STORE_DATA,varName,DATA=eSpecUpN
+
+        varName = downVarNameN
+        STORE_DATA,varName,DATA=eSpecDownN
+
+        varName = allAngleVarNameN
+        STORE_DATA,varName,DATA=eSpecN
+
+        restoredN = 1
      ENDIF
 
-     varName = upVarNameN
-     STORE_DATA,varName,DATA=eSpecUpN
+  ENDIF
 
-     varName = downVarNameN
-     STORE_DATA,varName,DATA=eSpecDownN
+  IF needS AND ~KEYWORD_SET(remake_file) THEN BEGIN
+     IF FILE_TEST(loadDir+fNameS) THEN BEGIN
+        PRINT,"Restoring " + fNameS + "..."
+        RESTORE,loadDir+fNameS
 
-     varName = allAngleVarNameN
-     STORE_DATA,varName,DATA=eSpecN
+        varName = upVarNameS
+        STORE_DATA,varName,DATA=eSpecUpS
 
-  ENDIF ELSE BEGIN
+        varName = downVarNameS
+        STORE_DATA,varName,DATA=eSpecDownS
 
-     t1 = tLimN[0]
-     t2 = tLimN[1]
+        varName = allAngleVarNameS
+        STORE_DATA,varName,DATA=eSpecS
 
-     t1N = tLimN[0]
-     t2N = tLimN[1]
+        restoredS = 1
+     ENDIF
 
-     t1S = tLimN[0]
-     t2S = tLimN[1]
+  ENDIF
+  ;; END POSSIBLY UNNECESSARY LINES
 
-     GET_FA_ORBIT,diff_eflux.time,/TIME_ARRAY
+  IF KEYWORD_SET(quit_if_file_exists) THEN BEGIN
 
-     ;; Now need to treat Northern and Southern separately, o' course, since the angle ranges are totally flipped
-     IF nN GT 0 THEN BEGIN
+     IF FILE_TEST(loadDir+fName) THEN BEGIN
 
-        ;; conic_aRangeN = [145,215]
-        ;; noConic_aRangeN = [215,145]
+        PRINT,"Restoring " + fName + "..."
+        RESTORE,loadDir+fName
 
-        conic_aRangeN = [90,270]
-        noConic_aRangeN = [270,90]
+        varName = upVarName
+        STORE_DATA,varName,DATA=eSpecUp
 
-        GET_FA_RATIO_OF_ION_SPECTROGRAMS, $
-           T1=tLimN[0], $
-           T2=tLimN[1], $
-           DOWNVARNAME=downVarNameN, $
-           UPVARNAME=upVarNameN, $
-           ALLANGLEVARNAME=allAngleVarNameN, $
-           UP_ARANGE=up_aRangeN, $
-           DOWN_ARANGE=down_aRangeN, $
-           UNITS=units, $
-           GET_EN_SPEC_PRO=get_en_spec_pro, $
-           CALIB=calib, $
-           MAKEZEROTHRESHEFLUX=makeZeroThreshEFlux, $
-           MAKEZEROVAL=makeZeroVal, $
-           OUT_DOWNESPEC=eSpecDownN, $
-           OUT_UPESPEC=eSpecUpN, $
-           OUT_ALLANGLEESPEC=eSpecN, $
-           OUT_UPDOWNRATIOSPEC=upDownRatioSpecN, $
-           OUT_UPALLRATIOSPEC=upAllRatioSpecN, $
-           /USE_DIFF_EFLUX, $
-           DIFF_EFLUX=diff_eFlux, $
-           IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs
+        varName = downVarName
+        STORE_DATA,varName,DATA=eSpecDown
 
-        PRINT,"Saving " + fNameN + " ..."
-        SAVE, $
-             eSpecN,eSpecUpN,eSpecDownN,upDownRatioSpecN,upAllRatioSpecN, $
-             eSpecS,eSpecUpS,eSpecDownS,upDownRatioSpecS,upAllRatioSpecS, $
-             up_aRangeS,down_aRangeS, $
-             up_aRangeN,down_aRangeN, $
-             FILENAME=loadDir+fNameN
+        varName = allAngleVarName
+        STORE_DATA,varName,DATA=eSpec
 
      ENDIF
 
-     IF nS GT 0 THEN BEGIN
+     ;; Don't use these; I think we can combine eBoundN and eBoundS as well as the ionups
 
-        STOP
+     ;; canQuitN = needN ? $
+     ;;            (N_ELEMENTS(eBoundN) GT 0 AND N_ELEMENTS(ionupJN) GT 0) : $
+     ;;            1
+     ;; canQuitS = needS ? $
+     ;;            (N_ELEMENTS(eBoundS) GT 0 AND N_ELEMENTS(ionupJS) GT 0) : $
+     ;;            1
 
-        ;; conic_aRangeS = [-35,35]
-        ;; noConic_aRangeS = [35,325]
+     ;; IF haveIonStruct AND canQuitN AND canQuitS THEN RETURN
 
-        conic_aRangeS = [-90,90]
-        noConic_aRangeS = [90,270]
+     canQuit = (N_ELEMENTS(eBound) GT 0 AND N_ELEMENTS(ionupJ) GT 0)
 
-     ENDIF
+     haveIonStruct = N_ELEMENTS(ionMomStruct) GT 0
 
-  ENDELSE
+     IF haveIonStruct AND canQuit THEN RETURN
 
-  IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
-     UPDOWNMINRATIO=upDownMinRatio, $
-     MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
-     DOWNESPEC=eSpecDownN, $
-     UPESPEC=eSpecUpN, $
-     ALLANGLEESPEC=eSpecN, $
-     UPDOWNRATIOSPEC=upDownRatioSpecN, $
-     OUT_EBOUND=eBound
+  ENDIF 
+
+
+
+  ;; t1N = tLimN[0]
+  ;; t2N = tLimN[1]
+
+  ;; t1S = tLimS[0]
+  ;; t2S = tLimS[1]
+
+  GET_FA_ORBIT,diff_eflux.time,/TIME_ARRAY
+
+  ;; Now need to treat Northern and Southern separately, o' course, since the angle ranges are totally flipped
+  IF nN GT 0 AND ~restoredN THEN BEGIN
+
+     GET_FA_RATIO_OF_ION_SPECTROGRAMS, $
+        T1=tLimN[0], $
+        T2=tLimN[1], $
+        DOWNVARNAME=downVarNameN, $
+        UPVARNAME=upVarNameN, $
+        ALLANGLEVARNAME=allAngleVarNameN, $
+        UP_ARANGE=up_aRangeN, $
+        DOWN_ARANGE=down_aRangeN, $
+        UNITS=units, $
+        GET_EN_SPEC_PRO=get_en_spec_pro, $
+        CALIB=calib, $
+        MAKEZEROTHRESHEFLUX=makeZeroThreshEFlux, $
+        MAKEZEROVAL=makeZeroVal, $
+        OUT_DOWNESPEC=eSpecDownN, $
+        OUT_UPESPEC=eSpecUpN, $
+        OUT_ALLANGLEESPEC=eSpecN, $
+        OUT_UPDOWNRATIOSPEC=upDownRatioSpecN, $
+        OUT_UPALLRATIOSPEC=upAllRatioSpecN, $
+        /USE_DIFF_EFLUX, $
+        DIFF_EFLUX=diff_eFlux, $
+        IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs
+
+     PRINT,"Saving " + fNameN + " ..."
+     SAVE, $
+        eSpecN,eSpecUpN,eSpecDownN,upDownRatioSpecN,upAllRatioSpecN, $
+        up_aRangeS,down_aRangeS, $
+        FILENAME=loadDir+fNameN
+
+  ENDIF
+
+  IF nS GT 0 AND ~restoredS THEN BEGIN
+
+     GET_FA_RATIO_OF_ION_SPECTROGRAMS, $
+        T1=tLimS[0], $
+        T2=tLimS[1], $
+        DOWNVARNAME=downVarNameS, $
+        UPVARNAME=upVarNameS, $
+        ALLANGLEVARNAME=allAngleVarNameS, $
+        UP_ARANGE=up_aRangeS, $
+        DOWN_ARANGE=down_aRangeS, $
+        UNITS=units, $
+        GET_EN_SPEC_PRO=get_en_spec_pro, $
+        CALIB=calib, $
+        MAKEZEROTHRESHEFLUX=makeZeroThreshEFlux, $
+        MAKEZEROVAL=makeZeroVal, $
+        OUT_DOWNESPEC=eSpecDownS, $
+        OUT_UPESPEC=eSpecUpS, $
+        OUT_ALLANGLEESPEC=eSpecS, $
+        OUT_UPDOWNRATIOSPEC=upDownRatioSpecS, $
+        OUT_UPALLRATIOSPEC=upAllRatioSpecS, $
+        /USE_DIFF_EFLUX, $
+        DIFF_EFLUX=diff_eFlux, $
+        IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs
+
+     PRINT,"Saving " + fNameS + " ..."
+     SAVE, $
+        eSpecS,eSpecUpS,eSpecDownS,upDownRatioSpecS,upAllRatioSpecS, $
+        up_aRangeS,down_aRangeS, $
+        FILENAME=loadDir+fNameS
+
+  ENDIF
 
   ;; SSDDD
   ;; Moments???
@@ -489,10 +573,39 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
            SC_POT=tmpSc_pot, $
            EEB_OR_EES=ieb_or_ies)
 
-  ;; IF KEYWORD_SET(use_peakE_bounds_for_moments) THEN BEGIN
-     ;; energy[0,*]               = peak_EBoundsArr[0,*] > energy[0,*]
-     energy[1,*]               = eBound.y
-  ;; ENDIF
+  IF N_ELEMENTS(eSpecN) GT 0 THEN BEGIN
+
+     IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
+        UPDOWNMINRATIO=upDownMinRatio, $
+        MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
+        DOWNESPEC=eSpecDownN, $
+        UPESPEC=eSpecUpN, $
+        ALLANGLEESPEC=eSpecN, $
+        UPDOWNRATIOSPEC=upDownRatioSpecN, $
+        OUT_EBOUND=eBoundN
+
+     nortenyo = WHERE(diff_eflux.ilat GT 10,nNortenyo)
+     IF nNortenyo NE N_ELEMENTS(eBoundN.y) THEN PRINT,"DIE"
+     energy[1,nortenyo]   = eBoundN.y
+
+  ENDIF
+
+  IF N_ELEMENTS(eSpecS) GT 0 THEN BEGIN
+
+     IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
+        UPDOWNMINRATIO=upDownMinRatio, $
+        MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
+        DOWNESPEC=eSpecDownS, $
+        UPESPEC=eSpecUpS, $
+        ALLANGLEESPEC=eSpecS, $
+        UPDOWNRATIOSPEC=upDownRatioSpecS, $
+        OUT_EBOUND=eBoundS
+
+     sudenyo = WHERE(diff_eflux.ilat LT -10,nSudenyo)
+     IF nSudenyo NE N_ELEMENTS(eBoundS.y) THEN PRINT,"DIE"
+     energy[1,sudenyo]   = eBoundS.y
+
+  ENDIF
 
   MOMENT_SUITE_2D,diff_eFlux, $
                   ENERGY=energy, $
@@ -523,6 +636,58 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
                   OUT_STRUCT=ionMomStruct, $
                   BATCH_MODE=batch_mode
 
+  CASE 1 OF
+     KEYWORD_SET(eBoundN) AND KEYWORD_SET(eBoundS): BEGIN
+        eBound = {x   : [eBoundN.x  ,eBoundS.x  ], $
+                  y   : [eBoundN.y  ,eBoundS.y  ], $
+                  ind : [eBoundN.ind,eBoundS.ind]}
+
+        eSpec = {x : [eSpecN.x,eSpecS.x], $
+                 y : [eSpecN.y,eSpecS.y], $
+                 v : [eSpecN.v,eSpecS.v], $
+                 yerr :  [eSpecN.yerr,eSpecS.yerr], $
+                 verr :  [eSpecN.verr,eSpecS.verr]}
+
+        eSpecUp = {x : [eSpecUpN.x,eSpecUpS.x], $
+                 y : [eSpecUpN.y,eSpecUpS.y], $
+                 v : [eSpecUpN.v,eSpecUpS.v], $
+                 yerr :  [eSpecUpN.yerr,eSpecUpS.yerr], $
+                 verr :  [eSpecUpN.verr,eSpecUpS.verr]}
+
+        eSpecDown = {x : [eSpecDownN.x,eSpecDownS.x], $
+                 y : [eSpecDownN.y,eSpecDownS.y], $
+                 v : [eSpecDownN.v,eSpecDownS.v], $
+                 yerr :  [eSpecDownN.yerr,eSpecDownS.yerr], $
+                 verr :  [eSpecDownN.verr,eSpecDownS.verr]}
+
+        upDownRatioSpec = {x : [upDownRatioSpecN.x,upDownRatioSpecS.x], $
+                           y : [upDownRatioSpecN.y,upDownRatioSpecS.y], $
+                           v : [upDownRatioSpecN.v,upDownRatioSpecS.v]}
+
+        upAllRatioSpec = {x : [upAllRatioSpecN.x,upAllRatioSpecS.x], $
+                           y : [upAllRatioSpecN.y,upAllRatioSpecS.y], $
+                           v : [upAllRatioSpecN.v,upAllRatioSpecS.v]}
+
+
+     END
+     KEYWORD_SET(eBoundN): BEGIN
+        eBound           = TEMPORARY(eBoundN)
+        eSpec            = TEMPORARY(eSpecN          )
+        eSpecUp          = TEMPORARY(eSpecUpN        )
+        eSpecDown        = TEMPORARY(eSpecDownN      )
+        upAllRatioSpec   = TEMPORARY(upAllRatioSpecN )
+        upDownRatioSpec  = TEMPORARY(upDownRatioSpecN)
+     END
+     KEYWORD_SET(eBoundS): BEGIN
+        eBound = TEMPORARY(eBoundS)
+        eSpec            = TEMPORARY(eSpecS          )
+        eSpecUp          = TEMPORARY(eSpecUpS        )
+        eSpecDown        = TEMPORARY(eSpecDownS      )
+        upAllRatioSpec   = TEMPORARY(upAllRatioSpecS )
+        upDownRatioSpec  = TEMPORARY(upDownRatioSpecS)
+     END
+  ENDCASE
+
   upflow_i = WHERE(diff_eFlux.valid AND eBound.y GT 4,nUpflow, $
                    COMPLEMENT=notUpflow_i, $
                    NCOMPLEMENT=nNotUpflow)
@@ -530,50 +695,52 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   ionupJ = {x  : eBound.x, $
             y  :  ionMomStruct.j}
   ionupJ.y[notUpflow_i] = !VALUES.F_NaN
-  ionupJ.y[where(FINITE(ionupj.y),/NULL)] = -1. * ionupJ.y[where(FINITE(ionupj.y),/NULL)]
+  flipMe = WHERE(FINITE(ionupj.y) AND diff_eflux.ilat GT 10,/NULL)
+  ionupJ.y[flipMe] = -1. * ionupJ.y[flipMe]
 
-  ylim,varName,6e6,6e9,1
+  YLIM,varName,6e6,6e9,1
   
-  PRINT,"Saving " + fNameN + " ..."
+  PRINT,"Saving " + fName + " ..."
   SAVE, $
-     eSpecN,eSpecUpN,eSpecDownN,upDownRatioSpecN,upAllRatioSpecN, $
+     eSpec,eSpecUp,eSpecDown,upDownRatioSpec,upAllRatioSpec, $
      eBound, ionMomStruct, ionupJ, $
-     eSpecS,eSpecUpS,eSpecDownS,upDownRatioSpecS,upAllRatioSpecS, $
-     up_aRangeS,down_aRangeS, $
      up_aRangeN,down_aRangeN, $
-     FILENAME=loadDir+fNameN
+     up_aRangeS,down_aRangeS, $
+     FILENAME=loadDir+fName
 
-  varName = upVarNameN
+  varName = upVarName
+  STORE_DATA,varName,DATA=eSpecUp
   OPTIONS,varName,'spec',1
   ZLIM,varName,1e4,1e8,1
   ylim,varName,4,24000,1
-  options,varName,'ytitle','Upward ions!C!CEnergy (eV)'
-  options,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
-  options,varName,'x_no_interp',1
-  options,varName,'y_no_interp',1
-  options,varName,'panel_size',2
+  OPTIONS,varName,'ytitle','Upward ions!C!CEnergy (eV)'
+  OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
+  OPTIONS,varName,'x_no_interp',1
+  OPTIONS,varName,'y_no_interp',1
+  OPTIONS,varName,'panel_size',2
   IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
 
-  varName = downVarNameN
-  options,varName,'spec',1
+  varName = downVarName
+  STORE_DATA,varName,DATA=eSpecDown
+  OPTIONS,varName,'spec',1
   zlim,varName,1e4,1e8,1
   ylim,varName,4,24000,1
-  options,varName,'ytitle','Downward ions !C!CEnergy (eV)'
-  options,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
-  options,varName,'x_no_interp',1
-  options,varName,'y_no_interp',1
-  options,varName,'panel_size',2
+  OPTIONS,varName,'ytitle','Downward ions !C!CEnergy (eV)'
+  OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
+  OPTIONS,varName,'x_no_interp',1
+  OPTIONS,varName,'y_no_interp',1
+  OPTIONS,varName,'panel_size',2
   IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
 
   ;; varName = allAngleVarNameN
-  ;; options,varName,'spec',1
+  ;; OPTIONS,varName,'spec',1
   ;; zlim,varName,1e4,1e8,1
   ;; ylim,varName,3,40000,1
-  ;; options,varName,'ytitle','ions (all angles)!C!CEnergy (eV)'
-  ;; options,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
-  ;; options,varName,'x_no_interp',1
-  ;; options,varName,'y_no_interp',1
-  ;; options,varName,'panel_size',2
+  ;; OPTIONS,varName,'ytitle','ions (all angles)!C!CEnergy (eV)'
+  ;; OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
+  ;; OPTIONS,varName,'x_no_interp',1
+  ;; OPTIONS,varName,'y_no_interp',1
+  ;; OPTIONS,varName,'panel_size',2
   ;; IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
 
   ;; varName = "ratioN"
@@ -591,7 +758,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   upDownRatioSpecVarName = "ratioNUpDown"
   varName = upDownRatioSpecVarName
-  data = upDownRatioSpecN
+  data = upDownRatioSpec
   STORE_DATA,varName,DATA=data
   OPTIONS,varName,'spec',1
   YLIM,varName,4,24000,1
@@ -600,7 +767,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   OPTIONS,varName,'ztitle','Up/Down ion eFlux'
   OPTIONS,varName,'x_no_interp',1
   OPTIONS,varName,'y_no_interp',1
-  options,varName,'panel_size',2
+  OPTIONS,varName,'panel_size',2
 
   IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
 
@@ -619,11 +786,11 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   varName = "ion_upJ"
   STORE_DATA,varName,DATA=ionupJ
-  options,varName,'ytitle','Ion flux'
-  options,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
-  options,varName,'x_no_interp',1
-  options,varName,'y_no_interp',1
-  options,varName,'panel_size',1
+  OPTIONS,varName,'ytitle','Ion flux'
+  OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
+  OPTIONS,varName,'x_no_interp',1
+  OPTIONS,varName,'y_no_interp',1
+  OPTIONS,varName,'panel_size',1
   IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
   
   IF ~KEYWORD_SET(no_plots) THEN BEGIN
