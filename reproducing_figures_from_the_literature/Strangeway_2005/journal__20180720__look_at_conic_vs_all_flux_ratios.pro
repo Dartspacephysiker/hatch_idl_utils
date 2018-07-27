@@ -228,6 +228,7 @@ END
 
 PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    UPDOWNMINRATIO=upDownMinRatio, $
+   MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
    SAVE_PS=save_ps, $
    NO_PLOTS=no_plots, $
    QUIT_IF_FILE_EXISTS=quit_if_file_exists, $
@@ -274,12 +275,19 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   nHere = N_ELEMENTS(times)
   GET_DATA,"ORBIT",DATA=orbit
   orbit = orbit.y[nHere/2]
+
   ;; upDownRatioStr = ''
   upDownMinRatio = KEYWORD_SET(upDownMinRatio) ? upDownMinRatio : 10
+  minNumQualifyingEChannels = KEYWORD_SET(minNumQualifyingEChannels) ? minNumQualifyingEChannels : 10
   IF KEYWORD_SET(upDownMinRatio) THEN BEGIN
      upDownRatioStr = STRING(FORMAT='("-upDownRatio_",I0)',upDownMinRatio)
   ENDIF
-  savePref = "orb_" + STRING(FORMAT='(I0)',orbit)+"-conic_vs_flux_ratios"+upDownRatioStr
+  IF KEYWORD_SET(minNumQualifyingEChannels) THEN BEGIN
+     minNQualEStr = STRING(FORMAT='("-minNQualECh_",I0)',minNumQualifyingEChannels)
+  ENDIF
+
+  savePref = "orb_" + STRING(FORMAT='(I0)',orbit)+"-conic_vs_flux_ratios"$
+             +upDownRatioStr+minNQualEStr
   saveSuff = ".sav"
 
   DIFF_EFLUX_FNAME, $
@@ -466,6 +474,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
      UPDOWNMINRATIO=upDownMinRatio, $
+     MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
      DOWNESPEC=eSpecDownN, $
      UPESPEC=eSpecUpN, $
      ALLANGLEESPEC=eSpecN, $
