@@ -13,14 +13,31 @@ FUNCTION MOMENTERRORS_2D,dat2, $
   COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF dat2.valid EQ 0 THEN BEGIN
-     PRINT,'Invalid Data'
-     RETURN, 0.
+     PRINT,'MOMENTERRORS_2D: Invalid Data'
+
+     N_R                     = 4 + (~KEYWORD_SET(pressure_covar_calc) ? 0 : 6) + $
+                               (~KEYWORD_SET(heatFlux_covar_calc) ? 0 : 3)
+     RETURN, {n   :  !VALUES.D_NAN, $
+              Ux  :  !VALUES.D_NAN, $
+              Uy  :  !VALUES.D_NAN, $
+              Uz  :  !VALUES.D_NAN, $
+              Pxx :  !VALUES.D_NAN, $
+              Pyy :  !VALUES.D_NAN, $
+              Pzz :  !VALUES.D_NAN, $
+              Pxy :  !VALUES.D_NAN, $
+              Pxz :  !VALUES.D_NAN, $
+              Pyz :  !VALUES.D_NAN, $
+              Hx  :  !VALUES.D_NAN, $
+              Hy  :  !VALUES.D_NAN, $
+              Hz  :  !VALUES.D_NAN, $
+              R   :  MAKE_ARRAY(N_R,N_R,/DOUBLE,VALUE=!VALUES.D_NAN)} ; correlation matrix
+
   ENDIF
 
   dat = CONV_UNITS(dat2,'dfStd') ;distribution function, in "standard" units (s^3/m^6)
   na  = dat.nenergy
   nb  = dat.nbins
-  
+
   EBINS2 = REPLICATE(1b,na)
   IF KEYWORD_SET(en) THEN BEGIN
      ebins2[*] = 0
@@ -98,24 +115,24 @@ FUNCTION MOMENTERRORS_2D,dat2, $
   ;; domega = theta
   ;; FOR a=0,nna DO BEGIN
   ;;    FOR b=0,nb-1 DO BEGIN
-  ;;       IF (ABS(theta[a,b]-!pi) LT dtheta[a,b]/2.) THEN BEGIN 
+  ;;       IF (ABS(theta[a,b]-!pi) LT dtheta[a,b]/2.) THEN BEGIN
   ;;          th1 = (!pi+theta[a,b]-dtheta[a,b]/2.)/2.
   ;;          dth1 = [!pi-th1]
   ;;          th2 = (!pi+theta[a,b]+dtheta[a,b]/2.)/2.
   ;;          dth2 = [th2-!pi]
-  ;;          domega[a,b]=2.*!pi*(ABS(SIN(th1))*SIN(dth1)*COS(th1)*COS(dth1) + ABS(SIN(th2))*SIN(dth2)*COS(th1)*COS(dth2)) 
+  ;;          domega[a,b]=2.*!pi*(ABS(SIN(th1))*SIN(dth1)*COS(th1)*COS(dth1) + ABS(SIN(th2))*SIN(dth2)*COS(th1)*COS(dth2))
   ;;       ENDIF ELSE IF (ABS(theta[a,b]-2*!pi) LT dtheta[a,b]/2.) THEN BEGIN
   ;;          th1 = (2.*!pi+theta[a,b]-dtheta[a,b]/2.)/2.
   ;;          dth1 = [2.*!pi-th1]
   ;;          th2 = (2.*!pi+theta[a,b]+dtheta[a,b]/2.)/2.
   ;;          dth2 = [th2-2.*!pi]
-  ;;          domega[a,b]=2.*!pi*(ABS(SIN(th1))*SIN(dth1)*COS(th1)*COS(dth1) + ABS(SIN(th2))*SIN(dth2)*COS(th1)*COS(dth2)) 
+  ;;          domega[a,b]=2.*!pi*(ABS(SIN(th1))*SIN(dth1)*COS(th1)*COS(dth1) + ABS(SIN(th2))*SIN(dth2)*COS(th1)*COS(dth2))
   ;;       ENDIF ELSE IF (ABS(theta[a,b]) LT dtheta[a,b]/2.) THEN BEGIN
   ;;          th1 = (theta[a,b]-dtheta[a,b]/2.)/2.
   ;;          dth1 = ABS(th1)
   ;;          th2 = (theta[a,b]+dtheta[a,b]/2.)/2.
   ;;          dth2 = [th2]
-  ;;          domega[a,b]=2.*!pi*(ABS(SIN(th1))*SIN(dth1)*COS(th1)*COS(dth1) + ABS(SIN(th2))*SIN(dth2)*COS(th1)*COS(dth2)) 
+  ;;          domega[a,b]=2.*!pi*(ABS(SIN(th1))*SIN(dth1)*COS(th1)*COS(dth1) + ABS(SIN(th2))*SIN(dth2)*COS(th1)*COS(dth2))
   ;;       ENDIF ELSE BEGIN
   ;;          th1 = theta[a,b]
   ;;          dth1 = dtheta[a,b]/2.
@@ -132,4 +149,3 @@ FUNCTION MOMENTERRORS_2D,dat2, $
 
   RETURN,errThing
 end
-

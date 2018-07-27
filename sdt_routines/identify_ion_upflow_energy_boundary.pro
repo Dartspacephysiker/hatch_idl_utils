@@ -1,5 +1,7 @@
 ;2018/07/23
 PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
+   UPDOWNMINRATIO=upDownMinRatio, $
+   MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
    DOWNESPEC=eSpecDown, $
    UPESPEC=eSpecUp, $
    ALLANGLEESPEC=eSpec, $
@@ -11,8 +13,8 @@ PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
   maxIonNRG = 500
   minIonNRG = 4
 
-  threshRatio = 10
-  minNQualNRG = 2
+  threshRatio = KEYWORD_SET(upDownMinRatio           ) ? upDownMinRatio            : 10
+  minNQualNRG = KEYWORD_SET(minNumQualifyingEChannels) ? minNumQualifyingEChannels : 4
 
   ;; fracNeeded = 3./4
   fracNeeded = 1./2

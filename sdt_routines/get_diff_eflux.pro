@@ -27,14 +27,17 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
   COMPILE_OPT IDL2,STRICTARRSUBS
 
   got_restored  = 0
-  IF KEYWORD_SET(loadFile) AND KEYWORD_SET(diff_eFlux_file) THEN BEGIN
 
+  IF KEYWORD_SET(loadFile) OR KEYWORD_SET(save_diff_eFlux_to_file) THEN BEGIN
      IF N_ELEMENTS(loadDir) EQ 0 THEN BEGIN
         ;; loadDir = ''
         diffEFluxDir = ''
      ENDIF ELSE BEGIN
         diffEFluxDir = loadDir + '/diff_eFlux/'
      ENDELSE
+  ENDIF
+
+  IF KEYWORD_SET(loadFile) AND KEYWORD_SET(diff_eFlux_file) THEN BEGIN
 
      IF (FILE_TEST(diffEFluxDir+diff_eFlux_file) OR FILE_TEST(diff_eFlux_file)) AND ~KEYWORD_SET(overwrite_existing) THEN BEGIN
         PRINT,'Restoring ' + diff_eFlux_file + '...'
@@ -44,7 +47,8 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         got_restored = (SIZE(dat_eFlux,/TYPE) EQ 8) OR (SIZE(diff_eFlux,/TYPE) EQ 8)
 
         ;; But if we missed most of the data, redo it!
-        IF t2-diff_eflux.time[-1] GT 5. THEN BEGIN
+        siste = N_ELEMENTS(diff_eFlux) GT 1 ? diff_eflux[-1].time : diff_eflux.time[-1]
+        IF t2-siste GT 8. THEN BEGIN
            PRINT,"Apparently junk diff_eFlux! Remaking ..."
            got_restored = 0
            diff_eFlux = !NULL
