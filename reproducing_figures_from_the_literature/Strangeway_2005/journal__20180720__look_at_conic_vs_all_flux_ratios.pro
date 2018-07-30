@@ -68,11 +68,11 @@ PRO GET_N_S_ASCENDING_DESCENDING_TIME_LIMITS, $
 
   southI = where(ilat.y LT -10,nS)
   if (nS GT 0) THEN BEGIN
-     tLimSouth=[ilat.x[southI[0]],ilat.x[southI[-1]]]
-     tLimSouth=T2S(tLimSouth)
-     saveTStrS = STRMID(tLimSouthStr[0],0,10)                      + "__" $
-                 + (STRMID(tLimSouthStr[0],11,8)).Replace(":","_") + "-"  $
-                 + (STRMID(tLimSouthStr[1],11,8)).Replace(":","_")
+     tLimS=[ilat.x[southI[0]],ilat.x[southI[-1]]]
+     tLimSStr=T2S(tLimS)
+     saveTStrS = STRMID(tLimSStr[0],0,10)                      + "__" $
+                 + (STRMID(tLimSStr[0],11,8)).Replace(":","_") + "-"  $
+                 + (STRMID(tLimSStr[1],11,8)).Replace(":","_")
 
      sAscendII = WHERE(diffILAT[southI] GE 0,nSAscend, $
                        COMPLEMENT=sDescendII, $
@@ -81,7 +81,7 @@ PRO GET_N_S_ASCENDING_DESCENDING_TIME_LIMITS, $
         sAscendI = southI[sAscendII]
         tLimSAscend=[ilat.x[sAscendI[0]],ilat.x[sAscendI[-1]]]
         tLimSAscendStr=T2S(tLimSAscend)
-        saveTStrNAscend = STRMID(tLimSAscendStr[0],0,10)                + "__" $
+        saveTStrSAscend = STRMID(tLimSAscendStr[0],0,10)                + "__" $
                           + (STRMID(tLimSAscendStr[0],11,8)).Replace(":","_") + "-"  $
                           + (STRMID(tLimSAscendStr[1],11,8)).Replace(":","_")
      ENDIF
@@ -234,6 +234,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    SAVE_PS=save_ps, $
    NO_PLOTS=no_plots, $
    QUIT_IF_FILE_EXISTS=quit_if_file_exists, $
+   ONLY_LEEWARD_IONS=only_leeward_ions, $
    ESPECALL=eSpec, $
    ESPECUP=eSpecUp, $
    ESPECDOWN=eSpecDown, $
@@ -245,7 +246,8 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    UP_ARANGEN=up_aRangeN, $
    DOWN_ARANGEN=down_aRangeN, $
    UP_ARANGES=up_aRangeS, $
-   DOWN_ARANGES=down_aRangeS
+   DOWN_ARANGES=down_aRangeS, $
+   MISLYKTES=mislyktes
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -274,6 +276,19 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   down_aRangeN = [270,90]
   up_aRangeS = [-90,90]
   down_aRangeS = [90,270]
+
+  ;;eliminate ram ions
+  IF KEYWORD_SET(only_leeward_ions) THEN BEGIN
+        i_angleS     =[180.0,360.0]
+        up_aRangeS   =[270.0,360.0]
+        down_aRangeS =[180.0,270.0]
+        
+        i_angleN     =[0.0,180.0]
+        up_aRangeN   =[90.0,180.0]
+        down_aRangeN =[0.0 ,90.0]
+
+  ENDIF
+
   calib = 1
 
   tRange = GET_ESA_TIMERANGES__RASKT(/IONS,OUT_TIME_ARRAY=times)
@@ -293,9 +308,10 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   IF KEYWORD_SET(minNumQualifyingEChannels) THEN BEGIN
      minNQualEStr = STRING(FORMAT='("-minNQualECh_",I0)',minNumQualifyingEChannels)
   ENDIF
+  leewardStr = KEYWORD_SET(only_leeward_ions) ? "-leeward" : ''
 
   savePref = "orb_" + STRING(FORMAT='(I0)',orbit)+"-conic_vs_flux_ratios"$
-             +upDownRatioStr+minNQualEStr
+             +upDownRatioStr+minNQualEStr + leewardStr
   saveSuff = ".sav"
 
   DIFF_EFLUX_FNAME, $
@@ -359,28 +375,28 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   fName = savePref+saveSuff
 
   IF N_ELEMENTS(saveTStrN) GT 0 THEN BEGIN
-     fNameN = savePref+saveTStrN+saveSuff
+     fNameN = savePref+'-'+saveTStrN+saveSuff
      ;; fNameN = savePref+saveSuff
      PRINT,fNameN
   ENDIF
   IF N_ELEMENTS(saveTStrNAscend) GT 0 THEN BEGIN
-     fNameNAscend = savePref+saveTStrNAscend+saveSuff
+     fNameNAscend  = savePref+'-NASC-'+saveTStrNAscend+saveSuff
      PRINT,fNameNAscend
   ENDIF
   IF N_ELEMENTS(saveTStrNDescend) GT 0 THEN BEGIN
-     fNameNDescend = savePref+saveTStrNDescend+saveSuff
+     fNameNDescend = savePref+'-NDESC-'+saveTStrNDescend+saveSuff
      PRINT,fNameNDescend
   ENDIF
   IF N_ELEMENTS(saveTStrS) GT 0 THEN BEGIN
-     fNameS = savePref+saveTStrS+saveSuff
+     fNameS = savePref+'-'+saveTStrS+saveSuff
      PRINT,fNameS
   ENDIF
   IF N_ELEMENTS(saveTStrSAscend) GT 0 THEN BEGIN
-     fNameSAscend = savePref+saveTStrSAscend+saveSuff
+     fNameSAscend  = savePref+'-SASC-'+saveTStrSAscend+saveSuff
      PRINT,fNameSAscend
   ENDIF
   IF N_ELEMENTS(saveTStrSDescend) GT 0 THEN BEGIN
-     fNameSDescend = savePref+saveTStrSDescend+saveSuff
+     fNameSDescend = savePref+'-SDESC-'+saveTStrSDescend+saveSuff
      PRINT,fNameSDescend
   ENDIF
 
@@ -573,6 +589,10 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
            SC_POT=tmpSc_pot, $
            EEB_OR_EES=ieb_or_ies)
 
+  IF KEYWORD_SET(only_leeward_ions) THEN BEGIN
+     aRange__moments = MAKE_ARRAY(2,N_ELEMENTS(diff_eFlux),VALUE=0.)
+  ENDIF
+
   IF N_ELEMENTS(eSpecN) GT 0 THEN BEGIN
 
      IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
@@ -588,6 +608,9 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      IF nNortenyo NE N_ELEMENTS(eBoundN.y) THEN PRINT,"DIE"
      energy[1,nortenyo]   = eBoundN.y
 
+     IF KEYWORD_SET(only_leeward_ions) THEN BEGIN
+        aRange__moments[*,nortenyo] = i_angleN # MAKE_ARRAY(nNortenyo,VALUE=1.)
+     ENDIF
   ENDIF
 
   IF N_ELEMENTS(eSpecS) GT 0 THEN BEGIN
@@ -604,6 +627,10 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      sudenyo = WHERE(diff_eflux.ilat LT -10,nSudenyo)
      IF nSudenyo NE N_ELEMENTS(eBoundS.y) THEN PRINT,"DIE"
      energy[1,sudenyo]   = eBoundS.y
+
+     IF KEYWORD_SET(only_leeward_ions) THEN BEGIN
+        aRange__moments[*,sudenyo] = i_angleS # MAKE_ARRAY(nSudenyo,VALUE=1.)
+     ENDIF
 
   ENDIF
 
@@ -692,14 +719,35 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
                    COMPLEMENT=notUpflow_i, $
                    NCOMPLEMENT=nNotUpflow)
 
+  IF (N_ELEMENTS(diff_eFlux.valid) NE N_ELEMENTS(ionMomStruct.j)) OR $
+     (N_ELEMENTS(diff_eFlux.valid) NE N_ELEMENTS(eBound.x      )) $
+  THEN BEGIN
+     PRINT,"TIDSERIENE STEMMER IKKE!"
+     PRINT,"TILBAKE ..."
+     mislyktes = 1
+     RETURN
+  ENDIF
+
   ionupJ = {x  : eBound.x, $
             y  :  ionMomStruct.j}
-  ionupJ.y[notUpflow_i] = !VALUES.F_NaN
-  flipMe = WHERE(FINITE(ionupj.y) AND diff_eflux.ilat GT 10,/NULL)
-  ionupJ.y[flipMe] = -1. * ionupJ.y[flipMe]
 
-  YLIM,varName,6e6,6e9,1
-  
+  IF nNotUpflow GT 0 THEN ionupJ.y[notUpflow_i] = !VALUES.F_NaN
+
+  ;; We actually have to flip signs regardless of hemisphere because (shy of the DONT_FLIP_SIGN keyword)
+  ;; MOMENT_SUITE_2D makes all earthward fluxes positive and all anti-earthward fluxes negative
+  ;; flipMe = WHERE(FINITE(ionupj.y) AND diff_eflux.ilat GT 10,nFlip,/NULL)
+  flipMe = WHERE(FINITE(ionupj.y),nFlip,/NULL)
+
+  IF nFlip GT 0 THEN BEGIN
+
+     ionupJ.y[flipMe] = -1. * ionupJ.y[flipMe]
+
+     IF KEYWORD_SET(only_leeward_ions) THEN BEGIN
+        ionupJ.y[flipMe] *= 2.
+     ENDIF
+
+  ENDIF
+
   PRINT,"Saving " + fName + " ..."
   SAVE, $
      eSpec,eSpecUp,eSpecDown,upDownRatioSpec,upAllRatioSpec, $
@@ -786,6 +834,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   varName = "ion_upJ"
   STORE_DATA,varName,DATA=ionupJ
+  ;; YLIM,varName,6e6,6e9,1
   OPTIONS,varName,'ytitle','Ion flux'
   OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
   OPTIONS,varName,'x_no_interp',1
