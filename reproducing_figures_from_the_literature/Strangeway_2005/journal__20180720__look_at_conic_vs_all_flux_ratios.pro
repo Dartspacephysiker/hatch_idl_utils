@@ -35,10 +35,11 @@ PRO GET_N_S_ASCENDING_DESCENDING_TIME_LIMITS, $
   CHECK_SORTED,ilat.x,is_sorted
   IF ~is_sorted THEN STOP
 
-  northI = where(ilat.y GT 10,nN)
+  northI = where(ilat.y GT 0,nN)
   ;; northI = where(ilat.y GT 10 AND (mlt.y GE 9 AND MLT.y LE 15),nn)
   IF (nN GT 0) then BEGIN
      tLimN=[ilat.x[northI[0]],ilat.x[northI[-1]]]
+     tLimN=[DOUBLE(FLOOR(tLimN[0])),DOUBLE(CEIL(tLimN[1]))]
      tLimNStr=T2S(tLimN)
      saveTStrN = STRMID(tLimNStr[0],0,10)                      + "__" $
                  + (STRMID(tLimNStr[0],11,8)).Replace(":","_") + "-"  $
@@ -66,9 +67,10 @@ PRO GET_N_S_ASCENDING_DESCENDING_TIME_LIMITS, $
 
   ENDIF
 
-  southI = where(ilat.y LT -10,nS)
+  southI = where(ilat.y LT 0,nS)
   if (nS GT 0) THEN BEGIN
      tLimS=[ilat.x[southI[0]],ilat.x[southI[-1]]]
+     tLimS=[DOUBLE(FLOOR(tLimS[0])),DOUBLE(CEIL(tLimS[1]))]
      tLimSStr=T2S(tLimS)
      saveTStrS = STRMID(tLimSStr[0],0,10)                      + "__" $
                  + (STRMID(tLimSStr[0],11,8)).Replace(":","_") + "-"  $
@@ -101,6 +103,7 @@ END
 PRO TPLOT_UP_VS_DOWN_ION_FLUXES, $
    tPlt_vars, $
    EBOUNDVARNAME=eBoundVarName, $
+   EBOUNDLOWVARNAME=eBoundLowVarName, $
    UPDOWNRATIOSPECVARNAME=upDownRatioSpecVarName, $
    PLOT_ASCENDING_NORTH=plot_ascN, $
    PLOT_ASCENDING_SOUTH=plot_ascS, $
@@ -206,6 +209,7 @@ PRO TPLOT_UP_VS_DOWN_ION_FLUXES, $
      TRANGE=tLimList[pIdx]
 
      TPLOT_PANEL,VARIABLE=upDownRatioSpecVarName,OPLOTVAR=eBoundVarName
+     TPLOT_PANEL,VARIABLE=upDownRatioSpecVarName,OPLOTVAR=eBoundLowVarName
 
      CASE 1 OF
         KEYWORD_SET(save_png): BEGIN
@@ -235,6 +239,8 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    NO_PLOTS=no_plots, $
    QUIT_IF_FILE_EXISTS=quit_if_file_exists, $
    ONLY_LEEWARD_IONS=only_leeward_ions, $
+   ONLY_CONE_IONS=only_cone_ions, $
+   ENFORCE_THIS_SAMPLE_RATE=enforce_this_sample_rate, $
    ESPECALL=eSpec, $
    ESPECUP=eSpecUp, $
    ESPECDOWN=eSpecDown, $
@@ -256,7 +262,8 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   loadDir = "/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/"
 
   ieb_or_ies = "ies"
-  enforce_diff_eFlux_sRate = 1.25
+  ;; enforce_diff_eFlux_sRate = 1.25
+  enforce_diff_eFlux_sRate = KEYWORD_SET(enforce_this_sample_rate) ? enforce_this_sample_rate : 2.5
   calc_geom_factors      = 0
   clean_the_McFadden_way = 0
 
@@ -274,7 +281,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   up_aRangeN = [90,270]
   down_aRangeN = [270,90]
-  up_aRangeS = [-90,90]
+  up_aRangeS = [270,90]
   down_aRangeS = [90,270]
 
   ;;eliminate ram ions
@@ -286,6 +293,17 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         i_angleN     =[0.0,180.0]
         up_aRangeN   =[90.0,180.0]
         down_aRangeN =[0.0 ,90.0]
+
+  ENDIF
+
+  IF KEYWORD_SET(only_cone_ions) THEN BEGIN
+        i_angleS     =[180.0,360.0]
+        up_aRangeS   =[300.0,360.0]
+        down_aRangeS =[180.0,240.0]
+        
+        i_angleN     =[0.0,180.0]
+        up_aRangeN   =[120.0,180.0]
+        down_aRangeN =[0.0 ,60.0]
 
   ENDIF
 
@@ -308,10 +326,14 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   IF KEYWORD_SET(minNumQualifyingEChannels) THEN BEGIN
      minNQualEStr = STRING(FORMAT='("-minNQualECh_",I0)',minNumQualifyingEChannels)
   ENDIF
-  leewardStr = KEYWORD_SET(only_leeward_ions) ? "-leeward" : ''
+  leewardStr = KEYWORD_SET(only_leeward_ions) ? "-leeward"   : ''
+
+  leewardStr = KEYWORD_SET(only_cone_ions   ) ? "-coneyIons" : ''
+
+  avgItvlStr    = '-sRate' + (STRING(FORMAT='(F0.2)',enforce_diff_eFlux_sRate)).Replace('.','_')
 
   savePref = "orb_" + STRING(FORMAT='(I0)',orbit)+"-conic_vs_flux_ratios"$
-             +upDownRatioStr+minNQualEStr + leewardStr
+             +avgItvlStr+upDownRatioStr+minNQualEStr + leewardStr
   saveSuff = ".sav"
 
   DIFF_EFLUX_FNAME, $
@@ -342,6 +364,9 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
                  LOAD_DIR=loadDir, $
                  OUT_DIFF_EFLUX=diff_eflux
 
+
+  ;; Now get times corresponding to diff_eFlux
+  GET_FA_ORBIT,diff_eFlux.time,/TIME_ARRAY
 
   get_data,'ILAT',data=ILAT
   get_data,'MLT',data=MLT
@@ -514,8 +539,6 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   ;; t1S = tLimS[0]
   ;; t2S = tLimS[1]
 
-  GET_FA_ORBIT,diff_eflux.time,/TIME_ARRAY
-
   ;; Now need to treat Northern and Southern separately, o' course, since the angle ranges are totally flipped
   IF nN GT 0 AND ~restoredN THEN BEGIN
 
@@ -537,6 +560,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         OUT_ALLANGLEESPEC=eSpecN, $
         OUT_UPDOWNRATIOSPEC=upDownRatioSpecN, $
         OUT_UPALLRATIOSPEC=upAllRatioSpecN, $
+        OUT_ESPECUP_TIME=out_timeN, $
         /USE_DIFF_EFLUX, $
         DIFF_EFLUX=diff_eFlux, $
         IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs
@@ -569,6 +593,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         OUT_ALLANGLEESPEC=eSpecS, $
         OUT_UPDOWNRATIOSPEC=upDownRatioSpecS, $
         OUT_UPALLRATIOSPEC=upAllRatioSpecS, $
+        OUT_ESPECUP_TIME=out_timeS, $
         /USE_DIFF_EFLUX, $
         DIFF_EFLUX=diff_eFlux, $
         IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs
@@ -605,8 +630,11 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         OUT_EBOUND=eBoundN
 
      nortenyo = WHERE(diff_eflux.ilat GT 10,nNortenyo)
-     IF nNortenyo NE N_ELEMENTS(eBoundN.y) THEN PRINT,"DIE"
-     energy[1,nortenyo]   = eBoundN.y
+     theseN = VALUE_CLOSEST2(out_timeN,diff_eFlux[nortenyo].time, $
+                            /CONSTRAINED)
+     ;; IF nNortenyo NE N_ELEMENTS(eBoundN.y) THEN PRINT,"DIE"
+     energy[1,nortenyo]   = eBoundN.y[theseN]
+     energy[0,nortenyo]   = eBoundN.yLow[theseN]
 
      IF KEYWORD_SET(only_leeward_ions) THEN BEGIN
         aRange__moments[*,nortenyo] = i_angleN # MAKE_ARRAY(nNortenyo,VALUE=1.)
@@ -625,8 +653,14 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         OUT_EBOUND=eBoundS
 
      sudenyo = WHERE(diff_eflux.ilat LT -10,nSudenyo)
-     IF nSudenyo NE N_ELEMENTS(eBoundS.y) THEN PRINT,"DIE"
-     energy[1,sudenyo]   = eBoundS.y
+
+     ;; out_timeS and eBoundS.x have the same number of elements
+     theseS = VALUE_CLOSEST2(out_timeS,diff_eFlux[sudenyo].time, $
+                            /CONSTRAINED)
+     ;; IF nSudenyo NE N_ELEMENTS(eBoundS.y) THEN PRINT,"DIE"
+
+     energy[1,sudenyo]   = eBoundS.y[theseS]
+     energy[0,sudenyo]   = eBoundS.yLow[theseS]
 
      IF KEYWORD_SET(only_leeward_ions) THEN BEGIN
         aRange__moments[*,sudenyo] = i_angleS # MAKE_ARRAY(nSudenyo,VALUE=1.)
@@ -665,35 +699,74 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   CASE 1 OF
      KEYWORD_SET(eBoundN) AND KEYWORD_SET(eBoundS): BEGIN
-        eBound = {x   : [eBoundN.x  ,eBoundS.x  ], $
-                  y   : [eBoundN.y  ,eBoundS.y  ], $
-                  ind : [eBoundN.ind,eBoundS.ind]}
 
-        eSpec = {x : [eSpecN.x,eSpecS.x], $
-                 y : [eSpecN.y,eSpecS.y], $
-                 v : [eSpecN.v,eSpecS.v], $
-                 yerr :  [eSpecN.yerr,eSpecS.yerr], $
-                 verr :  [eSpecN.verr,eSpecS.verr]}
+        IF eBoundN.x[0] LT eBoundS.x[0] THEN BEGIN
+           eBound1           = TEMPORARY(eBoundN         ) 
+           out_time1         = TEMPORARY(out_timeN       )
+           eSpec1            = TEMPORARY(eSpecN          )
+           eSpecUp1          = TEMPORARY(eSpecUpN        )
+           eSpecDown1        = TEMPORARY(eSpecDownN      )
+           upDownRatioSpec1  = TEMPORARY(upDownRatioSpecN)
+           upAllRatioSpec1   = TEMPORARY(upAllRatioSpecN )
 
-        eSpecUp = {x : [eSpecUpN.x,eSpecUpS.x], $
-                 y : [eSpecUpN.y,eSpecUpS.y], $
-                 v : [eSpecUpN.v,eSpecUpS.v], $
-                 yerr :  [eSpecUpN.yerr,eSpecUpS.yerr], $
-                 verr :  [eSpecUpN.verr,eSpecUpS.verr]}
+           eBound2           = TEMPORARY(eBoundS         ) 
+           out_time2         = TEMPORARY(out_timeS       )
+           eSpec2            = TEMPORARY(eSpecS          )
+           eSpecUp2          = TEMPORARY(eSpecUpS        )
+           eSpecDown2        = TEMPORARY(eSpecDownS      )
+           upDownRatioSpec2  = TEMPORARY(upDownRatioSpecS)
+           upAllRatioSpec2   = TEMPORARY(upAllRatioSpecS )
+        ENDIF ELSE BEGIN
+           eBound1           = TEMPORARY(eBoundS         )
+           out_time1         = TEMPORARY(out_timeS       )
+           eSpec1            = TEMPORARY(eSpecS          )
+           eSpecUp1          = TEMPORARY(eSpecUpS        )
+           eSpecDown1        = TEMPORARY(eSpecDownS      )
+           upDownRatioSpec1  = TEMPORARY(upDownRatioSpecS)
+           upAllRatioSpec1   = TEMPORARY(upAllRatioSpecS )
 
-        eSpecDown = {x : [eSpecDownN.x,eSpecDownS.x], $
-                 y : [eSpecDownN.y,eSpecDownS.y], $
-                 v : [eSpecDownN.v,eSpecDownS.v], $
-                 yerr :  [eSpecDownN.yerr,eSpecDownS.yerr], $
-                 verr :  [eSpecDownN.verr,eSpecDownS.verr]}
+           eBound2           = TEMPORARY(eBoundN         )
+           out_time2         = TEMPORARY(out_timeN       )
+           eSpec2            = TEMPORARY(eSpecN          )
+           eSpecUp2          = TEMPORARY(eSpecUpN        )
+           eSpecDown2        = TEMPORARY(eSpecDownN      )
+           upDownRatioSpec2  = TEMPORARY(upDownRatioSpecN)
+           upAllRatioSpec2   = TEMPORARY(upAllRatioSpecN )
+        ENDELSE
 
-        upDownRatioSpec = {x : [upDownRatioSpecN.x,upDownRatioSpecS.x], $
-                           y : [upDownRatioSpecN.y,upDownRatioSpecS.y], $
-                           v : [upDownRatioSpecN.v,upDownRatioSpecS.v]}
+        eBound = {x   : [eBound1.x  ,eBound2.x  ], $
+                  y   : [eBound1.y  ,eBound2.y  ], $
+                  ind : [eBound1.ind,eBound2.ind], $
+                  yLow   : [eBound1.yLow  ,eBound2.yLow  ], $
+                  indLow : [eBound1.indLow,eBound2.indLow]}
 
-        upAllRatioSpec = {x : [upAllRatioSpecN.x,upAllRatioSpecS.x], $
-                           y : [upAllRatioSpecN.y,upAllRatioSpecS.y], $
-                           v : [upAllRatioSpecN.v,upAllRatioSpecS.v]}
+        out_time = [out_time1,out_time2]
+
+        eSpec = {x : [eSpec1.x,eSpec2.x], $
+                 y : [eSpec1.y,eSpec2.y], $
+                 v : [eSpec1.v,eSpec2.v], $
+                 yerr :  [eSpec1.yerr,eSpec2.yerr], $
+                 verr :  [eSpec1.verr,eSpec2.verr]}
+
+        eSpecUp = {x : [eSpecUp1.x,eSpecUp2.x], $
+                   y : [eSpecUp1.y,eSpecUp2.y], $
+                   v : [eSpecUp1.v,eSpecUp2.v], $
+                   yerr :  [eSpecUp1.yerr,eSpecUp2.yerr], $
+                   verr :  [eSpecUp1.verr,eSpecUp2.verr]}
+
+        eSpecDown = {x : [eSpecDown1.x,eSpecDown2.x], $
+                     y : [eSpecDown1.y,eSpecDown2.y], $
+                     v : [eSpecDown1.v,eSpecDown2.v], $
+                     yerr :  [eSpecDown1.yerr,eSpecDown2.yerr], $
+                     verr :  [eSpecDown1.verr,eSpecDown2.verr]}
+
+        upDownRatioSpec = {x : [upDownRatioSpec1.x,upDownRatioSpec2.x], $
+                           y : [upDownRatioSpec1.y,upDownRatioSpec2.y], $
+                           v : [upDownRatioSpec1.v,upDownRatioSpec2.v]}
+
+        upAllRatioSpec = {x : [upAllRatioSpec1.x,upAllRatioSpec2.x], $
+                          y : [upAllRatioSpec1.y,upAllRatioSpec2.y], $
+                          v : [upAllRatioSpec1.v,upAllRatioSpec2.v]}
 
 
      END
@@ -704,6 +777,8 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         eSpecDown        = TEMPORARY(eSpecDownN      )
         upAllRatioSpec   = TEMPORARY(upAllRatioSpecN )
         upDownRatioSpec  = TEMPORARY(upDownRatioSpecN)
+        out_time         = TEMPORARY(out_timeN       )
+        
      END
      KEYWORD_SET(eBoundS): BEGIN
         eBound = TEMPORARY(eBoundS)
@@ -712,15 +787,20 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         eSpecDown        = TEMPORARY(eSpecDownS      )
         upAllRatioSpec   = TEMPORARY(upAllRatioSpecS )
         upDownRatioSpec  = TEMPORARY(upDownRatioSpecS)
+        out_time         = TEMPORARY(out_timeS       )
+
      END
   ENDCASE
 
-  upflow_i = WHERE(diff_eFlux.valid AND eBound.y GT 4,nUpflow, $
+  these = VALUE_CLOSEST2(out_time,diff_eFlux.time, $
+                          /CONSTRAINED)
+
+  upflow_i = WHERE(diff_eFlux.valid AND eBound.y[these] GT 4,nUpflow, $
                    COMPLEMENT=notUpflow_i, $
                    NCOMPLEMENT=nNotUpflow)
 
-  IF (N_ELEMENTS(diff_eFlux.valid) NE N_ELEMENTS(ionMomStruct.j)) OR $
-     (N_ELEMENTS(diff_eFlux.valid) NE N_ELEMENTS(eBound.x      )) $
+  IF (N_ELEMENTS(diff_eFlux.valid) NE N_ELEMENTS(ionMomStruct.j )) OR $
+     (N_ELEMENTS(diff_eFlux.valid) NE N_ELEMENTS(eBound.x[these])) $
   THEN BEGIN
      PRINT,"TIDSERIENE STEMMER IKKE!"
      PRINT,"TILBAKE ..."
@@ -728,7 +808,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      RETURN
   ENDIF
 
-  ionupJ = {x  : eBound.x, $
+  ionupJ = {x  : eBound.x[these], $
             y  :  ionMomStruct.j}
 
   IF nNotUpflow GT 0 THEN ionupJ.y[notUpflow_i] = !VALUES.F_NaN
@@ -832,6 +912,18 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   OPTIONS,eBoundVarName,'colors',potColor
   OPTIONS,eBoundVarName,'thick',3.0
 
+  eBoundLowVarName = "eBoundLow"
+  ;; potLStyle = 1 ;dotted
+  ;; potLStyle = 2           ;dashed
+  potLStyle = 0                 ;solid
+  potColor  = 40
+  ;; potLStyle = 3 ;dash dot
+  ;; potLStyle = 4 ;dash dot dot
+  STORE_DATA,eBoundLowVarName,DATA={x:eBound.x,y:eBound.yLow}
+  OPTIONS,eBoundLowVarName,'LINESTYLE',potLStyle
+  OPTIONS,eBoundLowVarName,'colors',potColor
+  OPTIONS,eBoundLowVarName,'thick',3.0
+
   varName = "ion_upJ"
   STORE_DATA,varName,DATA=ionupJ
   ;; YLIM,varName,6e6,6e9,1
@@ -846,6 +938,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      TPLOT_UP_VS_DOWN_ION_FLUXES, $
         tPlt_vars, $
         EBOUNDVARNAME=eBoundVarName, $
+        EBOUNDLOWVARNAME=eBoundLowVarName, $
         UPDOWNRATIOSPECVARNAME=upDownRatioSpecVarName, $
         PLOT_ASCENDING_NORTH=plot_ascN, $
         PLOT_ASCENDING_SOUTH=plot_ascS, $
