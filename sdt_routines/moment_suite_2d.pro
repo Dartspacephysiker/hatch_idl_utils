@@ -95,6 +95,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                     QUIET=quiet, $
                     MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux, $
                     PROVIDING_EPHEM_INFO=providing_ephem_info, $
+                    DONT_FLIP_SIGNS_OF_SOUTHHEMI_MOMENTS=dont_flip_signs_of_SH_moments, $
                     IN_ALT=alt, $
                     IN_ILAT=ilat, $
                     IN_MLT=mlt, $
@@ -542,18 +543,24 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
   ENDIF
 
-  north_south     = ABS(ilat)/ilat
+  ;; The following flips signs of moments for SH observations so that
+  ;; earthward is pos and anti-earthward is neg for everyone
+  IF ~KEYWORD_SET(dont_flip_signs_of_SH_moments) THEN BEGIN
 
-  flip            = WHERE(north_south LT 0,nFlip)
 
-  FLIPCURRENTS,j,jPerp,je,jePerp,jerr,jeErr,jPerpErr,jePerpErr,flip,nFlip,mapRatio, $
-               IONS=ions, $
-               ERROR_ESTIMATES=error_estimates, $
-               MAP_TO_100KM=map_to_100km, $
-               OUT_CURRENT=cur, $
-               OUT_CURERR=curErr, $
-               OUT_CURPERP_=curPerp, $
-               OUT_CURPERPERR=curPerpErr
+     north_south     = ABS(ilat)/ilat
+
+     flip            = WHERE(north_south LT 0,nFlip)
+
+     FLIPCURRENTS,j,jPerp,je,jePerp,jerr,jeErr,jPerpErr,jePerpErr,flip,nFlip,mapRatio, $
+                  IONS=ions, $
+                  ERROR_ESTIMATES=error_estimates, $
+                  MAP_TO_100KM=map_to_100km, $
+                  OUT_CURRENT=cur, $
+                  OUT_CURERR=curErr, $
+                  OUT_CURPERP_=curPerp, $
+                  OUT_CURPERPERR=curPerpErr
+  ENDIF
 
   IF specialN THEN BEGIN
 

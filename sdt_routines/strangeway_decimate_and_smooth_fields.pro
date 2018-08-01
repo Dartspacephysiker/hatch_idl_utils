@@ -66,8 +66,8 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
   finite_y         = FINITE(data.y)
 
   IF (WHERE(finite_y))[0] EQ -1 THEN BEGIN
-     MESSAGE,"No finite data here! No smoothing to be done ..."
-     ;; RETURN,-1
+     PRINT,"No finite data here! No smoothing to be done ..."
+     RETURN,-1
   ENDIF
 
   IF KEYWORD_SET(use_double_streaker) THEN BEGIN
@@ -218,9 +218,9 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
 
         IF (WHERE( ABS(FIX(sRates) - sRates) GT 0.1))[0] NE -1 AND $
            ~KEYWORD_SET(use_double_streaker) THEN BEGIN
-           MESSAGE,"The sampling frequencies aren't integer! Sorry ... (Oh, and is there any chance you're using spin-fitted variables? That'll booger you up in no time: their sample rate is 0.4, or T=2.5 s)"
+           PRINT,"The sampling frequencies aren't integer! Sorry ... (Oh, and is there any chance you're using spin-fitted variables? That'll booger you up in no time: their sample rate is 0.4, or T=2.5 s)"
            
-           ;; RETURN,-1
+           RETURN,-1
         ENDIF
 
         sRates = FIX(sRates)
@@ -328,7 +328,7 @@ FUNCTION STRANGEWAY_DECIMATE_AND_SMOOTH_FIELDS,data, $
 
                        END
                        ELSE: BEGIN
-                          MESSAGE,'What???? Samprate is ' + STRCOMPRESS(curSampRate,/REMOVE_ALL)
+                          PRINT,'What???? Samprate is ' + STRCOMPRESS(curSampRate,/REMOVE_ALL)
                           ;; earlyBreak = 1
                           STOP
                        END

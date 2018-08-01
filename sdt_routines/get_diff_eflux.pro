@@ -521,6 +521,8 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         t1Tmp            = t1
         t2Tmp            = t2
 
+        darr    = [1.d,1.d,1.d]
+
         units = "eFlux"
         nenergy = 48
         nbins   = 64
@@ -551,8 +553,18 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                 st_index        : 0L, $
                 en_index        : 0L, $
                 npts            : 0L, $
-                index           : 0L $
-                }
+                index           : 0L, $
+                fa_pos                : darr, $
+                fa_vel                : darr, $
+                alt                   : 1.d, $
+                ilat                  : 1.d, $
+                mlt                   : 1.d, $
+                orbit                 : 3l, $
+                b_model               : darr, $
+                b_foot                : darr, $
+                foot_lat              : 1.d, $
+                foot_lng              : 1.d $
+        }
 
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -757,6 +769,33 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
         print,FORMAT='(A0,I0)','n NaNned: ',nNanned
 
+
+        GET_FA_ORBIT,time,/TIME_ARRAY, $
+                     ORBIT_FILE=orbit_file,/ALL
+        GET_DATA,'fa_pos',data=fapos
+        GET_DATA,'fa_vel',data=favel
+        GET_DATA,'B_model',data=bmodel
+        GET_DATA,'BFOOT',data=bfoot
+        for i=0,2 do begin
+           cdfdat[*].fa_pos[i]=fapos.y[*,i]
+           cdfdat[*].fa_vel[i]=favel.y[*,i]
+           cdfdat[*].b_model[i]=bmodel.y[*,i]
+           cdfdat[*].b_foot[i]=bfoot.y[*,i]
+        endfor
+
+        get_data,'ALT',data=tmp
+        cdfdat[*].alt=tmp.y[*]
+        get_data,'ILAT',data=tmp
+        cdfdat[*].ilat=tmp.y[*]
+        get_data,'MLT',data=tmp
+        cdfdat[*].mlt=tmp.y[*]
+        get_data,'ORBIT',data=tmp
+        cdfdat[*].orbit=tmp.y[*]
+        orbit_num=STRCOMPRESS(STRING(tmp.y[0]),/REMOVE_ALL)
+        GET_data,'FLAT',data=tmp
+        cdfdat[*].foot_lat=tmp.y[*]
+        get_data,'FLNG',data=tmp
+        cdfdat[*].foot_lng=tmp.y[*]
 
         dat_eFlux = TEMPORARY(cdfdat)
 

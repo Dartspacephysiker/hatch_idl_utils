@@ -1,4 +1,5 @@
 ;2018/07/23
+;2018/07/23
 PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
    UPDOWNMINRATIO=upDownMinRatio, $
    MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
@@ -10,19 +11,27 @@ PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
-  maxIonNRG = 500
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; NYE VEI
+
+  maxIonNRG = 9000
   minIonNRG = 4
 
   threshRatio = KEYWORD_SET(upDownMinRatio           ) ? upDownMinRatio            : 10
   minNQualNRG = KEYWORD_SET(minNumQualifyingEChannels) ? minNumQualifyingEChannels : 4
 
+  highThreshRatio = 5
+
   ;; fracNeeded = 3./4
   fracNeeded = 1./2
 
   nTid = N_ELEMENTS(eSpec.x)
-  eBound = {x   : eSpecUp.x         , $
-            y   : eSpecUp.x * 0.    , $
-            ind : LONG(eSpecUp.x * 0)}
+  eBound = {x       : eSpecUp.x                  , $
+            y       : eSpecUp.x * 0.             , $
+            ind     : LONG(eSpecUp.x * 0)        , $
+            yLow    : eSpecUp.x * 0. + minIonNRG , $
+            indLow  : LONG(eSpecUp.x * 0) $
+           }
 
   ;; Y               FLOAT     Array[493, 47]
   NRGs     = REFORM(especup.v[nTid/2,*])
@@ -36,9 +45,15 @@ PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
   trimNRGs = eSpecUp.v[*,tmpNRG_i]
   trimRats = upDownRatioSpec.y[*,tmpNRG_i]
 
+     ;; t1Str ='1998-05-20/19:39:45'
+     ;; t1Str ='1998-05-20/19:43:30'
+     ;; t1 = S2T(t1Str)
+
   ;; Loop over all time slices of up/down energy spectra ratios
   ;; Find the ones that have sufficiently high up/down ratios to make us say "yes, that's up/outflow"
   FOR k=0,nTid-1 DO BEGIN
+
+     ;; IF ABS(eSpecUp.x[k]-t1) LT 1 THEN STOP
 
      tmpRats = trimRats[k,*]
      tmpNRGs = trimNRGs[k,*]
@@ -56,8 +71,95 @@ PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
      IF nTmpBove GE CEIL(FLOAT(nQualNRG)*fracNeeded) AND (nQualNRG GE minNQualNRG) THEN BEGIN
         eBound.y[k] = tmpMax
         eBound.ind[k] = tmpNRG_i[tmpBoveThresh_ii[ind_iii]]
-     ENDIF
+     ENDIF ELSE BEGIN
+
+        ;; If tmpMax exceeds 500 eV and the ratios are high, it may still be ion outflow
+
+        ;; IF tmpMax GE 500 eV AND nTmpBove GE 3 THEN BEGIN
+        tmpBoveHighThresh_ii = WHERE(tmpRats GE highThreshRatio,nTmpBoveHigh)
+
+        IF tmpMax GE 500 AND nTmpBoveHigh GT 3 THEN BEGIN
+           
+           tmpMaxHigh  = MAX( (NRGs[tmpNRG_i])[tmpBoveHighThresh_ii] , indHigh_iii)
+           
+           ;; tmpLB = tmpMaxHigh
+           indTmp_ii = tmpBoveHighThresh_ii[indHigh_iii]
+           WHILE tmpRats[indTmp_ii+1] GE highThreshRatio/2. DO BEGIN
+              indTmp_ii++
+              IF indTmp_ii GE (nTmpNRG-1) THEN BREAK
+           ENDWHILE
+
+           IF tmpNRGs[indTmp_ii] LT tmpMaxHigh THEN BEGIN
+              eBound.y[k] = tmpMaxHigh
+              eBound.ind[k] = tmpNRG_i[tmpBoveHighThresh_ii[indHigh_iii]] 
+
+              eBound.yLow[k] = tmpNRGs[indTmp_ii]
+              eBound.indLow[k] = tmpNRG_i[indTmp_ii]
+           ENDIF
+
+        ENDIF
+
+     ENDELSE
 
   ENDFOR
+
+
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; ALD VEI
+
+  ;; maxIonNRG = 500
+  ;; minIonNRG = 4
+
+  ;; threshRatio = KEYWORD_SET(upDownMinRatio           ) ? upDownMinRatio            : 10
+  ;; minNQualNRG = KEYWORD_SET(minNumQualifyingEChannels) ? minNumQualifyingEChannels : 4
+
+  ;; ;; fracNeeded = 3./4
+  ;; fracNeeded = 1./2
+
+  ;; nTid = N_ELEMENTS(eSpec.x)
+  ;; eBound = {x   : eSpecUp.x         , $
+  ;;           y   : eSpecUp.x * 0.    , $
+  ;;           ind : LONG(eSpecUp.x * 0), $
+  ;;           yLow  : eSpecUp.x * 0.    , $
+  ;;           indLow  : eSpecUp.x * 0. $
+  ;;          }
+
+  ;; ;; Y               FLOAT     Array[493, 47]
+  ;; NRGs     = REFORM(especup.v[nTid/2,*])
+  ;; IsReversedNRG = NRGs[1] LT NRGs[0]
+  ;; tmpNRG_i = WHERE((NRGs LE maxIonNRG) AND (NRGs GE minIonNRG),nTmpNRG)
+  ;; IF nTmpNRG LE 1 THEN BEGIN
+  ;;    PRINT,"BOGUS"
+  ;;    RETURN
+  ;; ENDIF
+
+  ;; trimNRGs = eSpecUp.v[*,tmpNRG_i]
+  ;; trimRats = upDownRatioSpec.y[*,tmpNRG_i]
+
+  ;; ;; Loop over all time slices of up/down energy spectra ratios
+  ;; ;; Find the ones that have sufficiently high up/down ratios to make us say "yes, that's up/outflow"
+  ;; FOR k=0,nTid-1 DO BEGIN
+
+  ;;    tmpRats = trimRats[k,*]
+  ;;    tmpNRGs = trimNRGs[k,*]
+
+  ;;    tmpBoveThresh_ii = WHERE(tmpRats GE threshRatio,nTmpBove)
+
+  ;;    ;; Skip ahead if none above threshold ratio for this time slice
+  ;;    IF nTmpBove LT 1 THEN CONTINUE
+
+  ;;    tmpMax  = MAX( (NRGs[tmpNRG_i])[tmpBoveThresh_ii] , ind_iii)
+
+  ;;    nQualNRG = N_ELEMENTS(WHERE((tmpNRGs LE tmpMax) AND (tmpNRGs GE minIonNRG),/NULL))
+  ;; nQualNRG = N_ELEMENTS(WHERE((tmpNRGs[tmpBoveThresh_ii] LE tmpMax) AND (tmpNRGs[tmpBoveThresh_ii] GE minIonNRG),/NULL))
+
+  ;;    ;; If at least half of the energy channels below the max are above threshold, call it up/outflow
+  ;;    IF nTmpBove GE CEIL(FLOAT(nQualNRG)*fracNeeded) AND (nQualNRG GE minNQualNRG) THEN BEGIN
+  ;;       eBound.y[k] = tmpMax
+  ;;       eBound.ind[k] = tmpNRG_i[tmpBoveThresh_ii[ind_iii]]
+  ;;    ENDIF
+
+  ;; ENDFOR
 
 END

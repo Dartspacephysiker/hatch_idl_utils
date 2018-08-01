@@ -76,7 +76,8 @@ PRO GET_FA_PARTICLE_2DT,type,routine, $
      GET_DATA,'ILAT',DATA=ilat
 
      north_i = WHERE(ilat.y GT 0,nNorth, $
-                     COMPLEMENT=south_i,NCOMPLEMENT=nSouth)
+                     COMPLEMENT=south_i, $
+                     NCOMPLEMENT=nSouth)
   ENDIF
 
   IF KEYWORD_SET(outflow_positive) THEN BEGIN

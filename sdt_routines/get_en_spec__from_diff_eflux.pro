@@ -56,16 +56,18 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
                                       NAME=name, $
                                       IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux, $
                                       OUT_AVGFACTORARR=avgFactorArr, $
-                                      OUT_NORMARR=normArr
+                                      OUT_NORMARR=normArr, $
+                                      OUT_TIME=out_time
 
   COMPILE_OPT IDL2,STRICTARRSUBS
   
   ;;	Time how long the routine takes
   ex_start = SYSTIME(1)
 
+  nHere = N_ELEMENTS(diff_eFlux.data_name)
   ;;	Set defaults for keywords, etc.
   ;; n        = 0
-  max      = N_ELEMENTS(diff_eFlux.data_name)
+  max      = nHere+ROUND(nHere*0.1)
   all_same = 1
 
   ;; ytitle  = data_str + '_en_spec'
@@ -76,8 +78,8 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   projName = ""
   ;; STR_ELEMENT,diff_eFlux,"project_name",projName
   ;; IF projName[0] EQ 'FAST' THEN BEGIN
-     nmaxvar = 96
-     default_gap_time = 8.
+  nmaxvar = 96
+  default_gap_time = 8.
   ;; ENDIF
   IF NOT KEYWORD_SET(gap_time) THEN gap_time = default_gap_time
 
@@ -91,6 +93,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
 
   avgFactorArr = LONARR(max)
   normArr      = LONARR(max)
+  out_time     = DBLARR(max)
 
   IF NOT KEYWORD_SET(units) THEN BEGIN
      units  = KEYWORD_SET(is_McFadden_diff_eFlux) ? diff_eFlux[0].units_name : diff_eFlux[0].units_name[0] ;Added [0] on 2018/07/20 because of McFadden-style cleaning
@@ -104,16 +107,27 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   ;; normArr  = !NULL
   ;;	Collect the data - Main Loop
   ;; n = 0
+
+  ;; "Why the datInd variable?" you ask? Because the loop variable k allows us to tell tplot where gaps in the data are: when
+  ;; there's invalid data that represents a large (i.e., several-second) chunk of time, we fill up the eSpec data/time entries
+  ;;with NaNs to say, "Hey, nothin' here, pal." Therefore, k can be and often is larger than the number of structs in
+  ;;diff_eflux. Therefore, we need a a separate loop variable—datInd—to keep track of the data.
+
+  datInd = 0
   FOR k=0,max-1 DO BEGIN
 
      dat = MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX( $
-           diff_eFlux,k, $
+           diff_eFlux,datInd, $
            IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux)
+     datInd++
+
+     IF datInd GE nHere THEN BREAK 
 
      ;; IF diff_eFlux.valid[k] EQ 0 THEN BEGIN
      IF dat.valid EQ 0 THEN BEGIN
         IF k GE 2 THEN dbadtime = time[k-1] - time[k-2] else dbadtime = gap_time/2.
         time[k]    = (last_time) + dbadtime
+        out_time[k]= dat.time
         data[k,*]  = missing
         ddata[k,*] = missing
         var[k,*]   = missing
@@ -152,21 +166,24 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      IF ABS((dat.time+dat.end_time)/2.-last_time) GE gap_time THEN BEGIN
         IF k GE 2 THEN dbadtime = time[k-1] - time[k-2] else dbadtime = gap_time/2.
         time[k]    = (last_time) + dbadtime
+        out_time[k]= dat.time
         data[k,*]  = missing
         ddata[k,*] = missing
         var[k,*]   = missing
         dvar[k,*]  = missing
+        k++
         ;; IF (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2. GT time[k-1] + gap_time THEN BEGIN
         IF (dat.time+dat.end_time)/2. GT time[k-1] + gap_time THEN BEGIN
            ;; time[k]   = (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2. - dbadtime
            time[k]    = (dat.time+dat.end_time)/2. - dbadtime
+           out_time[k]= dat.time
            data[k,*]  = missing
            ddata[k,*] = missing
            var[k,*]   = missing
            dvar[k,*]  = missing
            k++
-        endif
-     endif
+        ENDIF
+     ENDIF
 
      ;; avgFactorArr = [avgFactorArr,count]
      ;; normArr  = [normArr,norm]
@@ -181,6 +198,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      IF nvar GT nmax THEN nmax = nvar
      ;; time[k]  = (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2.
      time[k]  = (dat.time+dat.end_time)/2.
+     out_time[k] = dat.time
      IF ind[0] NE -1 THEN BEGIN
         ;; data[k,0:nvar-1]  = TOTAL( diff_eFlux.data[*,ind,k], 2)/norm
         ;; var[k,0:nvar-1]   = TOTAL( diff_eFlux.energy[*,ind,k], 2)/count
@@ -231,16 +249,18 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   PRINT,'all_same=',all_same
 
   IF KEYWORD_SET(t1) THEN BEGIN
-     ind   = WHERE(time ge t1)
-     time  = TIME[ind]
+     ind   = WHERE(out_time ge t1)
+     time  = time[ind]
+     out_time  = out_time[ind]
      data  = data[ind,*]
      ddata = ddata[ind,*]
      var   = var[ind,*]
      dvar  = dvar[ind,*]
   ENDIF
   IF KEYWORD_SET(t2) THEN BEGIN
-     ind   = WHERE(time LE t2)
+     ind   = WHERE(out_time LE t2)
      time  = time[ind]
+     out_time  = out_time[ind]
      data  = data[ind,*]
      ddata = ddata[ind,*]
      var   = var[ind,*]
