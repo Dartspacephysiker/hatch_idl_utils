@@ -235,8 +235,7 @@ END
 PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    UPDOWNMINRATIO=upDownMinRatio, $
    MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
-   SAVE_PS=save_ps, $
-   NO_PLOTS=no_plots, $
+   THRESH_EFLUX=thresh_eFlux, $
    QUIT_IF_FILE_EXISTS=quit_if_file_exists, $
    ONLY_LEEWARD_IONS=only_leeward_ions, $
    ONLY_CONE_IONS=only_cone_ions, $
@@ -253,6 +252,8 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    DOWN_ARANGEN=down_aRangeN, $
    UP_ARANGES=up_aRangeS, $
    DOWN_ARANGES=down_aRangeS, $
+   SAVE_PS=save_ps, $
+   NO_PLOTS=no_plots, $
    MISLYKTES=mislyktes
 
   COMPILE_OPT IDL2,STRICTARRSUBS
@@ -276,7 +277,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   plot_ascS = 1
   plot_descS = 1
 
-  makeZeroThreshEFlux = 1e6
+  makeZeroThreshEFlux = KEYWORD_SET(thresh_eFlux) ? thresh_eFlux : 1e6
   makeZeroVal = 0.001
 
   up_aRangeN = [90,270]
@@ -326,6 +327,14 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   IF KEYWORD_SET(minNumQualifyingEChannels) THEN BEGIN
      minNQualEStr = STRING(FORMAT='("-minNQualECh_",I0)',minNumQualifyingEChannels)
   ENDIF
+  IF makeZeroThreshEFlux EQ 1e6 THEN BEGIN
+     threshEFluxStr = ''
+  ENDIF ELSE BEGIN
+     threshEFluxStr = (STRING(FORMAT='("-threshEFlux",G6.1)',makeZeroThreshEFlux)).Replace("E+","e")
+     threshEFluxStr = threshEFluxStr.Replace(".","")
+     threshEFluxStr = threshEFluxStr.Replace('0',"")
+  ENDELSE
+
   leewardStr = KEYWORD_SET(only_leeward_ions) ? "-leeward"   : ''
 
   leewardStr = KEYWORD_SET(only_cone_ions   ) ? "-coneyIons" : ''
@@ -333,7 +342,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   avgItvlStr    = '-sRate' + (STRING(FORMAT='(F0.2)',enforce_diff_eFlux_sRate)).Replace('.','_')
 
   savePref = "orb_" + STRING(FORMAT='(I0)',orbit)+"-conic_vs_flux_ratios"$
-             +avgItvlStr+upDownRatioStr+minNQualEStr + leewardStr
+             +avgItvlStr+threshEFluxStr+upDownRatioStr+minNQualEStr + leewardStr
   saveSuff = ".sav"
 
   DIFF_EFLUX_FNAME, $
