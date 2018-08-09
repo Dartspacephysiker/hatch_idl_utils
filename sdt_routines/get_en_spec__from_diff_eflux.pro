@@ -116,12 +116,12 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   datInd = 0
   FOR k=0,max-1 DO BEGIN
 
+     IF datInd GE nHere THEN BREAK 
+
      dat = MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX( $
            diff_eFlux,datInd, $
            IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux)
      datInd++
-
-     IF datInd GE nHere THEN BREAK 
 
      ;; IF diff_eFlux.valid[k] EQ 0 THEN BEGIN
      IF dat.valid EQ 0 THEN BEGIN
@@ -233,6 +233,8 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
 
   ENDFOR
 
+  time  = time[0:k-1]
+  out_time  = out_time[0:k-1]
   IF NOT KEYWORD_SET(retrace) THEN BEGIN
 ;	If you want to plot the retrace, set the retrace flag to 1.
      data  = data[0:k-1,0:nmax-1]

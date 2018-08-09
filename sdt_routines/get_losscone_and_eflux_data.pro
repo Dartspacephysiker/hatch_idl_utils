@@ -8,6 +8,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 UPGOING=upgoing, $
                                 SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                                 ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $
+                                DIFFEFLUX__ARRAY_OF_STRUCTS=diffEFlux__array_of_structs, $
                                 DEF__INCLUDE_SC_POT=dEF__include_sc_pot, $
                                 SC_POT=sc_pot, $
                                 OUT_ORB=orb, $
@@ -111,6 +112,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                     /CALC_GEOM_FACTORS, $
                     ;; UNITS=eSpecUnits, $          
                     CLEAN_THE_MCFADDEN_WAY=McFadden_diff_eFlux, $
+                    ARRAY_OF_STRUCTS_INSTEAD=diffEFlux__array_of_structs, $
                     FIT_EACH_ANGLE=fit_each_angle, $
                     SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                     ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $

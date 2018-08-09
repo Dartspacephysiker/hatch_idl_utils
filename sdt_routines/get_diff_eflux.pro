@@ -566,6 +566,12 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                 foot_lng              : 1.d $
         }
 
+        IF SIZE(sc_pot,/TYPE) EQ 8 THEN BEGIN
+           STR_ELEMENT,tmplt,"sc_pot",!VALUES.F_NaN,/ADD_REPLACE
+           STR_ELEMENT,tmplt,"charge",!VALUES.F_NaN,/ADD_REPLACE
+        ENDIF
+
+
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         ;; BEGIN NYE VEI, 2018/07/26
@@ -1070,7 +1076,8 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
         ;;Add potential, if we got it
         IF SIZE(sc_pot,/TYPE) EQ 8 THEN BEGIN
-           ADD_SC_POT_TO_DIFF_EFLUX,diff_eFlux,sc_pot
+           ADD_SC_POT_TO_DIFF_EFLUX,diff_eFlux,sc_pot, $
+                                    ARRAY_OF_STRUCTS_INSTEAD=array_of_structs_instead
         ENDIF
 
      ENDELSE
@@ -1078,8 +1085,9 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
   ENDIF
 
   IF KEYWORD_SET(save_diff_eFlux_to_file) OR KEYWORD_SET(couldntfindLoad) THEN BEGIN
-     IF (N_ELEMENTS(diff_eFlux_file) GT 0) AND ~got_restored THEN BEGIN
-        save_diff_eFlux_to_file = diff_eFlux_file
+     gotMeString = SIZE(save_diff_eFlux_to_file,/TYPE) EQ 7
+     IF ((N_ELEMENTS(diff_eFlux_file) GT 0) OR gotMeString) AND ~got_restored THEN BEGIN
+        save_diff_eFlux_to_file = gotMeString ? save_diff_eFlux_to_file : diff_eFlux_file
         PRINT,"Saving diff_eFlux to file: " + save_diff_eFlux_to_file
         SAVE,diff_eFlux,FILENAME=diffEFluxDir + save_diff_eFlux_to_file
      ENDIF ELSE BEGIN

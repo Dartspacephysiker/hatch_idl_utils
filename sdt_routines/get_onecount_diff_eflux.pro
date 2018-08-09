@@ -3,6 +3,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
                             EEB_OR_EES=eeb_or_ees, $
                             SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
                             ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $
+                            DIFFEFLUX__ARRAY_OF_STRUCTS=diffEFlux__array_of_structs, $
                             SC_POT=sc_pot, $
                             IN_PROTOSTRUCT=in_protoStruct, $
                             SDT_NAME=name, $
@@ -17,7 +18,8 @@ PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
                             DIFF_EFLUX_FILE=diff_eFlux_file, $
                             LOAD_DAT_FROM_FILE=loadFile, $
                             LOAD_DIR=loadDir, $
-                            QUIET=quiet
+                            QUIET=quiet, $
+                            _EXTRA=e
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -64,9 +66,16 @@ PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
   IF ~got_restored THEN BEGIN
 
      IF KEYWORD_SET(in_protoStruct) THEN BEGIN
-        dat = MAKE_ARRAY_OF_SDT_STRUCTS_FROM_PREPPED_EFLUX( $
-              in_protoStruct, $
-              HAS_SC_POT=TAG_EXIST(in_protoStruct,'sc_pot'))
+        CASE 1 OF
+           KEYWORD_SET(diffEFlux__array_of_structs): BEGIN
+              dat = in_protoStruct
+           END
+           ELSE: BEGIN
+              dat = MAKE_ARRAY_OF_SDT_STRUCTS_FROM_PREPPED_EFLUX( $
+                    in_protoStruct, $
+                    HAS_SC_POT=TAG_EXIST(in_protoStruct,'sc_pot'))
+           END
+        ENDCASE
      ENDIF ELSE BEGIN
         dat                                            = CALL_FUNCTION(routine,t1,t2,CALIB=calib)
         
@@ -77,6 +86,9 @@ PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
      ENDELSE
      
      shiftVals                                      = !NULL
+     IF KEYWORD_SET(diffEFlux__array_of_structs) THEN BEGIN
+        dEF_oneCount = dat
+     ENDIF
      FOR i=0,N_ELEMENTS(dat)-1 DO BEGIN
         tempDat                                     = dat[i]
 
@@ -88,16 +100,24 @@ PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
 
         CASE 1 OF
            (KEYWORD_SET(fit_each_angle) OR (N_ELEMENTS(fit_each_angle) EQ 0)): BEGIN
-              tempCount = PREP_EFLUX_DATA( $
-                          tempDat, $
-                          UNITS=eSpecUnits, $          
-                          RETRACE=retrace, $
-                          VEL=vel, $
-                          ANGLE=an, $
-                          ARANGE=ar, $
-                          BINS=bins, $
-                          NO_SORT=no_sort);; , $
-                          ;; SC_POTVAL=TAG_EXIST(tempDat,'sc_pot') ? tempDat.sc_pot : !NULL)
+              CASE 1 OF
+                 KEYWORD_SET(diffEFlux__array_of_structs): BEGIN
+                    CALL_PROCEDURE,tempDat.units_procedure,tempDat,(KEYWORD_SET(eSpecUnits) ? eSpecUnits : "eFlux")
+                    tempCount = TEMPORARY(tempDat)
+                 END
+                 ELSE: BEGIN
+                    tempCount = PREP_EFLUX_DATA( $
+                                tempDat, $
+                                UNITS=eSpecUnits, $          
+                                RETRACE=retrace, $
+                                VEL=vel, $
+                                ANGLE=an, $
+                                ARANGE=ar, $
+                                BINS=bins, $
+                                NO_SORT=no_sort) ;; , $
+                    ;; SC_POTVAL=TAG_EXIST(tempDat,'sc_pot') ? tempDat.sc_pot : !NULL)
+                 END
+              ENDCASE
            END
            KEYWORD_SET(try_synthetic_SDT_struct): BEGIN
               SPEC2D,tempDat,UNITS=eSpecUnits,ANGLE=angle, $
@@ -151,10 +171,13 @@ PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
            ENDIF
         ENDIF
 
-        ADD_EFLUX_TO_EFLUX_STRUCT,dEF_oneCount,tempCount, $
-                                  ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
-                                  FIT_EACH_ANGLE=fit_each_angle
-
+        IF KEYWORD_SET(diffEFlux__array_of_structs) THEN BEGIN
+           dEF_oneCount[i] = TEMPORARY(tempCount)
+        ENDIF ELSE BEGIN
+           ADD_EFLUX_TO_EFLUX_STRUCT,dEF_oneCount,tempCount, $
+                                     ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
+                                     FIT_EACH_ANGLE=fit_each_angle
+        ENDELSE
 
      ENDFOR
      
@@ -207,7 +230,7 @@ PRO GET_ONECOUNT_DIFF_EFLUX,t1,t2, $
         ENDIF
      ENDELSE
 
-     IF SIZE(sc_pot,/TYPE) EQ 8 THEN BEGIN
+     IF SIZE(sc_pot,/TYPE) EQ 8 AND ~KEYWORD_SET(diffEFlux__array_of_structs) THEN BEGIN
         ADD_SC_POT_TO_DIFF_EFLUX,dEF_oneCount,sc_pot
      ENDIF
 
