@@ -1,7 +1,7 @@
 ;; 2018/05/07
 PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                           ORBIT=orbit, $
-                          NEWELL_2009_INTERP=Newell_2009_interp, $
+                          ;; NEWELL_2009_INTERP=Newell_2009_interp, $
                           ION_ANGLERANGE=ion_angleRange, $
                           ION_ENERGYRANGE=ion_energyRange, $
                           SPECTROGRAM_UNITS=spectrogram_units, $
@@ -26,11 +26,11 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
   saveIonName  = 'fa_ion_beams'
   saveIonName += '-' + orbString + (KEYWORD_SET(bonusPref) ? bonusPref : '' )
 
-  IF N_ELEMENTS(Newell_2009_interp) GT 0 THEN BEGIN
-     IF Newell_2009_interp EQ 0 THEN BEGIN
-        saveIonName += '-not_Newell_interpreted'
-     ENDIF
-  ENDIF
+  ;; IF N_ELEMENTS(Newell_2009_interp) GT 0 THEN BEGIN
+  ;;    IF Newell_2009_interp EQ 0 THEN BEGIN
+  ;;       saveIonName += '-not_Newell_interpreted'
+  ;;    ENDIF
+  ;; ENDIF
 
   t1  = time1
   t2  = time2

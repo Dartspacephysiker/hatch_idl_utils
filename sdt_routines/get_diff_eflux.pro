@@ -714,7 +714,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
               ;;;;;;;;;;;;;;;;;;;;
               ;; NYE
               dat                   = CONV_UNITS(dat,'counts')
-              ADD_STR_ELEMENT,dat,'ddata',SQRT(dat.data)
+              STR_ELEMENT,dat,'ddata',SQRT(dat.data),/ADD_REPLACE
               dat = conv_units(dat,units)
               ;; data[*,*]=0.
               ;;	data(0:nenergy-1,0:dat.nbins-1)=dat.data(retrace:nenergy-1+retrace,0:dat.nbins-1)
@@ -740,6 +740,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                  cdfdat[n].nbins            = dat.nbins
                  cdfdat[n].nenergy          = dat.nenergy
                  cdfdat[n].data[0:dat.nenergy-1,0:dat.nbins-1]    = dat.data
+                 cdfdat[n].ddata[0:dat.nenergy-1,0:dat.nbins-1]    = dat.ddata
                  cdfdat[n].energy[0:dat.nenergy-1,0:dat.nbins-1]  = dat.energy
                  cdfdat[n].theta[0:dat.nenergy-1,0:dat.nbins-1]   = dat.theta
                  cdfdat[n].geom[0:dat.nenergy-1,0:dat.nbins-1]    = dat.geom

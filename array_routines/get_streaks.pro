@@ -93,7 +93,7 @@ PRO GET_STREAKS,input, $
            
            ;; tmpStop_i     = stop_i[streakInd-1]
            ;;Check the start_i ahead of where we are, see if it is within allowable_gap of the last stop_i
-           keepStreaking = (start_i[streakInd] - stop_i[streakInd-1]) LE allowable_gap
+           keepStreaking = (input[start_i[streakInd]] - input[stop_i[streakInd-1]]) LE allowable_gap
            IF keepStreaking THEN BEGIN
               ;;If the start_i ahead of current position is within allowable gap, just adjust newStop_i
               newStop_i[-1] = stop_i[streakInd]
@@ -108,8 +108,6 @@ PRO GET_STREAKS,input, $
            streakInd++
               
         ENDWHILE
-
-        STOP
 
         start_i = TEMPORARY(newStart_i)
         stop_i  = TEMPORARY(newStop_i)

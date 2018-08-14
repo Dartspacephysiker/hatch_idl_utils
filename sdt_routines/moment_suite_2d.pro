@@ -194,6 +194,7 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                                                    ANGLE=aRange__charE, $
                                                    SC_POT=sc_pot, $
                                                    EEB_OR_EES=eeb_or_ees, $
+                                                   MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux, $
                                                    QUIET=quiet)
 
            jC         = momsC.y[*].j
@@ -223,11 +224,12 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
         IF specialN THEN BEGIN
 
            momsSC = MOMENTS_2D_NEW__FROM_DIFF_EFLUX(diff_eFlux, $
-                                                   ENERGY=energy, $
-                                                   ANGLE=aRange__dens, $
-                                                   SC_POT=sc_pot, $
-                                                   EEB_OR_EES=eeb_or_ees, $
-                                                   QUIET=quiet)
+                                                    ENERGY=energy, $
+                                                    ANGLE=aRange__dens, $
+                                                    SC_POT=sc_pot, $
+                                                    EEB_OR_EES=eeb_or_ees, $
+                                                    MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux, $
+                                                    QUIET=quiet)
 
            nSC    = momsSC.y[*].n
            TSC    = momsSC.y[*].T
@@ -256,11 +258,12 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
         IF specialT THEN BEGIN
 
            moms_T = MOMENTS_2D_NEW__FROM_DIFF_EFLUX(diff_eFlux, $
-                                                   ENERGY=eRange__temp, $
-                                                   ANGLE=aRange__temp, $
-                                                   SC_POT=sc_pot, $
-                                                   EEB_OR_EES=eeb_or_ees, $
-                                                   QUIET=quiet)
+                                                    ENERGY=eRange__temp, $
+                                                    ANGLE=aRange__temp, $
+                                                    SC_POT=sc_pot, $
+                                                    EEB_OR_EES=eeb_or_ees, $
+                                                    MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux, $
+                                                    QUIET=quiet)
 
            n_T    = moms_T.y[*].n
            T_T    = moms_T.y[*].T
