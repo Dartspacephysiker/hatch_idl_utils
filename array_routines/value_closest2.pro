@@ -64,7 +64,11 @@ FUNCTION VALUE_CLOSEST2,vector,values,diffs,ONLY_GE=only_ge,ONLY_LE=only_LE, $
 
               bro = REFORM(ABS(test[0,*]) GT ABS(test[1,*]))
 
-              inds[(check[0]) : (check[-1] < (N_ELEMENTS(bro) - 1) )] += bro
+              IF check[0] LE (check[-1] < (N_ELEMENTS(bro) - 1) ) THEN BEGIN
+
+                 inds[(check[0]) : (check[-1] < (N_ELEMENTS(bro) - 1) )] += bro
+
+              ENDIF
            END
         ENDCASE
      END
