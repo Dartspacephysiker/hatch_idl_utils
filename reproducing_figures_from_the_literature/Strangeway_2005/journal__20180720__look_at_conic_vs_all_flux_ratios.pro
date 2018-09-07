@@ -240,6 +240,9 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    ONLY_LEEWARD_IONS=only_leeward_ions, $
    ONLY_CONE_IONS=only_cone_ions, $
    ENFORCE_THIS_SAMPLE_RATE=enforce_this_sample_rate, $
+   REMAKE_DIFF_EFLUX=remake_diff_eFlux, $
+   DEF__INCLUDE_SC_POT=dEF__include_sc_pot, $
+   SC_POT=sc_pot, $
    ESPECALL=eSpec, $
    ESPECUP=eSpecUp, $
    ESPECDOWN=eSpecDown, $
@@ -270,7 +273,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   deFlux__array_of_structs  = 1
   save_diff_eFlux_to_file   = 1
-  load_diff_eFlux_from_file = 1
+  load_diff_eFlux_from_file = N_ELEMENTS(remake_diff_eFlux) GT 0 ? ~remake_diff_eFlux : 1
 
   plot_ascN = 1
   plot_descN = 1
@@ -360,8 +363,25 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
      LOADDIR=loadDir
 
+  IF (KEYWORD_SET(dEF__include_sc_pot) OR N_ELEMENTS(dEF__include_sc_pot) EQ 0) AND $
+     N_ELEMENTS(sc_pot) EQ 0 THEN BEGIN
+     ;; GET_SC_POTENTIAL,T1=diff_eFlux.time[0],T2=diff_eFlux.time[-1], $
+     GET_SC_POTENTIAL,T1=times[0],T2=times[-1], $
+                      DATA=sc_pot, $
+                      FROM_FA_POTENTIAL=pot__from_fa_potential, $
+                      ALL=pot__all, $
+                      /REPAIR, $
+                      CHASTON_STYLE=pot__Chaston_style, $
+                      FILENAME=pot__fName, $
+                      FROM_FILE=pot__from_file, $
+                      ORBIT=orbit, $
+                      SAVE_FILE=pot__save_file
+     
+  ENDIF
+
   GET_DIFF_EFLUX,T1=times[0],T2=times[-1], $
                  EEB_OR_EES=ieb_or_ies, $
+                 SC_POT=sc_pot, $
                  ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $
                  CLEAN_THE_MCFADDEN_WAY=clean_the_McFadden_way, $
                  CALC_GEOM_FACTORS=calc_geom_factors, $
@@ -617,11 +637,13 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   ;; SSDDD
   ;; Moments???
+  ion_min_if_nan_scpots = 4.
   energy = MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX( $
            diff_eFlux, $
            ENERGY=[4,100], $
            SC_POT=tmpSc_pot, $
-           EEB_OR_EES=ieb_or_ies)
+           EEB_OR_EES=ieb_or_ies, $
+           MIN_IF_NAN_SCPOTS=ion_min_if_nan_scpots)
 
   IF KEYWORD_SET(only_leeward_ions) THEN BEGIN
      aRange__moments = MAKE_ARRAY(2,N_ELEMENTS(diff_eFlux),VALUE=0.)
