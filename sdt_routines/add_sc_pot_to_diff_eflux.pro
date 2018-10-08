@@ -16,6 +16,8 @@ PRO ADD_SC_POT_TO_DIFF_EFLUX,diff_eFlux,sc_pot, $
   tmpTime = diff_eFlux.time
   diffMax      = MEDIAN(tmpTime[1:-1]-tmpTime[0:-2])*2.
 
+  sc_pot_TMP = sc_pot.y
+
   sc_pot_min_i = VALUE_CLOSEST2(sc_pot.x,tmpTime, $
                                 EXTREME_II=extreme_ii, $
                                 /CONSTRAINED)
@@ -32,15 +34,14 @@ PRO ADD_SC_POT_TO_DIFF_EFLUX,diff_eFlux,sc_pot, $
      IF (WHERE( $
         ABS(sc_pot.x[sc_pot_min_i[extreme_ii]] - tmpTime[extreme_ii]) $
         GT diffMax))[0] NE -1 THEN BEGIN
-        STOP
+        sc_pot_TMP[sc_pot_min_i[extreme_ii]] = !VALUES.F_NaN
      ENDIF
 
   ENDIF
 
-  IF (WHERE( $
-     ABS(sc_pot.x[sc_pot_min_i] - tmpTime) $
-     GT diffMax))[0] NE -1 THEN BEGIN
-     STOP
+  bungaLunga = WHERE(ABS(sc_pot.x[sc_pot_min_i] - tmpTime) GT diffMax)
+  IF bungaLunga[0] NE -1 THEN BEGIN
+     sc_pot_TMP[sc_pot_min_i[bungaLunga]] = !VALUES.F_NaN
   ENDIF
 
 
@@ -49,12 +50,12 @@ PRO ADD_SC_POT_TO_DIFF_EFLUX,diff_eFlux,sc_pot, $
         charge = 1.             ; charge of species
         IF (diff_eFlux[0].mass LT 0.00010438871) then charge = -1. ; this line works for Wind which does not have dat.charge
         FOR kk=0,N_ELEMENTS(sc_pot_min_i)-1 DO BEGIN
-           diff_eFlux[kk].sc_pot = sc_pot.y[sc_pot_min_i[kk]]
+           diff_eFlux[kk].sc_pot = sc_pot_TMP[sc_pot_min_i[kk]]
            diff_eFlux[kk].charge = charge
         ENDFOR
      END
      ELSE: BEGIN
-        STR_ELEMENT,diff_eFlux,'sc_pot',sc_pot.y[sc_pot_min_i],/ADD_REPLACE
+        STR_ELEMENT,diff_eFlux,'sc_pot',sc_pot_TMP[sc_pot_min_i],/ADD_REPLACE
 
         ;;And charge
         charge = 1.             ; charge of species

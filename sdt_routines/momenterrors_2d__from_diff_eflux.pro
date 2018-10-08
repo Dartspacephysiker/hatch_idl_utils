@@ -11,7 +11,8 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                           ;; CONV_TO_CM=conv_to_cm, $
                                           SC_POT=sc_pot, $
                                           EEB_OR_EES=eeb_or_ees, $
-                                          QUIET=quiet
+                                          QUIET=quiet, $
+                                          SUMMARY_QUIET=summary_quiet
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -44,7 +45,8 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                    ARANGE=ar, $
                                    BINS=bins, $
                                    PRESSURE_COVAR_CALC=pressure_covar_calc, $
-                                   HEATFLUX_COVAR_CALC=heatFlux_covar_calc)
+                                   HEATFLUX_COVAR_CALC=heatFlux_covar_calc, $
+                                   QUIET=quiet)
 
                                    ;; CONV_TO_CM=conv_to_cm
      
@@ -68,7 +70,7 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
   ENDFOR
   
   ex_time     = SYSTIME(1) - ex_start
-  IF ~KEYWORD_SET(quiet) THEN BEGIN
+  IF ~KEYWORD_SET(summary_quiet) THEN BEGIN
      MESSAGE,STRING(ex_time)+' seconds execution time.',/CONT,/INFO
      PRINT,'Number of data points = ',max
   ENDIF

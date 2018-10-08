@@ -76,7 +76,7 @@ PRO DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $
      KEYWORD_SET(spectra_average_interval): BEGIN
         dat_eFlux   = AVERAGE_SUM3D(dat_eFlux,spectra_average_interval)
      END
-     ELSE: STOP
+     ELSE: 
   ENDCASE
      
   IF KEYWORD_SET(array_of_structs_instead) THEN BEGIN

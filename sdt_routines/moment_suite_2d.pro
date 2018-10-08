@@ -421,15 +421,15 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
   IF KEYWORD_SET(error_estimates) THEN BEGIN
 
      errors      = MOMENTERRORS_2D__FROM_DIFF_EFLUX(diff_eFlux, $
-                                                        ENERGY=energy, $
-                                                        ANGLE=aRange__moments, $
-                                                        SC_POT=sc_pot, $
-                                                        EEB_OR_EES=eeb_or_ees, $
-                                                        ;; PRESSURE_COVAR_CALC=pressure_covar_calc, $
-                                                        /PRESSURE_COVAR_CALC, $
-                                                        ;; HEATFLUX_COVAR_CALC=heatFlux_covar_calc, $
-                                                        /HEATFLUX_COVAR_CALC, $
-                                                        QUIET=quiet)
+                                                    ENERGY=energy, $
+                                                    ANGLE=aRange__moments, $
+                                                    SC_POT=sc_pot, $
+                                                    EEB_OR_EES=eeb_or_ees, $
+                                                    ;; PRESSURE_COVAR_CALC=pressure_covar_calc, $
+                                                    /PRESSURE_COVAR_CALC, $
+                                                    ;; HEATFLUX_COVAR_CALC=heatFlux_covar_calc, $
+                                                    /HEATFLUX_COVAR_CALC, $
+                                                    /QUIET)
 
      ;; IF KEYWORD_SET(dens_errors) THEN BEGIN
      ;; nerr     = MAKE_ARRAY(nHere,/FLOAT)

@@ -57,7 +57,8 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
                                       IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux, $
                                       OUT_AVGFACTORARR=avgFactorArr, $
                                       OUT_NORMARR=normArr, $
-                                      OUT_TIME=out_time
+                                      OUT_TIME=out_time, $
+                                      BAD_TIME=bad_time
 
   COMPILE_OPT IDL2,STRICTARRSUBS
   
@@ -94,6 +95,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   avgFactorArr = LONARR(max)
   normArr      = LONARR(max)
   out_time     = DBLARR(max)
+  bad_time     = MAKE_ARRAY(max,/BYTE,VALUE=0B)
 
   IF NOT KEYWORD_SET(units) THEN BEGIN
      units  = KEYWORD_SET(is_McFadden_diff_eFlux) ? diff_eFlux[0].units_name : diff_eFlux[0].units_name[0] ;Added [0] on 2018/07/20 because of McFadden-style cleaning
@@ -112,6 +114,18 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   ;; there's invalid data that represents a large (i.e., several-second) chunk of time, we fill up the eSpec data/time entries
   ;;with NaNs to say, "Hey, nothin' here, pal." Therefore, k can be and often is larger than the number of structs in
   ;;diff_eflux. Therefore, we need a a separate loop variable—datInd—to keep track of the data.
+  ;; 20181008: ALSO, datInd lets us keep track of the input angle array, if, for example, you wish to specify the loss cone on
+  ;; structure-by-structure basis
+
+  isArrayOfAngles = 0
+  CASE N_ELEMENTS(SIZE(an,/DIMENSIONS)) OF
+     1: BEGIN
+        IF N_ELEMENTS(an) GT 1 THEN currentAngle = an
+     END
+     2: BEGIN
+        isArrayOfAngles = 1   
+     END
+  ENDCASE
 
   datInd = 0
   FOR k=0,max-1 DO BEGIN
@@ -121,12 +135,16 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      dat = MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX( $
            diff_eFlux,datInd, $
            IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux)
+  
+     IF isArrayOfAngles THEN currentAngle = an[*,datInd]
+
      datInd++
 
      ;; IF diff_eFlux.valid[k] EQ 0 THEN BEGIN
      IF dat.valid EQ 0 THEN BEGIN
         IF k GE 2 THEN dbadtime = time[k-1] - time[k-2] else dbadtime = gap_time/2.
         time[k]    = (last_time) + dbadtime
+        bad_time[k] = 1B
         out_time[k]= dat.time
         data[k,*]  = missing
         ddata[k,*] = missing
@@ -142,7 +160,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      ;; count = diff_eFlux.nbins[k]
      count = dat.nbins
      ;; IF KEYWORD_SET(an) THEN bins = ANGLE_TO_BINS(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(dat,k),an)
-     IF KEYWORD_SET(an) THEN bins = ANGLE_TO_BINS(dat,an)
+     IF KEYWORD_SET(currentAngle) THEN bins = ANGLE_TO_BINS(dat,currentAngle)
      if KEYWORD_SET(ar) THEN BEGIN
         ;; nb   = diff_eFlux.nbins
         nb   = dat.nbins
@@ -166,6 +184,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      IF ABS((dat.time+dat.end_time)/2.-last_time) GE gap_time THEN BEGIN
         IF k GE 2 THEN dbadtime = time[k-1] - time[k-2] else dbadtime = gap_time/2.
         time[k]    = (last_time) + dbadtime
+        bad_time[k] = 1B
         out_time[k]= dat.time
         data[k,*]  = missing
         ddata[k,*] = missing
@@ -176,6 +195,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
         IF (dat.time+dat.end_time)/2. GT time[k-1] + gap_time THEN BEGIN
            ;; time[k]   = (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2. - dbadtime
            time[k]    = (dat.time+dat.end_time)/2. - dbadtime
+           bad_time[k] = 1B
            out_time[k]= dat.time
            data[k,*]  = missing
            ddata[k,*] = missing
@@ -234,6 +254,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   ENDFOR
 
   time  = time[0:k-1]
+  bad_time  = bad_time[0:k-1]
   out_time  = out_time[0:k-1]
   IF NOT KEYWORD_SET(retrace) THEN BEGIN
 ;	If you want to plot the retrace, set the retrace flag to 1.
@@ -253,6 +274,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   IF KEYWORD_SET(t1) THEN BEGIN
      ind   = WHERE(out_time ge t1)
      time  = time[ind]
+     bad_time  = bad_time[ind]
      out_time  = out_time[ind]
      data  = data[ind,*]
      ddata = ddata[ind,*]
@@ -262,6 +284,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   IF KEYWORD_SET(t2) THEN BEGIN
      ind   = WHERE(out_time LE t2)
      time  = time[ind]
+     bad_time  = bad_time[ind]
      out_time  = out_time[ind]
      data  = data[ind,*]
      ddata = ddata[ind,*]

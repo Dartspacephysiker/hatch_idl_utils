@@ -28,6 +28,9 @@ PRO DIFF_EFLUX_FNAME, $
         avgItvlStr    = '-avg_itvl' + STRING(FORMAT='(I0)',spectra_average_interval)
         plotNamePref += avgItvlStr
      END
+     ELSE: BEGIN
+        avgItvlStr = ''
+     END
   ENDCASE
 
   ;; tString files

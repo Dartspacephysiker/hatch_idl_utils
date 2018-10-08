@@ -740,7 +740,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                  cdfdat[n].nbins            = dat.nbins
                  cdfdat[n].nenergy          = dat.nenergy
                  cdfdat[n].data[0:dat.nenergy-1,0:dat.nbins-1]    = dat.data
-                 cdfdat[n].ddata[0:dat.nenergy-1,0:dat.nbins-1]    = dat.ddata
+                 cdfdat[n].ddata[0:dat.nenergy-1,0:dat.nbins-1]   = dat.ddata
                  cdfdat[n].energy[0:dat.nenergy-1,0:dat.nbins-1]  = dat.energy
                  cdfdat[n].theta[0:dat.nenergy-1,0:dat.nbins-1]   = dat.theta
                  cdfdat[n].geom[0:dat.nenergy-1,0:dat.nbins-1]    = dat.geom
@@ -751,6 +751,9 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                  cdfdat[n].geomfactor       = dat.geomfactor
                  cdfdat[n].header_bytes     = dat.header_bytes
                  cdfdat[n].index            = dat.index
+                 cdfdat[n].st_index         = dat.index
+                 cdfdat[n].en_index         = dat.index+1
+                 cdfdat[n].npts             = N_ELEMENTS(dat.nenergy*dat.nbins)
 
                  last_time = cdfdat[n].time
                  last_delta_time = cdfdat[n].end_time-cdfdat[n].time

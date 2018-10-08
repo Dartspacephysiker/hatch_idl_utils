@@ -16,7 +16,7 @@ FUNCTION TIMEGEN_EASIER,t1_julDay,t2_julDay, $
   IF KEYWORD_SET(hourInterval ) THEN nTypes++
 
   IF nTypes EQ 0 THEN BEGIN
-     PRINT,"No interval provided! Assuming you just want to live you life."
+     PRINT,"No interval provided! Assuming you just want to live your life."
      PRINT,"Setting monthInterval to 3 ..."
      monthInterval        = 3
      nTypes               = 1

@@ -9,7 +9,8 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
                                          SC_POT=sc_pot, $
                                          EEB_OR_EES=eeb_or_ees, $
                                          MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux, $
-                                         QUIET=quiet
+                                         QUIET=quiet, $
+                                         SUMMARY_QUIET=summary_quiet
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -61,7 +62,8 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
                                      EBINS=ebins, $
                                      ANGLE=N_ELEMENTS(an) GT 0 ? (N_ELEMENTS(an) GT 2 ? an[*,k] : an) : !NULL, $
                                      ARANGE=ar, $
-                                     BINS=bins)
+                                     BINS=bins, $
+                                     QUIET=quiet)
 
      moments.y[k].n           = tmpStruct.n
      moments.y[k].j           = tmpStruct.j
@@ -86,7 +88,7 @@ FUNCTION MOMENTS_2D_NEW__FROM_DIFF_EFLUX,diff_eFlux, $
   ENDFOR
   
   ex_time     = SYSTIME(1) - ex_start
-  IF ~KEYWORD_SET(quiet) THEN BEGIN
+  IF ~KEYWORD_SET(summary_quiet) THEN BEGIN
      MESSAGE,STRING(ex_time)+' seconds execution time.',/CONT,/INFO
      PRINT,'Number of data points = ',max
   ENDIF

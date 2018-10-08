@@ -9,6 +9,7 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
    CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
    UPGOING=upgoing, $
    OUT_E_ANGLE=e_angle, $
+   OUT_MAPRATIO=mapRatio, $
    ANGLESTR=angleStr, $
    SDTSTRUCT=struc, $
    JUST_ONE=just_one
@@ -47,20 +48,12 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
                   struc.bFoot[*,1]*struc.bFoot[*,1]+ $
                   struc.bFoot[*,2]*struc.bFoot[*,2])^0.5
      mapRatio  = TEMPORARY(mag2)/TEMPORARY(mag1)
-     lcw = 180./!DPI * ATAN(SQRT(1.D/(TEMPORARY(mapRatio)-1.D)))
+     lcw       = 180./!DPI * ATAN(SQRT(1.D/(mapRatio-1.D)))
 
   ENDELSE
   
   north_south       = LONG(ABS(struc.ilat)/struc.ilat)
-  
-  ;;Loss cone stuff
-  lc_angleRange     = !NULL
-  allExclAtm_aRange = !NULL
-  earthward_aRange  = !NULL
-  i_angle           = !NULL
-  i_angle_up        = !NULL
 
-  ;;Collect angles
   IF KEYWORD_SET(just_one) THEN BEGIN
      IF N_ELEMENTS(WHERE(north_south EQ north_south[0])) NE N_ELEMENTS(north_south) THEN BEGIN
         PRINT,"You're in a mixed-hemisphere situation, which spells trouble. Better call Doc."
@@ -71,6 +64,23 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
      lcw            = lcw[0]
   ENDIF
   
+  ;;Dus one?
+  nHere                = N_ELEMENTS(north_south)
+  IF KEYWORD_SET(just_one) THEN BEGIN
+     lc_angleRange     = MAKE_ARRAY(2,/FLOAT,VALUE=0.0)
+     allExclAtm_aRange = MAKE_ARRAY(2,/FLOAT,VALUE=0.0)
+     earthward_aRange  = MAKE_ARRAY(2,/FLOAT,VALUE=0.0)
+     i_angle           = MAKE_ARRAY(2,/FLOAT,VALUE=0.0)
+     i_angle_up        = MAKE_ARRAY(2,/FLOAT,VALUE=0.0)
+  ENDIF ELSE BEGIN
+     lc_angleRange     = MAKE_ARRAY(2,nHere,/FLOAT,VALUE=0.0)
+     allExclAtm_aRange = MAKE_ARRAY(2,nHere,/FLOAT,VALUE=0.0)
+     earthward_aRange  = MAKE_ARRAY(2,nHere,/FLOAT,VALUE=0.0)
+     i_angle           = MAKE_ARRAY(2,nHere,/FLOAT,VALUE=0.0)
+     i_angle_up        = MAKE_ARRAY(2,nHere,/FLOAT,VALUE=0.0)
+  ENDELSE
+  
+  ;;Collect angles
   FOR i=0,N_ELEMENTS(north_south)-1 DO BEGIN
      IF north_south[i] EQ -1 THEN BEGIN
 
@@ -78,23 +88,37 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
         CASE 1 OF
            KEYWORD_SET(upgoing): BEGIN
 
-              lc_angleRange     = [[lc_angleRange],[360.-lcw,lcw]]
+              ;; lc_angleRange     = [[lc_angleRange],[360.-lcw,lcw]]
+              ;; ;; i_angle  = [90.,270.0]
+              ;; ;; eliminate ram from data
+              ;; i_angle     = [[i_angle],[0.0,180.0]]
+              ;; i_angle_up  = [[i_angle_up],[90.0,180.0]]
+
+              lc_angleRange[*,i] = [360.-lcw[i],lcw[i]]
               ;; i_angle  = [90.,270.0]
               ;; eliminate ram from data
-              i_angle     = [[i_angle],[0.0,180.0]]
-              i_angle_up  = [[i_angle_up],[90.0,180.0]]
+              i_angle[*,i]    = [ 0.0,180.0]
+              i_angle_up[*,i] = [90.0,180.0]
 
            END
            ELSE: BEGIN
 
-              lc_angleRange     = [[lc_angleRange    ],[180.-lcw,180.+lcw]] 
-              allExclAtm_aRange = [[allExclAtm_aRange],[lcw     ,360.-lcw]] 
-              earthward_aRange  = [[earthward_aRange ],[90.     ,270.    ]] 
+              ;; lc_angleRange     = [[lc_angleRange    ],[180.-lcw,180.+lcw]] 
+              ;; allExclAtm_aRange = [[allExclAtm_aRange],[lcw     ,360.-lcw]] 
+              ;; earthward_aRange  = [[earthward_aRange ],[90.     ,270.    ]] 
+
+              lc_angleRange[*,i]     = [180.-lcw[i],180.+lcw[i]]
+              allExclAtm_aRange[*,i] = [lcw[i]     ,360.-lcw[i]]
+              earthward_aRange[*,i]  = [90.     ,270.    ]
 
               ;; i_angle  = [270.0,90.0]	
               ;; eliminate ram from data
-              i_angle     = [[i_angle]   ,[180.0,360.0]]
-              i_angle_up  = [[i_angle_up],[270.0,360.0]]
+              ;; i_angle     = [[i_angle]   ,[180.0,360.0]]
+              ;; i_angle_up  = [[i_angle_up],[270.0,360.0]]
+
+              i_angle[*,i]    = [180.0,360.0]
+              i_angle_up[*,i] = [270.0,360.0]
+
 
            END
         ENDCASE
@@ -105,23 +129,38 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
         CASE 1 OF
            KEYWORD_SET(upgoing): BEGIN
 
-              lc_angleRange     = [[lc_angleRange],[180.-lcw,180+lcw]] 
+              ;; lc_angleRange     = [[lc_angleRange],[180.-lcw,180+lcw]] 
+              ;; ;; i_angle  = [270.0,90.0]	
+              ;; ;; eliminate ram from data
+              ;; i_angle     = [[i_angle],[180.0,360.0]]
+              ;; i_angle_up  = [[i_angle_up],[270.0,360.0]]
+
+              lc_angleRange[*,i] = [180.-lcw[i],180+lcw[i]]
               ;; i_angle  = [270.0,90.0]	
               ;; eliminate ram from data
-              i_angle     = [[i_angle],[180.0,360.0]]
-              i_angle_up  = [[i_angle_up],[270.0,360.0]]
+              i_angle[*,i]     = [180.0,360.0]
+              i_angle_up[*,i]  = [270.0,360.0]
 
            END
            ELSE: BEGIN
 
-              lc_angleRange     = [[lc_angleRange],[360.-lcw,lcw]] 
-              allExclAtm_aRange = [[allExclAtm_aRange],[180.+lcw,180.-lcw]]
-              earthward_aRange  = [[earthward_aRange ],[270.     ,90.    ]] 
+              ;; lc_angleRange     = [[lc_angleRange],[360.-lcw,lcw]] 
+              ;; allExclAtm_aRange = [[allExclAtm_aRange],[180.+lcw,180.-lcw]]
+              ;; earthward_aRange  = [[earthward_aRange ],[270.     ,90.    ]] 
+
+              ;; ;; i_angle  = [90.,270.0]
+              ;; ;; eliminate ram from data
+              ;; i_angle     = [[i_angle],[0.0,180.0]]
+              ;; i_angle_up  = [[i_angle_up],[90.0,180.0]]
+              
+              lc_angleRange[*,i]     = [360.-lcw[i],     lcw[i]]
+              allExclAtm_aRange[*,i] = [180.+lcw[i],180.-lcw[i]]
+              earthward_aRange[*,i]  = [270.     ,90.    ]
 
               ;; i_angle  = [90.,270.0]
               ;; eliminate ram from data
-              i_angle     = [[i_angle],[0.0,180.0]]
-              i_angle_up  = [[i_angle_up],[90.0,180.0]]
+              i_angle[*,i]     = [0.0,180.0]
+              i_angle_up[*,i]  = [90.0,180.0]
               
            END
         ENDCASE

@@ -7,13 +7,14 @@ FUNCTION MOMENTERRORS_2D,dat2, $
                          ARANGE=ar, $
                          BINS=bins, $;; , $
                          PRESSURE_COVAR_CALC=pressure_covar_calc, $
-                         HEATFLUX_COVAR_CALC=heatFlux_covar_calc
+                         HEATFLUX_COVAR_CALC=heatFlux_covar_calc, $
+                         QUIET=quiet
                          ;; CONV_TO_CM=conv_to_cm
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF dat2.valid EQ 0 THEN BEGIN
-     PRINT,'MOMENTERRORS_2D: Invalid Data'
+     IF ~KEYWORD_SET(quiet) THEN PRINT,'MOMENTERRORS_2D: Invalid Data'
 
      N_R                     = 4 + (~KEYWORD_SET(pressure_covar_calc) ? 0 : 6) + $
                                (~KEYWORD_SET(heatFlux_covar_calc) ? 0 : 3)

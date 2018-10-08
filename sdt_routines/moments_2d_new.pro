@@ -6,7 +6,8 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
                         ANGLE=an, $
                         ARANGE=ar, $
                         BINS=bins, $
-                        WANTANGLESTUFF=wantAngleStuff
+                        WANTANGLESTUFF=wantAngleStuff, $
+                        QUIET=quiet
 
   ;; COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -42,7 +43,7 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   ;; moments  = 0.
 
   if dat2.valid eq 0 then begin
-     print,'Invalid Data'
+     IF ~KEYWORD_SET(quiet) THEN PRINT,'MOMENTS_2D_NEW: Invalid Data'
      return, momTmplt
   endif
 
@@ -55,7 +56,7 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
 
   ;;Get charge
   charge=1.                     ; charge of species
-  value=0 & str_element,dat,'charge',value
+  value=0 & STR_ELEMENT,dat,'charge',value
   if value le 0 or value ge 0 then value=value else value=0
   if value ne 0 then charge=dat.charge		
   if ((value eq 0) and (dat.mass lt 0.00010438871)) then charge=-1. ; this line works for Wind which does not have dat.charge

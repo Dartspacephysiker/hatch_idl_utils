@@ -3,6 +3,7 @@ FUNCTION GET_ESA_TIMERANGES, $
    BURST=burst, $
    AURORAL_OVAL=auroral_oval, $
    RETURN_STRUCT=return_struct, $
+
    STRINGS=strings, $
    TPLOT_VAR_LIST=tplot_var_list
 
