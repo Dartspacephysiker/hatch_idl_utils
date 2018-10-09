@@ -24,6 +24,7 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                 ;; ESPECUNITS=eSpecUnits, $
                                 ;; ELECTRON_ENERGY_LIMS=energy_electrons, $
                                 SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
+                                IGNORE_MIXED_HEMISPHERE=ignore_mixed_hemisphere, $
                                 _EXTRA=e
 
   COMPILE_OPT IDL2,STRICTARRSUBS
@@ -80,7 +81,8 @@ PRO GET_LOSSCONE_AND_EFLUX_DATA,T1=t1,T2=t2, $
                                           OUT_E_ANGLE=e_angle, $
                                           ANGLESTR=angleStr, $
                                           SDTSTRUCT=struc, $
-                                          /JUST_ONE
+                                          /JUST_ONE, $
+                                          IGNORE_MIXED_HEMISPHERE=ignore_mixed_hemisphere
   
   ;; GET_DATA,'ORBIT',DATA=orbit
   orb = struc.orbit[0]

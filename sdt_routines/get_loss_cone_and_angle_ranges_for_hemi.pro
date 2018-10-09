@@ -12,7 +12,8 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
    OUT_MAPRATIO=mapRatio, $
    ANGLESTR=angleStr, $
    SDTSTRUCT=struc, $
-   JUST_ONE=just_one
+   JUST_ONE=just_one, $
+   IGNORE_MIXED_HEMISPHERE=ignore_mixed_hemisphere
 
   ;;get_orbit data if need be
   IF N_ELEMENTS(struc) EQ 0 THEN BEGIN
@@ -55,7 +56,8 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
   north_south       = LONG(ABS(struc.ilat)/struc.ilat)
 
   IF KEYWORD_SET(just_one) THEN BEGIN
-     IF N_ELEMENTS(WHERE(north_south EQ north_south[0])) NE N_ELEMENTS(north_south) THEN BEGIN
+     IF N_ELEMENTS(WHERE(north_south EQ north_south[0])) NE N_ELEMENTS(north_south) AND ~KEYWORD_SET(ignore_mixed_hemisphere) $
+     THEN BEGIN
         PRINT,"You're in a mixed-hemisphere situation, which spells trouble. Better call Doc."
         STOP
      ENDIF
