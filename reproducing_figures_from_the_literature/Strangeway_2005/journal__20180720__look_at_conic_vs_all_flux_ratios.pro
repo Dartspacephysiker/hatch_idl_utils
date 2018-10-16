@@ -250,6 +250,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    UPALLRATIOSPEC=upAllRatioSpec, $
    EBOUND=eBound, $
    IONMOMSTRUCT=ionMomStruct, $
+   IONDIFFEFLUX=diff_eflux, $
    IONUPJ=ionUpJ, $
    UP_ARANGEN=up_aRangeN, $
    DOWN_ARANGEN=down_aRangeN, $
