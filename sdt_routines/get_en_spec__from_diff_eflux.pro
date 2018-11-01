@@ -220,18 +220,18 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      time[k]  = (dat.time+dat.end_time)/2.
      out_time[k] = dat.time
      IF ind[0] NE -1 THEN BEGIN
-        ;; data[k,0:nvar-1]  = TOTAL( diff_eFlux.data[*,ind,k], 2)/norm
-        ;; var[k,0:nvar-1]   = TOTAL( diff_eFlux.energy[*,ind,k], 2)/count
-        data[k,0:nvar-1]  = TOTAL( dat.data[*,ind],  2)/norm
-        ddata[k,0:nvar-1] = TOTAL( dat.ddata[*,ind], 2)/norm
-        var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind],2)/count
-        dvar[k,0:nvar-1]  = TOTAL( dat.denergy[*,ind],2)/count
+        ;; data[k,0:nvar-1]  = TOTAL( diff_eFlux.data[0:dat.nEnergy-1,ind,k], 2)/norm
+        ;; var[k,0:nvar-1]   = TOTAL( diff_eFlux.energy[0:dat.nEnergy-1,ind,k], 2)/count
+        data[k,0:nvar-1]  = TOTAL( dat.data[0:dat.nEnergy-1,ind],  2)/norm
+        ddata[k,0:nvar-1] = TOTAL( dat.ddata[0:dat.nEnergy-1,ind], 2)/norm
+        var[k,0:nvar-1]   = TOTAL( dat.energy[0:dat.nEnergy-1,ind],2)/count
+        dvar[k,0:nvar-1]  = TOTAL( dat.denergy[0:dat.nEnergy-1,ind],2)/count
      ENDIF ELSE BEGIN
         data[k,0:nvar-1]  = 0
         ddata[k,0:nvar-1] = 0
-        ;; var[k,0:nvar-1]   = TOTAL( diff_eFlux.energy[*,ind,k], 2)
-        var[k,0:nvar-1]   = TOTAL( dat.energy[*,ind], 2)
-        dvar[k,0:nvar-1]  = TOTAL( dat.denergy[*,ind], 2)
+        ;; var[k,0:nvar-1]   = TOTAL( diff_eFlux.energy[0:dat.nEnergy-1,ind,k], 2)
+        var[k,0:nvar-1]   = TOTAL( dat.energy[0:dat.nEnergy-1,ind], 2)
+        dvar[k,0:nvar-1]  = TOTAL( dat.denergy[0:dat.nEnergy-1,ind], 2)
      endelse
 
 ; test the following lines, the 96-6-19 version of tplot did not work with !values.f_nan

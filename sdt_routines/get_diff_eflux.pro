@@ -524,7 +524,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         darr    = [1.d,1.d,1.d]
 
         units = "eFlux"
-        nenergy = 48
+        nenergy = 96
         nbins   = 64
         blankArr = MAKE_ARRAY(nenergy,nbins,/FLOAT,VALUE=0.)
         tmplt = { $
@@ -594,8 +594,6 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         last_time = (dat.time+dat.end_time)/2.
         last_delta_time=dat.end_time-dat.time
         if not keyword_set(gap_time) then gap_time = 4. ; for burst data gap_time should be 0.1
-
-
 
         if not keyword_set(units) then units = 'Eflux'
 
@@ -669,8 +667,12 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
                     ;;;;;;;;;;;;;;;;;;;;
                     ;; NYE
-                    cdfdat[n].time = (dat.time+dat.end_time)/2. - dbadtime
+
+                    ;; cdfdat[n].time = (dat.time+dat.end_time)/2. - dbadtime
+                    ;; Changed line below on 2018/10/24 cause I'm not sure if two above are right
+                    cdfdat[n].time = dat.time - dbadtime
                     cdfdat[n].end_time = !values.f_nan
+
                     cdfdat[n].data[*,*] = !values.f_nan
                     cdfdat[n].energy[*] = !values.f_nan
                     cdfdat[n].theta[*,*] = !values.f_nan
@@ -680,7 +682,7 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
                     nNanned++
 
                  endif
-              endif
+              ENDIF
 
               ;;;;;;;;;;;;;;;;;;;;
               ;; ALDER (2017/12/05)
@@ -779,6 +781,53 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
         print,FORMAT='(A0,I0)','n NaNned: ',nNanned
 
+
+        IF N_ELEMENTS(WHERE(cdfdat.nenergy GT 48,/NULL)) GT 0 THEN BEGIN
+           ;; 20181024 new prob??
+
+           GET_FA_ORBIT,cdfdat[0].time,/TIME_ARRAY,/NO_STORE,STRUC=struc
+           
+           ;; PRINT,FORMAT='("Orb ",I0,": ",I0,A0)', $
+           ;;       struc.orbit, $
+           ;;       N_ELEMENTS(dat.energy[*,0]), $
+           ;;       " energy bins! Writing to log and exiting ..."
+
+           PRINT,FORMAT='("Orb ",I0,": ",A0,A0)', $
+                 struc.orbit, $
+                 "More than 48", $
+                 " energy bins! Writing to log ..."
+
+           logFile = '/thelonious_data1/FAST_electrons_2018/weird_energy_log.txt'
+           OPENW,lun,logFile, $
+                 /GET_LUN,/APPEND
+           PRINTF,lun,FORMAT='("Orb ",I0,": ",A0,A0)', $
+                  struc.orbit, $
+                  "More than 48", $
+                  " energy bins!"
+           CLOSE,lun
+           FREE_LUN,lun
+
+           ;; RETURN
+
+           ;; cdfdat[n].time = dat.time
+           ;; cdfdat[n].end_time = dat.end_time
+           ;; cdfdat[n].data[*,*] = !values.f_nan
+           ;; cdfdat[n].energy[*] = !values.f_nan
+           ;; cdfdat[n].theta[*,*] = !values.f_nan
+           ;; cdfdat[n].nenergy = !values.f_nan
+           ;; cdfdat[n].nbins = !values.f_nan
+
+           ;; last_time = cdfdat[n].time
+           ;; last_delta_time = cdfdat[n].end_time-cdfdat[n].time
+
+           ;; n=n+1
+           ;; nNanned++
+
+           ;; dat = call_function(routine,t,/calib,/ad)
+
+           ;; CONTINUE
+
+        ENDIF
 
         GET_FA_ORBIT,time,/TIME_ARRAY, $
                      ORBIT_FILE=orbit_file,/ALL
@@ -1016,6 +1065,10 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+        IF N_ELEMENTS(WHERE(dat_eFlux.valid,/NULL)) EQ 0 THEN BEGIN
+           PRINT,"No valid data here ..."
+           RETURN
+        ENDIF
 
         ;;Turn it into the tangly mess of arrays
         DAT_EFLUX_TO_DIFF_EFLUX,dat_eFlux,diff_eFlux, $

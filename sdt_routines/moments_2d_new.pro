@@ -70,7 +70,7 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   if value eq 0 then sc_pot=pot
   if sc_pot gt 66.*1.2 and charge eq -1. then begin
      peak_e=cold_peak_2d(dat,energy=[66.*1.2,1000.])
-     ind = where(dat.energy(*,0) eq peak_e)
+     ind = where(dat.energy(0:dat.nEnergy-1,0) eq peak_e)
      ind1 = ind
      maxcnt=max(dat.data(ind1,*),ind2)
      d0=dat.data(ind1,ind2)
@@ -118,7 +118,7 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
   ;; ENDIF
   
   if dat.data_name ne 'HSPAD' and dat.energy(0)-dat.denergy(0) lt (TAG_EXIST(dat,'sc_pot') ? dat.sc_pot : 0) then begin
-     tmpmin=min(abs(dat.energy(*,0)-sc_pot),ind1)
+     tmpmin=min(abs(dat.energy(0:dat.nEnergy-1,0)-sc_pot),ind1)
      tmpmax=max(dat.data(ind1,*),ind2)
      th=dat.theta(ind1,ind2)
      if (sc_pot gt 20. and th ne 0. and th ne 180.) then begin
@@ -191,11 +191,11 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
 
   if ndimen(bins2) ne 2 then bins2=ebins2#bins2
 
-  energy   = dat.energy
-  denergy  = dat.denergy
-  theta    = dat.theta/!radeg
-  dtheta   = dat.dtheta/!radeg
-  data     = dat.data*bins2
+  energy   = dat.energy[0:dat.nEnergy-1,0:dat.nBins-1]
+  denergy  = dat.denergy[0:dat.nEnergy-1,0:dat.nBins-1]
+  theta    = dat.theta[0:dat.nEnergy-1,0:dat.nBins-1]/!radeg
+  dtheta   = dat.dtheta[0:dat.nEnergy-1,0:dat.nBins-1]/!radeg
+  data     = dat.data[0:dat.nEnergy-1,0:dat.nBins-1]*bins2
 
   value=0 & STR_ELEMENT,dat,'domega',value
   ;; if n_elements(value) ne 1 then domega = dat.domega ELSE BEGIN
@@ -263,7 +263,7 @@ FUNCTION MOMENTS_2D_NEW,dat2, $
                               EBINS=ebins, $
                               ANGLE=[-180,180])
 
-     charEAngleResolved = Const_je*TOTAL(dat.data*denergy*energy^2*domega_all,1,/NAN) / (Const_j*TOTAL(dat.data*denergy*energy*domega_all,1,/NAN))*6.242*1.0e11
+     charEAngleResolved = Const_je*TOTAL(dat.data[0:dat.nEnergy-1,0:dat.nBins-1]*denergy*energy^2*domega_all,1,/NAN) / (Const_j*TOTAL(dat.data[0:dat.nEnergy-1,0:dat.nBins-1]*denergy*energy*domega_all,1,/NAN))*6.242*1.0e11
 
      pAngle = theta[0,*]*180/!PI
      sortie = SORT(pAngle)
