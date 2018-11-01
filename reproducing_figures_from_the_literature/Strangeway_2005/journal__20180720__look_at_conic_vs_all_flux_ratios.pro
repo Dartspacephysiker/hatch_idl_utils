@@ -700,6 +700,9 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   ENDIF
 
+  these = WHERE(energy[1,*] LT energy[0,*],COMPLEMENT=notThese)
+  diff_eflux[these].valid = 0
+
   MOMENT_SUITE_2D,diff_eFlux, $
                   ENERGY=energy, $
                   ARANGE__MOMENTS=aRange__moments, $
