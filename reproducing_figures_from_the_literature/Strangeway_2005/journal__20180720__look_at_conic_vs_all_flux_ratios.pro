@@ -235,6 +235,7 @@ END
 PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    UPDOWNMINRATIO=upDownMinRatio, $
    MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
+   FRACBELOWTHATMUSTBEUPWARD=fracBelowThatMustBeUpward, $
    THRESH_EFLUX=thresh_eFlux, $
    QUIT_IF_FILE_EXISTS=quit_if_file_exists, $
    ONLY_LEEWARD_IONS=only_leeward_ions, $
@@ -251,6 +252,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    EBOUND=eBound, $
    IONMOMSTRUCT=ionMomStruct, $
    IONDIFFEFLUX=diff_eflux, $
+   BAD_ION_TIMES=bad_times, $
    IONUPJ=ionUpJ, $
    UP_ARANGEN=up_aRangeN, $
    DOWN_ARANGEN=down_aRangeN, $
@@ -269,7 +271,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   ieb_or_ies = "ies"
   ;; enforce_diff_eFlux_sRate = 1.25
   enforce_diff_eFlux_sRate = KEYWORD_SET(enforce_this_sample_rate) ? enforce_this_sample_rate : 2.5
-  calc_geom_factors      = 0
+  calc_geom_factors      = 1
   clean_the_McFadden_way = 0
 
   deFlux__array_of_structs  = 1
@@ -394,6 +396,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
                  LOAD_DIR=loadDir, $
                  OUT_DIFF_EFLUX=diff_eflux
 
+  tDiffs     = diff_eFlux.end_time - diff_eFlux.time
 
   ;; Now get times corresponding to diff_eFlux
   GET_FA_ORBIT,diff_eFlux.time,/TIME_ARRAY
@@ -569,6 +572,10 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   ;; t1S = tLimS[0]
   ;; t2S = tLimS[1]
 
+  ;; For later
+  eSpecTimes = !NULL
+  eSpecBad = !NULL
+
   ;; Now need to treat Northern and Southern separately, o' course, since the angle ranges are totally flipped
   IF nN GT 0 AND ~restoredN THEN BEGIN
 
@@ -591,14 +598,18 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         OUT_UPDOWNRATIOSPEC=upDownRatioSpecN, $
         OUT_UPALLRATIOSPEC=upAllRatioSpecN, $
         OUT_ESPECUP_TIME=out_timeN, $
+        OUT_BAD_TIME=out_bad_timeN, $
         /USE_DIFF_EFLUX, $
         DIFF_EFLUX=diff_eFlux, $
         IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs
 
+     eSpecTimes = [eSpecTimes,out_timeN]
+     eSpecBad = [eSpecBad,out_bad_timeN]
+
      PRINT,"Saving " + fNameN + " ..."
      SAVE, $
         eSpecN,eSpecUpN,eSpecDownN,upDownRatioSpecN,upAllRatioSpecN, $
-        up_aRangeS,down_aRangeS, $
+        up_aRangeN,down_aRangeN,out_timeN,out_bad_timeN, $
         FILENAME=loadDir+fNameN
 
   ENDIF
@@ -624,17 +635,30 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         OUT_UPDOWNRATIOSPEC=upDownRatioSpecS, $
         OUT_UPALLRATIOSPEC=upAllRatioSpecS, $
         OUT_ESPECUP_TIME=out_timeS, $
+        OUT_BAD_TIME=out_bad_timeS, $
         /USE_DIFF_EFLUX, $
         DIFF_EFLUX=diff_eFlux, $
         IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs
 
+     eSpecTimes = [eSpecTimes,out_timeS]
+     eSpecBad = [eSpecBad,out_bad_timeS]
+
      PRINT,"Saving " + fNameS + " ..."
      SAVE, $
         eSpecS,eSpecUpS,eSpecDownS,upDownRatioSpecS,upAllRatioSpecS, $
-        up_aRangeS,down_aRangeS, $
+        up_aRangeS,down_aRangeS,out_timeS,out_bad_timeS, $
         FILENAME=loadDir+fNameS
 
   ENDIF
+
+  this = VALUE_CLOSEST2(eSpecTimes,diff_eFlux.time,/CONSTRAINED)
+  totDiffs = diff_eFlux.time-eSpecTimes[this]
+  refDiff = (tDiffs[WHERE(FINITE(tDiffs),/NULL)])[0]
+  OKdiff = WHERE(FINITE(totDiffs) AND (ABS(totDiffs) LT refDiff))
+
+  ;; -1 means "not known"
+  bad_times = MAKE_ARRAY(N_ELEMENTS(diff_eFlux.time),/LONG,VALUE=-1L)
+  bad_times[OKdiff] = eSpecBad[this[OKdiff]]
 
   ;; SSDDD
   ;; Moments???
@@ -655,6 +679,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
         UPDOWNMINRATIO=upDownMinRatio, $
         MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
+        FRACBELOWTHATMUSTBEUPWARD=fracBelowThatMustBeUpward, $
         DOWNESPEC=eSpecDownN, $
         UPESPEC=eSpecUpN, $
         ALLANGLEESPEC=eSpecN, $
@@ -678,6 +703,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
         UPDOWNMINRATIO=upDownMinRatio, $
         MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
+        FRACBELOWTHATMUSTBEUPWARD=fracBelowThatMustBeUpward, $
         DOWNESPEC=eSpecDownS, $
         UPESPEC=eSpecUpS, $
         ALLANGLEESPEC=eSpecS, $
@@ -730,7 +756,9 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
                   OUT_ERR_CHARE=charEErr, $
                   INOUT_MAPRATIO=mapRatio, $
                   OUT_STRUCT=ionMomStruct, $
-                  BATCH_MODE=batch_mode
+                  BATCH_MODE=batch_mode, $
+                  MCFADDEN_STYLE_DIFF_EFLUX=deFlux__array_of_structs
+
 
   CASE 1 OF
      KEYWORD_SET(eBoundN) AND KEYWORD_SET(eBoundS): BEGIN
