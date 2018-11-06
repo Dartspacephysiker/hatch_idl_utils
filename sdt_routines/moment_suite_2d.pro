@@ -429,7 +429,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                                                     /PRESSURE_COVAR_CALC, $
                                                     ;; HEATFLUX_COVAR_CALC=heatFlux_covar_calc, $
                                                     /HEATFLUX_COVAR_CALC, $
-                                                    /QUIET)
+                                                    /QUIET, $
+                                                    MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux)
 
      ;; IF KEYWORD_SET(dens_errors) THEN BEGIN
      ;; nerr     = MAKE_ARRAY(nHere,/FLOAT)
@@ -525,7 +526,59 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
 
      ;; ERROR_CALC_2D,errors,j,je,n,T,jerr,jeErr,nerr,Terr
 
-  ENDIF
+  ENDIF ELSE BEGIN
+     errors          = !VALUES.F_NaN
+
+     nerr        = !VALUES.F_NaN    
+     jerr        = !VALUES.F_NaN
+     jeErr       = !VALUES.F_NaN
+     charEErr    = !VALUES.F_NaN
+     Terr        = !VALUES.F_NaN
+     jje_coVar   = !VALUES.F_NaN
+     jPerp       = !VALUES.F_NaN
+     jePerp      = !VALUES.F_NaN
+     jjePerp_coVa= !VALUES.F_NaN
+     parErrs     = !VALUES.F_NaN
+     perpErrs    = !VALUES.F_NaN
+
+     jje_coVar_T = !VALUES.F_NaN
+     nerr_T      = !VALUES.F_NaN
+     jerr_T      = !VALUES.F_NaN
+     jeErr_T     = !VALUES.F_NaN
+     charEErr_T  = !VALUES.F_NaN
+     Terr_T      = !VALUES.F_NaN
+     perpErrs_T  = !VALUES.F_NaN
+
+     jje_coVarSC = !VALUES.F_NaN
+     nerrSC      = !VALUES.F_NaN
+     jerrSC      = !VALUES.F_NaN
+     jeErrSC     = !VALUES.F_NaN
+     charEErrSC  = !VALUES.F_NaN
+     TerrSC      = !VALUES.F_NaN
+     perpErrsSC  = !VALUES.F_NaN
+
+     jPerpErr        = !VALUES.F_NaN
+     jePerpErr       = !VALUES.F_NaN
+     charEPerpErr    = !VALUES.F_NaN
+     errorsSC        = !VALUES.F_NaN
+     jPerpErrSC      = !VALUES.F_NaN
+     jePerpErrSC     = !VALUES.F_NaN
+     charEPerpErrSC  = !VALUES.F_NaN
+     errors_T        = !VALUES.F_NaN
+     jPerpErr_T      = !VALUES.F_NaN
+     jePerpErr_T     = !VALUES.F_NaN
+     charEPerpErr_T  = !VALUES.F_NaN
+
+     curErr          = !VALUES.F_NaN
+     curPerpErr      = !VALUES.F_NaN 
+
+     curErrSC        = !VALUES.F_NaN
+     curPerpErrSC    = !VALUES.F_NaN
+
+     curPerpErr_T    = !VALUES.F_NaN
+     curErr_T        = !VALUES.F_NaN
+
+  ENDELSE
 
   IF ~(KEYWORD_SET(providing_ephem_info) AND $
        N_ELEMENTS(alt      ) GT 0        AND $

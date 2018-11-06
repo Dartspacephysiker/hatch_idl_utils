@@ -18,6 +18,7 @@ PRO GET_FA_RATIO_OF_ION_SPECTROGRAMS, $
    OUT_UPDOWNRATIOSPEC=upDownRatioSpec, $
    OUT_UPALLRATIOSPEC=upAllRatioSpec, $
    OUT_ESPECUP_TIME=out_time, $
+   OUT_BAD_TIME=bad_time, $
    USE_DIFF_EFLUX=use_diff_eFlux, $
    DIFF_EFLUX=diff_eFlux, $
    IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux
@@ -39,6 +40,7 @@ PRO GET_FA_RATIO_OF_ION_SPECTROGRAMS, $
                NAME=varName, $
                OUT_AVGFACTORARR=avgFactorArr, $
                OUT_NORMARR=normArr, $
+               BAD_TIME=bad_time, $
                OUT_TIME=out_time, $
                IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux)
      STORE_DATA,varName,DATA=eSpecUp

@@ -12,7 +12,8 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
                                           SC_POT=sc_pot, $
                                           EEB_OR_EES=eeb_or_ees, $
                                           QUIET=quiet, $
-                                          SUMMARY_QUIET=summary_quiet
+                                          SUMMARY_QUIET=summary_quiet, $
+                                          MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -36,7 +37,11 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
 
   FOR k=0,max-1 DO BEGIN
 
-     errThing    = MOMENTERRORS_2D(MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k), $
+     errThing    = MOMENTERRORS_2D((KEYWORD_SET(McFadden_style_diff_eFlux) ? $
+                                    MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX__MCFADDEN_STYLE(diff_eFlux,k, $
+                                                                                       HAS_SC_POT=(SIZE(sc_pot,/TYPE) EQ 8)) : $
+                                    MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k, $
+                                                                       HAS_SC_POT=(SIZE(sc_pot,/TYPE) EQ 8))), $
                                    ;; ENERGY=en, $
                                    ENERGY=N_ELEMENTS(en) GT 0 ? en[*,k] : !NULL , $
                                    ERANGE=er, $

@@ -3,6 +3,7 @@
 PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
    UPDOWNMINRATIO=upDownMinRatio, $
    MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
+   FRACBELOWTHATMUSTBEUPWARD=fracBelowThatMustBeUpward, $
    DOWNESPEC=eSpecDown, $
    UPESPEC=eSpecUp, $
    ALLANGLEESPEC=eSpec, $
@@ -23,7 +24,7 @@ PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
   highThreshRatio = 5
 
   ;; fracNeeded = 3./4
-  fracNeeded = 1./2
+  fracNeeded = KEYWORD_SET(fracBelowThatMustBeUpward) ? fracBelowThatMustBeUpward : 1./2
 
   nTid = N_ELEMENTS(eSpec.x)
   eBound = {x       : eSpecUp.x                  , $
