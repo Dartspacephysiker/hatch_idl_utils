@@ -77,10 +77,10 @@ if keyword_set(bins) then bins2=bins
 if ndimen(bins2) ne 2 then bins2=ebins2#bins2
 
 data = dat.data*bins2
-energy = dat.energy
-denergy = dat.denergy
-theta = dat.theta
-dtheta = dat.dtheta
+energy = dat.energy[0:dat.nenergy-1,0:dat.nbins-1]
+denergy = dat.denergy[0:dat.nenergy-1,0:dat.nbins-1]
+theta = dat.theta[0:dat.nenergy-1,0:dat.nbins-1]
+dtheta = dat.dtheta[0:dat.nenergy-1,0:dat.nbins-1]
 	if ndimen(dtheta) eq 1 then dtheta=replicate(1.,na)#dtheta
 mass = dat.mass * 1.6e-22 ;puts 'er in kg
 Const = 1.6e-12

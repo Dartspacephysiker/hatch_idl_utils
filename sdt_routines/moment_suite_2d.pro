@@ -467,7 +467,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                                                          EEB_OR_EES=eeb_or_ees, $
                                                          /PRESSURE_COVAR_CALC, $
                                                          /HEATFLUX_COVAR_CALC, $
-                                                         QUIET=quiet)
+                                                         QUIET=quiet, $
+                                                         MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux)
 
         ;;NOTE, this uses the wrong j, je, and T! They correspond to aRange__moments, not aRange__dens!
         ;;I'm not updating it because they won't affect nErr. They WOULD affect other the calculated uncertainty
@@ -494,13 +495,14 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
      IF specialT THEN BEGIN
 
         errors_T      = MOMENTERRORS_2D__FROM_DIFF_EFLUX(diff_eFlux, $
-                                                        ENERGY=eRange__temp, $
-                                                        ANGLE=aRange__temp, $
-                                                        SC_POT=sc_pot, $
-                                                        EEB_OR_EES=eeb_or_ees, $
-                                                        /PRESSURE_COVAR_CALC, $
-                                                        /HEATFLUX_COVAR_CALC, $
-                                                        QUIET=quiet)
+                                                         ENERGY=eRange__temp, $
+                                                         ANGLE=aRange__temp, $
+                                                         SC_POT=sc_pot, $
+                                                         EEB_OR_EES=eeb_or_ees, $
+                                                         /PRESSURE_COVAR_CALC, $
+                                                         /HEATFLUX_COVAR_CALC, $
+                                                         QUIET=quiet, $
+                                                         MCFADDEN_STYLE_DIFF_EFLUX=McFadden_style_diff_eFlux)
 
         ;;NOTE, this uses the wrong j, je, and T! They correspond to aRange__moments, not aRange__dens!
         ;;I'm not updating it because they won't affect nErr. They WOULD affect other the calculated uncertainty
