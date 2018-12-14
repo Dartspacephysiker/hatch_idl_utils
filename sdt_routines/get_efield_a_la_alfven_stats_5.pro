@@ -11,14 +11,15 @@ FUNCTION GET_EFIELD_A_LA_ALFVEN_STATS_5,BURST=burst
   ;; COMPILE_OPT,idl2,S
 
   data_valid=1B
-  t = 0.D & dcB=GET_FA_FIELDS('MagDC',/ALL,/DEFAULT)
+  t = 0.D
+  ;; dcB=GET_FA_FIELDS('MagDC',/ALL,/DEFAULT)
 
-  IF dcB.valid EQ 0 THEN BEGIN
+  ;; IF dcB.valid EQ 0 THEN BEGIN
 
-     PRINT,' ERROR: No FAST mag data-get_fa_fields returned invalid data'
-     data_valid=0B
+  ;;    PRINT,' ERROR: No FAST mag data-get_fa_fields returned invalid data'
+  ;;    data_valid=0B
 
-  ENDIF ELSE BEGIN
+  ;; ENDIF ELSE BEGIN
 
      dat=GET_FA_FIELDS('V5-V8_S',t,/START)
 
@@ -57,7 +58,7 @@ FUNCTION GET_EFIELD_A_LA_ALFVEN_STATS_5,BURST=burst
 
      ENDELSE
 
-  ENDELSE
+  ;; ENDELSE
   
   IF ~data_valid THEN BEGIN
      RETURN,0
@@ -88,11 +89,11 @@ FUNCTION GET_EFIELD_A_LA_ALFVEN_STATS_5,BURST=burst
   
 
   ;;get the prootn cyc frequency for smoothing the e field data later
-  proton_cyc_freq={x: dcB.time, $ 
-                   y: 1.6e-19*sqrt(dcB.comp1^2+dcB.comp2^2+dcB.comp3^2)*1.0e-9/1.67e-27/(2.*!DPI)}; in Hz
+  ;; proton_cyc_freq={x: dcB.time, $ 
+  ;;                  y: 1.6e-19*sqrt(dcB.comp1^2+dcB.comp2^2+dcB.comp3^2)*1.0e-9/1.67e-27/(2.*!DPI)}; in Hz
 
-  efield = CREATE_STRUCT(efield, $
-                         'proton_cyc_freq',TEMPORARY(proton_cyc_freq))
+  ;; efield = CREATE_STRUCT(efield, $
+  ;;                        'proton_cyc_freq',TEMPORARY(proton_cyc_freq))
 
   RETURN,efield
 END

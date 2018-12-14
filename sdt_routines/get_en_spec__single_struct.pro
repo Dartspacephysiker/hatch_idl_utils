@@ -140,15 +140,15 @@ FUNCTION GET_EN_SPEC__SINGLE_STRUCT,dat,  $
      IF nvar GT nmax THEN nmax = nvar
      time  = (dat.time+dat.end_time)/2.
      IF ind[0] NE -1 THEN BEGIN
-        data[0:nvar-1]  = TOTAL( dat.data[*,ind],  2)/norm
-        ddata[0:nvar-1] = TOTAL( dat.ddata[*,ind], 2)/norm
-        var[0:nvar-1]   = TOTAL( dat.energy[*,ind],2)/count
-        dvar[0:nvar-1]  = TOTAL( dat.denergy[*,ind],2)/count
+        data[0:nvar-1]  = TOTAL( dat.data[0:dat.nEnergy-1,ind],  2)/norm
+        ddata[0:nvar-1] = TOTAL( dat.ddata[0:dat.nEnergy-1,ind], 2)/norm
+        var[0:nvar-1]   = TOTAL( dat.energy[0:dat.nEnergy-1,ind],2)/count
+        dvar[0:nvar-1]  = TOTAL( dat.denergy[0:dat.nEnergy-1,ind],2)/count
      ENDIF ELSE BEGIN
         data[0:nvar-1]  = 0
         ddata[0:nvar-1] = 0
-        var[0:nvar-1]   = TOTAL( dat.energy[*,ind], 2)
-        dvar[0:nvar-1]  = TOTAL( dat.denergy[*,ind], 2)
+        var[0:nvar-1]   = TOTAL( dat.energy[0:dat.nEnergy-1,ind], 2)
+        dvar[0:nvar-1]  = TOTAL( dat.denergy[0:dat.nEnergy-1,ind], 2)
      endelse
 
 ; test the following lines, the 96-6-19 version of tplot did not work with !values.f_nan

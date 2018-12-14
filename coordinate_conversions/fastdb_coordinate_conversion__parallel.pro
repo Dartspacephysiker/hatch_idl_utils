@@ -573,6 +573,7 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         IF (N_GEO EQ nTot) THEN BEGIN
            stitchable    = [stitchable,'GEO']
            final_GEOFile = outFile_pref + '-GEO.sav'
+           final_GEOCartFile = outFile_pref + '-GEO_Cartesian.sav'
         ENDIF
 
         IF (N_MAG EQ nTot) THEN BEGIN
@@ -772,6 +773,8 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
                 LON : MAKE_ARRAY(nTot,/FLOAT), $
                 LAT : MAKE_ARRAY(nTot,/FLOAT)}
         
+        GEOCart = MAKE_ARRAY(3,nTot,/FLOAT)
+
         curInd = 0LL
 
         FOR k=0,nFiles-1 DO BEGIN
@@ -790,6 +793,8 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
            GEOF.lon[tmpInds] = GEO.lon
            GEOF.lat[tmpInds] = GEO.lat
 
+           GEOCart[*,tmpInds] = coords.GEO
+
            curInd += nHere
 
            GEO = !NULL
@@ -801,7 +806,11 @@ PRO FASTDB_COORDINATE_CONVERSION__PARALLEL, $
         PRINT,"Saving stitched GEO file to " + final_GEOFile
         SAVE,GEO,FILENAME=coordDir+final_GEOFile
 
+        PRINT,"Saving stitched GEOCart file to " + final_GEOCartFile
+        SAVE,GEOCart,FILENAME=coordDir+final_GEOCartFile
+
         GEO = !NULL
+        GEOCart = !NULL
      ENDIF
 
      IF stitch_MAG THEN BEGIN
