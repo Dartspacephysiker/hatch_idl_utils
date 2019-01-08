@@ -237,6 +237,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
    FRACBELOWTHATMUSTBEUPWARD=fracBelowThatMustBeUpward, $
    THRESH_EFLUX=thresh_eFlux, $
+   MAKE_IONS_OXYGEN=make_ions_oxygen, $
    QUIT_IF_FILE_EXISTS=quit_if_file_exists, $
    ONLY_LEEWARD_IONS=only_leeward_ions, $
    ONLY_CONE_IONS=only_cone_ions, $
@@ -260,6 +261,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    DOWN_ARANGES=down_aRangeS, $
    SAVE_PS=save_ps, $
    NO_PLOTS=no_plots, $
+   OUT_ORBIT=out_orbit, $
    MISLYKTES=mislyktes
 
   COMPILE_OPT IDL2,STRICTARRSUBS
@@ -323,7 +325,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   nHere = N_ELEMENTS(times)
   GET_DATA,"ORBIT",DATA=orbit
   orbit = orbit.y[nHere/2]
-
+  out_orbit = orbit
   ;; upDownRatioStr = ''
   upDownMinRatio = KEYWORD_SET(upDownMinRatio) ? upDownMinRatio : 10
   minNumQualifyingEChannels = KEYWORD_SET(minNumQualifyingEChannels) ? minNumQualifyingEChannels : 10
@@ -396,11 +398,18 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
                  LOAD_DIR=loadDir, $
                  OUT_DIFF_EFLUX=diff_eflux
 
+  IF KEYWORD_SET(make_ions_oxygen) THEN BEGIN
+     PRINT,"Assuming they're oxygen!!!"
+     diff_eFlux[*].mass = diff_eFlux[0].mass * 16.
+  ENDIF
+
   tDiffs     = diff_eFlux.end_time - diff_eFlux.time
 
   ;; Now get times corresponding to diff_eFlux
   GET_FA_ORBIT,diff_eFlux.time,/TIME_ARRAY
 
+  ;; get_data,'ORBIT',data=orb
+  ;; out_orbit=diff_eflux[0].orbit
   get_data,'ILAT',data=ILAT
   get_data,'MLT',data=MLT
 
