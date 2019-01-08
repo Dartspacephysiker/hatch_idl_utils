@@ -79,15 +79,16 @@ PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
         ;; IF tmpMax GE 500 eV AND nTmpBove GE 3 THEN BEGIN
         tmpBoveHighThresh_ii = WHERE(tmpRats GE highThreshRatio,nTmpBoveHigh)
 
-        IF tmpMax GE 500 AND nTmpBoveHigh GT 3 THEN BEGIN
+        IF tmpMax GE 300 AND nTmpBoveHigh GT 3 THEN BEGIN ;
            
            tmpMaxHigh  = MAX( (NRGs[tmpNRG_i])[tmpBoveHighThresh_ii] , indHigh_iii)
            
            ;; tmpLB = tmpMaxHigh
            indTmp_ii = tmpBoveHighThresh_ii[indHigh_iii]
-           WHILE tmpRats[indTmp_ii+1] GE highThreshRatio/2. DO BEGIN
+           ;; WHILE tmpRats[indTmp_ii+1] GE highThreshRatio/2. DO BEGIN ;Keep feeling downward until there's more downward than upward
+           WHILE tmpRats[indTmp_ii+1] GE 1. DO BEGIN ;Keep feeling downward until there's more downward than upward
               indTmp_ii++
-              IF indTmp_ii GE (nTmpNRG-1) THEN BREAK
+              IF indTmp_ii GE (nTmpNRG-1) THEN BREAK ;Get out if we're about to go below the detector energy limit
            ENDWHILE
 
            IF tmpNRGs[indTmp_ii] LT tmpMaxHigh THEN BEGIN

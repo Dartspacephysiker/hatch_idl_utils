@@ -7,16 +7,19 @@ PRO GET_FAST_GEI_COORDS,times, $
                         GEI_STRUCT_NAME=GEI_struct_name, $
                         ORIG_ROUTINENAME=orig_routineName, $
                         CHECK_IF_EXISTS=check_if_exists, $
+                        OUT_STRUCT=GEIcoords, $
                         QUIET=quiet
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
   IF ~KEYWORD_SET(quiet) THEN PRINT,"Getting " + STRCOMPRESS(N_ELEMENTS(times),/REMOVE_ALL) + " FAST ephemeris points in GEI coords ..."
 
-  IF FILE_TEST(GEI_coord_dir + '/' + GEI_coord_filename) THEN BEGIN
-     PRINT,"File exists: " + GEI_coord_dir + '/' + GEI_coord_filename
-     PRINT,"You need to confirm that you want it."
-     RETURN
+  IF KEYWORD_SET(GEI_coord_dir) AND KEYWORD_SET(GEI_coord_filename) THEN BEGIN
+     IF FILE_TEST(GEI_coord_dir + '/' + GEI_coord_filename) THEN BEGIN
+        PRINT,"File exists: " + GEI_coord_dir + '/' + GEI_coord_filename
+        PRINT,"You need to confirm that you want it."
+        RETURN
+     ENDIF
   ENDIF
 
   GET_FA_ORBIT,times,/TIME_ARRAY,/ALL,/DEFINITIVE

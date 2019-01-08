@@ -63,7 +63,7 @@ PRO PLOT_DIFF_EFLUX__2D_DISTS,diff_eFlux, $
                                  DEF_STRINGS=dEF_strings, $
                                  ;; ONLY_DATA=only_data, $ 
                                  ;; FOR_HORSESHOE_FIT=for_horseshoe_fit, $
-                                 RETRACE=retrace,   $
+                                 RETRACE=retrace, $
                                  PROMPT__CONT_TO_NEXT_FIT=prompt__cont_to_next_fit, $
                                  PROMPT__CONT_UNTIL_FIT_EQ=prompt__cont_until_fit_eq, $
                                  PROMPT__NTOT2DFITS=nTot2DFits, $
