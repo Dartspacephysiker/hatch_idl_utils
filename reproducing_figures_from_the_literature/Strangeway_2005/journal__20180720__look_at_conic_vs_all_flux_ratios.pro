@@ -125,6 +125,7 @@ PRO TPLOT_UP_VS_DOWN_ION_FLUXES, $
    SAVETSTRASCENDS=saveTStrSAscend, $
    SAVETSTRDESCENDS=saveTStrSDescend, $
    SAVE_PS=save_ps, $
+   MAKE_SPECIAL_JGR_PLOT=make_special_JGR_plot, $
    SAVEPREF=savePref
 
   nPlots = 0
@@ -260,13 +261,17 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
    UP_ARANGES=up_aRangeS, $
    DOWN_ARANGES=down_aRangeS, $
    SAVE_PS=save_ps, $
+   MAKE_SPECIAL_JGR_PLOT=make_special_JGR_plot, $
    NO_PLOTS=no_plots, $
    OUT_ORBIT=out_orbit, $
    MISLYKTES=mislyktes
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
-  remake_file = 1
+  ;; UPFLOWVERSION = '20190116'
+  UPFLOWVERSION = '20190117'    ;Forgot to add .type member to ionupj!!
+
+  remake_file = 0
 
   loadDir = "/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/"
 
@@ -497,7 +502,12 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   downVarNameS = 'eSpecDownS'
   allAngleVarNameS = 'eSpecS'
 
+  ;; For later
+  eSpecTimes = !NULL
+  eSpecBad = !NULL
+
   IF needN AND ~KEYWORD_SET(remake_file) THEN BEGIN
+
      IF FILE_TEST(loadDir+fNameN) THEN BEGIN
         PRINT,"Restoring " + fNameN + "..."
         RESTORE,loadDir+fNameN
@@ -511,7 +521,22 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         varName = allAngleVarNameN
         STORE_DATA,varName,DATA=eSpecN
 
-        restoredN = 1
+        IF N_ELEMENTS(SAVEUPFLOWVERSION) GT 0 THEN BEGIN
+           restoredN = UPFLOWVERSION EQ SAVEUPFLOWVERSION
+
+           IF ~restoredN THEN PRINT,"Wrong North version: ",SAVEUPFLOWVERSION + '. Remaking ...'
+
+        ENDIF ELSE BEGIN
+           PRINT,"No North version! Remaking file ..."
+        ENDELSE
+
+        SAVEUPFLOWVERSION = !NULL
+
+     ENDIF
+
+     IF restoredN THEN BEGIN
+        eSpecTimes = [eSpecTimes,out_timeN]
+        eSpecBad = [eSpecBad,out_bad_timeN]
      ENDIF
 
   ENDIF
@@ -530,7 +555,22 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         varName = allAngleVarNameS
         STORE_DATA,varName,DATA=eSpecS
 
-        restoredS = 1
+        IF N_ELEMENTS(SAVEUPFLOWVERSION) GT 0 THEN BEGIN
+           restoredS = UPFLOWVERSION EQ SAVEUPFLOWVERSION
+
+           IF ~restoredS THEN PRINT,"Wrong South version: ",SAVEUPFLOWVERSION + '. Remaking ...'
+
+        ENDIF ELSE BEGIN
+           PRINT,"No South version! Remaking file ..."
+        ENDELSE
+
+        SAVEUPFLOWVERSION = !NULL
+
+     ENDIF
+
+     IF restoredS THEN BEGIN
+        eSpecTimes = [eSpecTimes,out_timeS]
+        eSpecBad = [eSpecBad,out_bad_timeS]
      ENDIF
 
   ENDIF
@@ -538,10 +578,18 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   IF KEYWORD_SET(quit_if_file_exists) THEN BEGIN
 
+     ;; Make sure version is correct
+     isCorrectVersion = 0B
+
      IF FILE_TEST(loadDir+fName) THEN BEGIN
 
         PRINT,"Restoring " + fName + "..."
         RESTORE,loadDir+fName
+
+        IF N_ELEMENTS(SAVEUPFLOWVERSION) GT 0 THEN BEGIN
+           isCorrectVersion = UPFLOWVERSION EQ SAVEUPFLOWVERSION
+           SAVEUPFLOWVERSION = !NULL
+        ENDIF
 
         varName = upVarName
         STORE_DATA,varName,DATA=eSpecUp
@@ -565,7 +613,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
      ;; IF haveIonStruct AND canQuitN AND canQuitS THEN RETURN
 
-     canQuit = (N_ELEMENTS(eBound) GT 0 AND N_ELEMENTS(ionupJ) GT 0)
+     canQuit = (N_ELEMENTS(eBound) GT 0) AND (N_ELEMENTS(ionupJ) GT 0) AND isCorrectVersion
 
      haveIonStruct = N_ELEMENTS(ionMomStruct) GT 0
 
@@ -573,17 +621,13 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   ENDIF 
 
-
-
   ;; t1N = tLimN[0]
   ;; t2N = tLimN[1]
 
   ;; t1S = tLimS[0]
   ;; t2S = tLimS[1]
 
-  ;; For later
-  eSpecTimes = !NULL
-  eSpecBad = !NULL
+  SAVEUPFLOWVERSION = UPFLOWVERSION
 
   ;; Now need to treat Northern and Southern separately, o' course, since the angle ranges are totally flipped
   IF nN GT 0 AND ~restoredN THEN BEGIN
@@ -618,7 +662,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      PRINT,"Saving " + fNameN + " ..."
      SAVE, $
         eSpecN,eSpecUpN,eSpecDownN,upDownRatioSpecN,upAllRatioSpecN, $
-        up_aRangeN,down_aRangeN,out_timeN,out_bad_timeN, $
+        up_aRangeN,down_aRangeN,out_timeN,out_bad_timeN,SAVEUPFLOWVERSION, $
         FILENAME=loadDir+fNameN
 
   ENDIF
@@ -655,11 +699,12 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      PRINT,"Saving " + fNameS + " ..."
      SAVE, $
         eSpecS,eSpecUpS,eSpecDownS,upDownRatioSpecS,upAllRatioSpecS, $
-        up_aRangeS,down_aRangeS,out_timeS,out_bad_timeS, $
+        up_aRangeS,down_aRangeS,out_timeS,out_bad_timeS,SAVEUPFLOWVERSION, $
         FILENAME=loadDir+fNameS
 
   ENDIF
 
+  ;; Align the spectrum times with the diff_eFlux measurements
   this = VALUE_CLOSEST2(eSpecTimes,diff_eFlux.time,/CONSTRAINED)
   totDiffs = diff_eFlux.time-eSpecTimes[this]
   refDiff = (tDiffs[WHERE(FINITE(tDiffs),/NULL)])[0]
@@ -810,7 +855,8 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
                   y   : [eBound1.y  ,eBound2.y  ], $
                   ind : [eBound1.ind,eBound2.ind], $
                   yLow   : [eBound1.yLow  ,eBound2.yLow  ], $
-                  indLow : [eBound1.indLow,eBound2.indLow]}
+                  indLow : [eBound1.indLow,eBound2.indLow], $
+                  type   : [eBound1.type  ,eBound2.type  ]}
 
         out_time = [out_time1,out_time2]
 
@@ -880,8 +926,9 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      RETURN
   ENDIF
 
-  ionupJ = {x  : eBound.x[these], $
-            y  :  ionMomStruct.j}
+  ionupJ = {x    : eBound.x[these], $
+            y    :  ionMomStruct.j, $
+            type : eBound.type[these]}
 
   IF nNotUpflow GT 0 THEN ionupJ.y[notUpflow_i] = !VALUES.F_NaN
 
@@ -905,8 +952,63 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      eSpec,eSpecUp,eSpecDown,upDownRatioSpec,upAllRatioSpec, $
      eBound, ionMomStruct, ionupJ, $
      up_aRangeN,down_aRangeN, $
-     up_aRangeS,down_aRangeS, $
+     up_aRangeS,down_aRangeS,SAVEUPFLOWVERSION, $
      FILENAME=loadDir+fName
+
+  typiskPanelSize = 2
+  IF KEYWORD_SET(make_special_JGR_plot) THEN BEGIN
+
+     typiskPanelSize = 1
+
+     specUnits = 'eflux'
+     ionSpecLogLims  = [5.,9.]
+     ;; eSpecLogLims = [6.,9.]
+     specLogUnitsString = 'Log eV!C/cm!U2!N-s-sr-eV'
+
+     var_name='Iesa_Angle'
+     ion_ER = KEYWORD_SET(ion_energyRange) ? ion_energyRange : [4.,30000.]
+     GET_PA_SPEC,'fa_' + ieb_or_ies + '_c', $
+                 T1=t1, $
+                 T2=t2, $
+                 UNITS=specUnits, $
+                 NAME=var_name, $
+                 ENERGY=ion_ER, $
+                 /RETRACE, $
+                 /CALIB
+     GET_DATA,var_name,DATA=data        
+
+     data.y = ALOG10(data.y)
+     STORE_DATA,var_name, DATA=data
+     OPTIONS,var_name,'spec',1	
+     ;; ZLIM,var_name,4,9,0
+        ZLIM,var_name, $
+             (MIN(data.y[WHERE(FINITE(data.y))]) > ionSpecLogLims[0]), $
+             (MAX(data.y[WHERE(FINITE(data.y))]) < ionSpecLogLims[1]),0
+     ;; ZLIM,var_name,MIN(data.y[WHERE(FINITE(data.y))]),MAX(data.y[WHERE(FINITE(data.y))]),0
+     YLIM,var_name,0,360,0
+     OPTIONS,var_name,'ytitle','Ions > ' + STRING(FORMAT='(I0)',ion_ER[0]) + ' eV!C!CAngle (Deg.)'
+     OPTIONS,var_name,'ztitle',specLogUnitsString
+     OPTIONS,var_name,'x_no_interp',1
+     OPTIONS,var_name,'y_no_interp',1
+     OPTIONS,var_name,'panel_size',bigPanelSize
+
+     GET_DATA,var_name, DATA=data
+     bb = WHERE (data.v GT 270.,nb)
+     IF (nb GT 0) THEN data.v[bb]=data.v[bb]-360.
+     nn = N_ELEMENTS(data.x)
+     FOR n = 0,nn-1L DO BEGIN
+        bs = SORT (data.v[n,*])
+        data.v[n,*]=data.v[n,bs]
+        data.y[n,*]=data.y[n,bs]
+     endfor
+     STORE_DATA,var_name, DATA=data	
+     OPTIONS,var_name,'yminor',9
+     OPTIONS,var_name,'yticks',4
+     OPTIONS,var_name,'ytickv',[-90,0,90,180,270]
+     YLIM,var_name,-90,270,0
+
+     IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[var_name] ELSE tPlt_vars=[var_name,tPlt_vars]
+  ENDIF
 
   varName = upVarName
   STORE_DATA,varName,DATA=eSpecUp
@@ -917,7 +1019,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
   OPTIONS,varName,'x_no_interp',1
   OPTIONS,varName,'y_no_interp',1
-  OPTIONS,varName,'panel_size',2
+  OPTIONS,varName,'panel_size',typiskPanelSize
   IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
 
   varName = downVarName
@@ -929,7 +1031,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
   OPTIONS,varName,'x_no_interp',1
   OPTIONS,varName,'y_no_interp',1
-  OPTIONS,varName,'panel_size',2
+  OPTIONS,varName,'panel_size',typiskPanelSize
   IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
 
   ;; varName = allAngleVarNameN
@@ -940,7 +1042,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   ;; OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
   ;; OPTIONS,varName,'x_no_interp',1
   ;; OPTIONS,varName,'y_no_interp',1
-  ;; OPTIONS,varName,'panel_size',2
+  ;; OPTIONS,varName,'panel_size',typiskPanelSize
   ;; IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
 
   ;; varName = "ratioN"
@@ -967,7 +1069,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   OPTIONS,varName,'ztitle','Up/Down ion eFlux'
   OPTIONS,varName,'x_no_interp',1
   OPTIONS,varName,'y_no_interp',1
-  OPTIONS,varName,'panel_size',2
+  OPTIONS,varName,'panel_size',typiskPanelSize
 
   IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
 
@@ -1006,6 +1108,33 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   OPTIONS,varName,'panel_size',1
   IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
   
+  IF KEYWORD_SET(make_special_JGR_plot) THEN BEGIN
+
+     varName = "dB_east"
+     GET_DATA,"dB_fac",DATA=magData
+
+     IF SIZE(magData,/TYPE) NE 8 THEN BEGIN
+        UCLA_MAG_DESPIN
+        GET_DATA,"dB_fac",DATA=magData
+        IF N_ELEMENTS(magData) EQ 0 THEN STOP
+     ENDIF
+
+     dbEast = {x:magData.x, $
+               y:magData.y[*,1]}
+     STORE_DATA,varName,DATA=dbEast
+
+     ;; YLIM,varName,6e6,6e9,1
+     OPTIONS,varName,'ytitle','B!DE-W!N (nT)'
+
+
+     ;; OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
+     ;; OPTIONS,varName,'x_no_interp',1
+     ;; OPTIONS,varName,'y_no_interp',1
+     OPTIONS,varName,'panel_size',1
+     IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
+     
+  ENDIF
+
   IF ~KEYWORD_SET(no_plots) THEN BEGIN
      TPLOT_UP_VS_DOWN_ION_FLUXES, $
         tPlt_vars, $
@@ -1032,6 +1161,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
         SAVETSTRASCENDS=saveTStrSAscend, $
         SAVETSTRDESCENDS=saveTStrSDescend, $
         SAVE_PS=save_ps, $
+        MAKE_SPECIAL_JGR_PLOT=make_special_JGR_plot, $
         SAVEPREF=savePref
   ENDIF
   
