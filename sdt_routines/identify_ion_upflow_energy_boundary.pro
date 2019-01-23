@@ -1,5 +1,7 @@
 ;2018/07/23
-;2018/07/23
+;2019/01/16 Added .type to eBound struct.
+;           type = 1 means dayside, "from 4 ev up" upflow.
+;           type = 2 means nightside, "hovering beam" upflow
 PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
    UPDOWNMINRATIO=upDownMinRatio, $
    MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
@@ -31,7 +33,8 @@ PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
             y       : eSpecUp.x * 0.             , $
             ind     : LONG(eSpecUp.x * 0)        , $
             yLow    : eSpecUp.x * 0. + minIonNRG , $
-            indLow  : LONG(eSpecUp.x * 0) $
+            indLow  : LONG(eSpecUp.x * 0)        , $
+            type    : BYTE(eSpecUp.x * 0B)         $
            }
 
   ;; Y               FLOAT     Array[493, 47]
@@ -72,6 +75,7 @@ PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
      IF nTmpBove GE CEIL(FLOAT(nQualNRG)*fracNeeded) AND (nQualNRG GE minNQualNRG) THEN BEGIN
         eBound.y[k] = tmpMax
         eBound.ind[k] = tmpNRG_i[tmpBoveThresh_ii[ind_iii]]
+        eBound.type[k] = 1
      ENDIF ELSE BEGIN
 
         ;; If tmpMax exceeds 500 eV and the ratios are high, it may still be ion outflow
@@ -97,6 +101,9 @@ PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
 
               eBound.yLow[k] = tmpNRGs[indTmp_ii]
               eBound.indLow[k] = tmpNRG_i[indTmp_ii]
+
+              eBound.type[k] = 2
+
            ENDIF
 
         ENDIF

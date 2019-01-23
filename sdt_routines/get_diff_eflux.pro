@@ -26,6 +26,8 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
+  DIFFEFLUXVERSION = '20190116'
+
   got_restored  = 0
 
   IF KEYWORD_SET(loadFile) OR KEYWORD_SET(save_diff_eFlux_to_file) THEN BEGIN
@@ -40,26 +42,42 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
   IF KEYWORD_SET(loadFile) AND KEYWORD_SET(diff_eFlux_file) THEN BEGIN
 
      IF (FILE_TEST(diffEFluxDir+diff_eFlux_file) OR FILE_TEST(diff_eFlux_file)) AND ~KEYWORD_SET(overwrite_existing) THEN BEGIN
+        isCorrectVersion = 0    ;Start with assumption that it ISN'T
+
         PRINT,'Restoring ' + diff_eFlux_file + '...'
         realFile = FILE_TEST(diffEFluxDir+diff_eFlux_file) ? diffEFluxDir+diff_eFlux_file : diff_eFlux_file
         RESTORE,realFile
-        ;; got_restored = (N_ELEMENTS(dat_eFlux) GT 0) OR (N_ELEMENTS(diff_eFlux) GT 0)
-        got_restored = (SIZE(dat_eFlux,/TYPE) EQ 8) OR (SIZE(diff_eFlux,/TYPE) EQ 8)
 
-        ;; But if we missed most of the data, redo it!
-        siste = N_ELEMENTS(diff_eFlux) GT 1 ? diff_eflux[-1].time : diff_eflux.time[-1]
-        IF t2-siste GT 8. THEN BEGIN
-           PRINT,"Apparently junk diff_eFlux! Remaking ..."
-           got_restored = 0
+        IF N_ELEMENTS(SAVEDIFFEFLUXVERSION) GT 0 THEN BEGIN
+           isCorrectVersion = DIFFEFLUXVERSION EQ SAVEDIFFEFLUXVERSION
+        ENDIF ELSE got_restored = 0
+
+        ;; got_restored = (N_ELEMENTS(dat_eFlux) GT 0) OR (N_ELEMENTS(diff_eFlux) GT 0)
+        got_restored = (SIZE(dat_eFlux,/TYPE) EQ 8) OR (SIZE(diff_eFlux,/TYPE) EQ 8) AND isCorrectVersion
+
+        IF got_restored THEN BEGIN
+
+           ;; But if we missed most of the data, redo it!
+           siste = N_ELEMENTS(diff_eFlux) GT 1 ? diff_eflux[-1].time : diff_eflux.time[-1]
+           IF t2-siste GT 8. THEN BEGIN
+              PRINT,"Apparently junk diff_eFlux! Remaking ..."
+              got_restored = 0
+              diff_eFlux = !NULL
+           ENDIF
+
+        ENDIF
+
+        IF ~got_restored AND N_ELEMENTS(diff_eFlux) GT 0 THEN BEGIN
+           ;; IF diff_eFlux EQ 0 THEN diff_eFlux = !NULL
            diff_eFlux = !NULL
         ENDIF
-        IF ~got_restored AND N_ELEMENTS(diff_eFlux) GT 0 THEN BEGIN
-           IF diff_eFlux EQ 0 THEN diff_eFlux = !NULL
-        ENDIF
+
      ENDIF ELSE BEGIN
+
         PRINT,"Couldn't find " + diff_eFlux_file + "!!!"
         PRINT,'Attempting to get and save for you ...'
         couldntfindLoad = 1
+
      ENDELSE
 
      ;; RETURN
@@ -1145,8 +1163,9 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
      gotMeString = SIZE(save_diff_eFlux_to_file,/TYPE) EQ 7
      IF ((N_ELEMENTS(diff_eFlux_file) GT 0) OR gotMeString) AND ~got_restored THEN BEGIN
         save_diff_eFlux_to_file = gotMeString ? save_diff_eFlux_to_file : diff_eFlux_file
+        SAVEDIFFEFLUXVERSION = DIFFEFLUXVERSION
         PRINT,"Saving diff_eFlux to file: " + save_diff_eFlux_to_file
-        SAVE,diff_eFlux,FILENAME=diffEFluxDir + save_diff_eFlux_to_file
+        SAVE,diff_eFlux,SAVEDIFFEFLUXVERSION,FILENAME=diffEFluxDir + save_diff_eFlux_to_file
      ENDIF ELSE BEGIN
         ;; PRINT,"Sorry, no save for you"
      ENDELSE
