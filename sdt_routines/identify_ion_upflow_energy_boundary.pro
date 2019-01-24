@@ -38,13 +38,37 @@ PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
            }
 
   ;; Y               FLOAT     Array[493, 47]
-  NRGs     = REFORM(especup.v[nTid/2,*])
-  IsReversedNRG = NRGs[1] LT NRGs[0]
-  tmpNRG_i = WHERE((NRGs LE maxIonNRG) AND (NRGs GE minIonNRG),nTmpNRG)
-  IF nTmpNRG LE 1 THEN BEGIN
+  tryCount = 0
+  goodEnergies = 0B
+  WHILE ~goodEnergies DO BEGIN
+     NRGs     = REFORM(especup.v[(nTid/2 + tryCount) < (nTid-1),*])
+
+     tmpNRG_i = WHERE((NRGs LE maxIonNRG) AND (NRGs GE minIonNRG),nTmpNRG)
+     IF nTmpNRG LE 1 THEN BEGIN
+        PRINT,"FIND GOOD ENERGIES: BOGUS " + STRING(FORMAT='(I0)',tryCount)
+        ;; RETURN
+     ENDIF ELSE BEGIN
+        goodEnergies = 1B
+     ENDELSE
+
+     tryCount += 1
+
+     IF tryCount GT 50 THEN BREAK
+  ENDWHILE
+  
+  IF ~goodEnergies THEN BEGIN
      PRINT,"BOGUS"
      RETURN
   ENDIF
+  IsReversedNRG = NRGs[1] LT NRGs[0]
+
+  ;; NRGs     = REFORM(especup.v[nTid/2,*])
+  ;; IsReversedNRG = NRGs[1] LT NRGs[0]
+  ;; tmpNRG_i = WHERE((NRGs LE maxIonNRG) AND (NRGs GE minIonNRG),nTmpNRG)
+  ;; IF nTmpNRG LE 1 THEN BEGIN
+  ;;    PRINT,"BOGUS"
+  ;;    RETURN
+  ;; ENDIF
 
   trimNRGs = eSpecUp.v[*,tmpNRG_i]
   trimRats = upDownRatioSpec.y[*,tmpNRG_i]
