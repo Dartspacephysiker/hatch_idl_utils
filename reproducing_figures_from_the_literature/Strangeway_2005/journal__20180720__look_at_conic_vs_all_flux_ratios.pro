@@ -348,9 +348,12 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      threshEFluxStr = threshEFluxStr.Replace('0',"")
   ENDELSE
 
-  leewardStr = KEYWORD_SET(only_leeward_ions) ? "-leeward"   : ''
-
-  leewardStr = KEYWORD_SET(only_cone_ions   ) ? "-coneyIons" : ''
+  leewardStr = ''
+  IF KEYWORD_SET(only_leeward_ions) THEN BEGIN
+     leewardStr = "-leeward"
+  ENDIF ELSE IF KEYWORD_SET(only_cone_ions) THEN BEGIN
+     leewardStr = "-coneyIons"
+  ENDIF
 
   avgItvlStr    = '-sRate' + (STRING(FORMAT='(F0.2)',enforce_diff_eFlux_sRate)).Replace('.','_')
 
