@@ -19,6 +19,7 @@ PRO IDENTIFY_ION_UPFLOW_ENERGY_BOUNDARY, $
 
   maxIonNRG = 9000
   minIonNRG = 4
+  ;; minIonNRG = 3.5
 
   threshRatio = KEYWORD_SET(upDownMinRatio           ) ? upDownMinRatio            : 10
   minNQualNRG = KEYWORD_SET(minNumQualifyingEChannels) ? minNumQualifyingEChannels : 4

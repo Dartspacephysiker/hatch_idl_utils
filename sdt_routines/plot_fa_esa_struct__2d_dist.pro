@@ -12,6 +12,7 @@ PRO PLOT_FA_ESA_STRUCT__2D_DIST,curDataStr,fit2DStruct, $
                                 FINISH_AND_SAVE_ALL=finish_and_save_all, $
                                 KAPPA_FIT__SHOW__QUIT=show__quit, $
                                 FIT2D__PA_ZRANGE=fit2D__PA_zRange, $
+                                OUT_PLOTDIR=PAPlotDir, $
                                 EPS=eps
 
   COMPILE_OPT IDL2,STRICTARRSUBS

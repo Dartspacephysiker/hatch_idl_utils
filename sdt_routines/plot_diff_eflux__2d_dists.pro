@@ -8,7 +8,8 @@ PRO PLOT_DIFF_EFLUX__2D_DISTS,diff_eFlux, $
                               RETRACE=retrace,   $
                               ;; NPLOTS=nPlots, $
                               SPEC_AVG_INTVL=spec_avg_intvl, $
-                              JUST_SAVE_ALL=just_save_all
+                              JUST_SAVE_ALL=just_save_all, $
+                              COMBINE_PLOTS_IN_PDF=combine_plots_in_PDF
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -70,7 +71,47 @@ PRO PLOT_DIFF_EFLUX__2D_DISTS,diff_eFlux, $
                                  FINISH_AND_SAVE_ALL=just_save_all, $
                                  KAPPA_FIT__SHOW__QUIT=show__quit, $
                                  FIT2D__PA_ZRANGE=fit2D__PA_zRange, $
-                                 EPS=eps
+                                 OUT_PLOTDIR=plotDir, $
+                                 EPS=combine_plots_in_PDF
 
   ENDFOR
+
+  IF KEYWORD_SET(combine_plots_in_PDF) THEN BEGIN
+
+     plotTypeStr = '2DDists'
+     nye_plotSuff = '_NYE'
+
+     SHELLCMDINIT = 'export PS1=dude; . /home/spencerh/.bash_funcs;'
+     nyPDF = STRING(FORMAT='("orb",A0,"_",A0)',dEF_strings.orbStr,plotTypeStr)+'.pdf'
+
+     pdfCount = 0
+     WHILE FILE_TEST(plotDir+'/' + nyPDF) DO BEGIN
+        pdfCount++
+        nyPDF = STRING(FORMAT='("orb",A0,"_",A0,"__",I02,A0)', $
+                       dEF_strings.orbStr, $
+                       plotTypeStr, $
+                       pdfCount, $
+                       '.pdf')
+     ENDWHILE
+
+     PRINT,"Converting all 1D plots into single pdf ..."
+     SPAWN,SHELLCMDINIT + ' cd ' + plotDir + '; ' $
+           + 'pwd; convert_and_unite_eps ' $
+           + nyPDF $
+           + " " + STRING(FORMAT='(A0)',"'*.eps'")
+
+     ;; SPAWN,SHELLCMDINIT + ' cd ' + plotDir + '; ' $
+     ;;       + 'mv ' + nyPDF + ' ../../'
+
+     ;; mv the nye_plotSuffs to regular file thing
+     SPAWN,SHELLCMDINIT + ' cd ' + plotDir + '; ' $
+           + STRING(FORMAT='(A0,A0,A0,A0,A0)', $
+                    'for brud in *', $
+                    nye_plotSuff, $
+                    '.eps; do mv ${brud} ${brud%%', $
+                    nye_plotSuff, $
+                    '.eps}.eps; done')
+
+  ENDIF
+
 END

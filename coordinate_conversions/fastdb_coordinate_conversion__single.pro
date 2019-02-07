@@ -13,6 +13,7 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
                                          DPTILT_FILENAME=dpTilt_filename, $
                                          COORDDIR=coordDir, $
                                          TIMEFILE=timeFile, $
+                                         SAVE_GEI_COORDS=save_GEI_coords, $
                                          EPHEMFILEINDARR=ephemFileIndArr, $
                                          TMPFILE=tmpFile, $
                                          OUTFILE=outFile, $
@@ -31,6 +32,8 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
   COMPILE_OPT IDL2,STRICTARRSUBS
 
   @defaults__fastdb_coordinate_conversion.pro
+
+  IF N_ELEMENTS(save_GEI_coords) EQ 0 THEN save_GEI_coords = 1
 
   IF KEYWORD_SET(create_timeStamps) THEN BEGIN
      nTot = N_ELEMENTS(times)
@@ -74,7 +77,7 @@ PRO FASTDB_COORDINATE_CONVERSION__SINGLE,times, $
            ' timeStamps ...'
 
      GET_FAST_GEI_COORDS,times, $
-                         /SAVE_GEI_COORDS, $
+                         SAVE_GEI_COORDS=save_GEI_coords, $
                          GEI_COORD_DIR=coordDir, $
                          GEI_COORD_FILENAME=GEI_coord_filename, $ 
                          GEI_STRUCT_NAME=defGEIStructName, $
