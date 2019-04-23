@@ -273,7 +273,8 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
 
   remake_file = 0
 
-  loadDir = "/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/"
+  ;; loadDir = "/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/"
+  loadDir = "/thelonious_data1/FAST/conic_vs_flux_ratios/"
 
   ieb_or_ies = "ies"
   ;; enforce_diff_eFlux_sRate = 1.25
