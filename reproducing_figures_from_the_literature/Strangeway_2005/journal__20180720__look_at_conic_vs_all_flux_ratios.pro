@@ -274,6 +274,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
   remake_file = 0
 
   ;; loadDir = "/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/"
+  diff_eFlux_dir = "/thelonious_data1/FAST/"
   loadDir = "/thelonious_data1/FAST/conic_vs_flux_ratios/"
 
   ieb_or_ies = "ies"
@@ -375,7 +376,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
      OUT_DIFF_EFLUX_FILE=diff_eFlux_file, $
      ENFORCE_DIFF_EFLUX_SRATE=enforce_diff_eFlux_sRate, $
      SPECTRA_AVERAGE_INTERVAL=spectra_average_interval, $
-     LOADDIR=loadDir
+     LOADDIR=diff_eFlux_dir
 
   IF (KEYWORD_SET(dEF__include_sc_pot) OR N_ELEMENTS(dEF__include_sc_pot) EQ 0) AND $
      N_ELEMENTS(sc_pot) EQ 0 THEN BEGIN
@@ -404,7 +405,7 @@ PRO JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS, $
                  OVERWRITE_EXISTING=overwrite_existing, $
                  DIFF_EFLUX_FILE=diff_eFlux_file, $
                  LOAD_DAT_FROM_FILE=load_diff_eFlux_from_file, $
-                 LOAD_DIR=loadDir, $
+                 LOAD_DIR=diff_eFlux_dir, $
                  OUT_DIFF_EFLUX=diff_eflux
 
   IF KEYWORD_SET(make_ions_oxygen) THEN BEGIN
