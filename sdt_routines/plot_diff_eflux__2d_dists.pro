@@ -8,6 +8,7 @@ PRO PLOT_DIFF_EFLUX__2D_DISTS,diff_eFlux, $
                               RETRACE=retrace,   $
                               ;; NPLOTS=nPlots, $
                               SPEC_AVG_INTVL=spec_avg_intvl, $
+                              FIT2D__PA_ZRANGE=fit2D__PA_zRange, $
                               JUST_SAVE_ALL=just_save_all, $
                               COMBINE_PLOTS_IN_PDF=combine_plots_in_PDF
 

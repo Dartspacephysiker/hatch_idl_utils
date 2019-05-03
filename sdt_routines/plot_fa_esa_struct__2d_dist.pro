@@ -51,11 +51,13 @@ PRO PLOT_FA_ESA_STRUCT__2D_DIST,curDataStr,fit2DStruct, $
   ;; cont2DLims  = {zrange:[10^(6.6),upLim]}
   ;; spec2DLims = {yrange:[1e6,upLim]}
 
-  IF curDataStr.mass GT 5.7D-06 THEN BEGIN
-     fit2D__PA_zRange = 10.D^([5.5,8.5])
-  ENDIF ELSE BEGIN
-     fit2D__PA_zRange = 10.D^([6.0,8.5])
-  ENDELSE
+  IF N_ELEMENTS(fit2D__PA_zRange) EQ 0 THEN BEGIN
+     IF curDataStr.mass GT 5.7D-06 THEN BEGIN
+        fit2D__PA_zRange = 10.D^([5.5,8.5])
+     ENDIF ELSE BEGIN
+        fit2D__PA_zRange = 10.D^([6.0,8.5])
+     ENDELSE
+  ENDIF
   
   ;; IF KEYWORD_SET(fit2D__PA_zRange) THEN BEGIN
      cont2DLims.zRange = fit2D__PA_zRange
