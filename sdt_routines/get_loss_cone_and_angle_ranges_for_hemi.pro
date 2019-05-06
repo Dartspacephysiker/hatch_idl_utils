@@ -18,22 +18,22 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
   ;;get_orbit data if need be
   IF N_ELEMENTS(struc) EQ 0 THEN BEGIN
 
-     GET_DATA,'ALT',DATA=alt
-     GET_DATA,'ILAT',DATA=ilat
-     IF ( SIZE(alt,/TYPE) NE 8 ) OR $
-        ( SIZE(ilat,/TYPE) NE 8 )    $
-     THEN BEGIN
-        GET_FA_ORBIT,t1,t2,/ALL,STRUC=struc
+     ;; GET_DATA,'ALT',DATA=alt
+     ;; GET_DATA,'ILAT',DATA=ilat
+     ;; IF ( SIZE(alt,/TYPE) NE 8 ) OR $
+     ;;    ( SIZE(ilat,/TYPE) NE 8 )    $
+     ;; THEN BEGIN
+     GET_FA_ORBIT,t1,t2,/ALL,STRUC=struc
         ;; GET_DATA,'ALT',DATA=alt
         ;; GET_DATA,'ILAT',DATA=ilat
-     ENDIF
-  ENDIF ELSE BEGIN
-     ;; alt = {x: struc.x, $
-     ;;        y: struc.alt}
-     ;; ilat = {x: struc.x, $
-     ;;         y: struc.ilat}
+     ;; ENDIF
+  ENDIF;;  ELSE BEGIN
+  ;;    ;; alt = {x: struc.x, $
+  ;;    ;;        y: struc.alt}
+  ;;    ;; ilat = {x: struc.x, $
+  ;;    ;;         y: struc.ilat}
 
-  ENDELSE
+  ;; ENDELSE
 
   IF KEYWORD_SET(only_fit_fieldaligned_angle) THEN BEGIN
      lcw               = FLOAT(REPLICATE(5,N_ELEMENTS(alt.y)))
