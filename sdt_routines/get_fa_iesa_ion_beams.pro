@@ -1,5 +1,8 @@
 ;; 2018/05/07
 PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
+                          USEDIFFEFLUX=useDiffEflux, $
+                          IONDIFFEFLUX=ion_dEF, $
+                          MCFADDEN_STYLE_DIFF_EFLUX=McFadden_diff_eFlux, $
                           ORBIT=orbit, $
                           ;; NEWELL_2009_INTERP=Newell_2009_interp, $
                           ION_ANGLERANGE=ion_angleRange, $
@@ -18,6 +21,8 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
   ;; GET_DATA,'dB_fac_v',DATA=data
   ;; IF SIZE(data,/TYPE) NE 8 THEN $
   ;;    UCLA_MAG_DESPIN,TW_MAT=tw_mat,ORBIT=orbit,SPIN_AXIS=spin_axis,DELTA_PHI=delta_phi,/QUIET
+
+  min_if_nan_scpots = 10.
 
   IF N_ELEMENTS(orbit) EQ 0 THEN GET_FA_SDT_ORBIT,orbit
 
@@ -51,6 +56,9 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
      END
      KEYWORD_SET(spectra_average_interval): BEGIN
         specAvgSuff = STRING(FORMAT='("-avgItvl",I0)',spectra_average_interval)
+     END
+     ELSE: BEGIN
+        specAvgSuff = ''
      END
   ENDCASE
 
@@ -119,7 +127,10 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
   pot[index_max+1:nSC_POT-1] = pot[j_range[index_max]]
   sc_potAvg     = {x:sc_potRed.x,y:pot,type:"Chaston style"}
 
-  IF sc_pot.isNeg THEN sc_potAvg.y *= -1.
+  IF sc_pot.isNeg THEN BEGIN
+     sc_potAvg.y *= -1.
+     sc_pot.isNeg = 0B
+  ENDIF
 
   var_name='Iesa_Angle'
   ion_ER = KEYWORD_SET(ion_energyRange) ? ion_energyRange : [4.,30000.]
@@ -148,48 +159,48 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
 
 
   ionBeam_aRange = ion_angleRange
-  IF ion_angleRange[0] GE 90. AND ion_angleRange[0] LE 180 THEN BEGIN
-     ;; NH
-     ionBeam_aRange[0] = 180.-(180.-ion_angleRange[0])/2.
-     ionBeam_aRange[1] = 180.+(180.-ion_angleRange[0])/2.
-     ion_halfRange     = [90,270]
-  ENDIF 
-  IF ion_angleRange[0] GE 270. AND ion_angleRange[0] LE 360. THEN BEGIN
-     ;; SH
-     ionBeam_aRange[0] = 360.-(360.-ion_angleRange[0])/2.
-     ionBeam_aRange[1] = (360.-ion_angleRange[0])/2.
-     ion_halfRange     = [270,90]
-  ENDIF
-  iAngle       = KEYWORD_SET(ion_angleRange     ) ? ion_angleRange      : [135.,225.]
-  iAngleChari  = iAngle
+  ion_halfRange = ion_angleRange*0.
+  IF NDIMEN(ionBeam_aRange) EQ 2 THEN BEGIN
 
-  var_name = "IesaTightEnSpec"
-  GET_EN_SPEC,'fa_' + ieb_or_ies + '_c', $
-              T1=t1, $
-              T2=t2, $
-              NAME=var_name, $
-              UNITS=specUnits, $
-              ANGLE=ionBeam_aRange, $
-              /CALIB, $
-              RETRACE=1
-  var_name = "IesaHalfRangeEnSpec"
-  GET_EN_SPEC,'fa_' + ieb_or_ies + '_c', $
-              T1=t1, $
-              T2=t2, $
-              NAME=var_name, $
-              UNITS=specUnits, $
-              ANGLE=ion_halfRange, $
-              /CALIB, $
-              RETRACE=1
+     nHere = N_ELEMENTS(ionBeam_aRange[0,*])
+     FOR dee=0,nHere-1 DO BEGIN
+
+        IF ion_angleRange[0,dee] GE 90. AND ion_angleRange[0,dee] LE 180 THEN BEGIN
+           ;; NH
+           ionBeam_aRange[0,dee] = 180.-(180.-ion_angleRange[0,dee])/2.
+           ionBeam_aRange[1,dee] = 180.+(180.-ion_angleRange[0,dee])/2.
+           ion_halfRange[*,dee]  = [90,270]
+        ENDIF 
+        IF ion_angleRange[0] GE 270. AND ion_angleRange[0] LE 360. THEN BEGIN
+           ;; SH
+           ionBeam_aRange[0,dee] = 360.-(360.-ion_angleRange[0,dee])/2.
+           ionBeam_aRange[1,dee] = (360.-ion_angleRange[0,dee])/2.
+           ion_halfRange[*,dee] = [270,90]
+        ENDIF
+
+     ENDFOR
+
+  ENDIF ELSE BEGIN
+
+     IF ion_angleRange[0] GE 90. AND ion_angleRange[0] LE 180 THEN BEGIN
+        ;; NH
+        ionBeam_aRange[0] = 180.-(180.-ion_angleRange[0])/2.
+        ionBeam_aRange[1] = 180.+(180.-ion_angleRange[0])/2.
+        ion_halfRange     = [90,270]
+     ENDIF 
+     IF ion_angleRange[0] GE 270. AND ion_angleRange[0] LE 360. THEN BEGIN
+        ;; SH
+        ionBeam_aRange[0] = 360.-(360.-ion_angleRange[0])/2.
+        ionBeam_aRange[1] = (360.-ion_angleRange[0])/2.
+        ion_halfRange     = [270,90]
+     ENDIF
+
+  ENDELSE
+  ;; iAngle       = KEYWORD_SET(ion_angleRange     ) ? ion_angleRange      : [135.,225.]
+  ;; iAngleChari  = iAngle
 
   var_name='IesaPASpec'
   GET_DATA,var_name, DATA=paspec
-  var_name='IesaTightEnSpec'
-  GET_DATA,var_name, DATA=enspec
-  var_name='IesaHalfRangeEnSpec'
-  GET_DATA,var_name,DATA=IesaHRSpec
-
-  compSpec = IesaHRSpec
 
   t1eeb = 0.D 
   t2eeb = 0.D
@@ -198,24 +209,140 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
   t1eeb = time1 > t1eeb
   t2eeb = time2 < t2eeb
 
-  GET_2DT_TS_POT,'j_2d_fs','fa_' + ieb_or_ies, $
-                 NAME='JiTight', $
-                 T1=t1eeb,T2=t2eeb, $
-                 ENERGY=[0.,ion_ER[1]], $
-                 ANGLE=ionBeam_aRange, $
-                 SC_POT={x:sc_potAvg.x,y:sc_potAvg.y*(-1.)}, $ ;This routine expects pot values to be the negative of their actual value
-                 /CALIB
-  GET_2DT_TS_POT,'je_2d_fs','fa_' + ieb_or_ies, $
-                 NAME='JeiTight', $
-                 T1=t1eeb,T2=t2eeb, $
-                 ENERGY=[0.,ion_ER[1]], $
-                 ANGLE=ionBeam_aRange, $
-                 SC_POT={x:sc_potAvg.x,y:sc_potAvg.y*(-1.)}, $ ;This routine expects pot values to be the negative of their actual value
-                 /CALIB
+  IF KEYWORD_SET(useDiffEflux) THEN BEGIN
 
-  GET_DATA,'JiTight',DATA=jiTight
-  GET_DATA,'JeiTight',DATA=jeiTight
+     en   = MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX(ion_dEF, $
+                                               ENERGY=[0.,ion_ER[1]], $
+                                               SC_POT=sc_pot, $
+                                               MIN_IF_NAN_SCPOTS=min_if_nan_scpots, $
+                                               EEB_OR_EES=eeb_or_ees)
+
+     
+
+     deFlux__array_of_structs  = KEYWORD_SET(McFadden_diff_eFlux)
+
+     paSpecName = 'IesaPASpec'
+     tightEnSpecName = 'IesaTightEnSpec'
+     halfEnSpecName = 'IesaHalfRangeEnSpec'
+     
+     varName = tightEnSpecName
+     enspec = GET_EN_SPEC__FROM_DIFF_EFLUX( $
+               ion_dEF, $
+               T1=t1, $
+               T2=t2, $
+               /RETRACE, $
+               ANGLE=ionBeam_aRange, $
+               UNITS=specUnits, $
+               NAME=varName, $
+               OUT_AVGFACTORARR=avgFactorArr, $
+               OUT_NORMARR=normArr, $
+               BAD_TIME=bad_time, $
+               OUT_TIME=out_time, $
+               IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs)
+     STORE_DATA,varName,DATA=enspec
+
+     varName = halfEnSpecName
+     IesaHRSpec = GET_EN_SPEC__FROM_DIFF_EFLUX( $
+               ion_dEF, $
+               T1=t1, $
+               T2=t2, $
+               /RETRACE, $
+               ANGLE=ion_halfRange, $
+               UNITS=specUnits, $
+               NAME=varName, $
+               OUT_AVGFACTORARR=avgFactorArr, $
+               OUT_NORMARR=normArr, $
+               BAD_TIME=bad_time, $
+               OUT_TIME=out_time, $
+               IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs)
+     STORE_DATA,varName,DATA=IesaHRSpec
+
+
+     MOMENT_SUITE_2D,ion_dEF, $
+                     ;; ENERGY=[0.,ion_ER[1]], $
+                     ENERGY=en, $
+                     ARANGE__MOMENTS=ionBeam_aRange, $
+                     SC_POT=sc_pot, $
+                     EEB_OR_EES=ieb_or_ies, $
+                     /ERROR_ESTIMATES, $
+                     ;; MAP_TO_100KM=map_to_100km, $ 
+                     ORBIT=orbit, $
+                     /NEW_MOMENT_ROUTINE, $
+                     QUIET=quiet, $
+                     OUTTIME=time, $
+                     OUT_N=n, $
+                     OUT_J_=j, $
+                     OUT_JE=je, $
+                     OUT_T=T, $
+                     OUT_CHARE=charE, $
+                     OUT_CURRENT=cur, $
+                     OUT_JJE_COVAR=jje_coVar, $
+                     OUT_ERRORS=errors, $
+                     OUT_ERR_N=nErr, $
+                     OUT_ERR_J_=jErr, $
+                     OUT_ERR_JE=jeErr, $
+                     OUT_ERR_T=TErr, $
+                     OUT_ERR_CURRENT=curErr, $
+                     OUT_ERR_CHARE=charEErr, $
+                     INOUT_MAPRATIO=mapRatio, $
+                     OUT_STRUCT=ionMomStruct, $
+                     BATCH_MODE=batch_mode, $
+                     MCFADDEN_STYLE_DIFF_EFLUX=deFlux__array_of_structs
+
+     jiTight = {x: ionMomStruct.time, $
+                y: ionMomStruct.j}
+
+     jeiTight = {x: ionMomStruct.time, $
+                 y: ionMomStruct.je}
+
+  ENDIF ELSE BEGIN
+
+     var_name = "IesaTightEnSpec"
+     GET_EN_SPEC,'fa_' + ieb_or_ies + '_c', $
+                 T1=t1, $
+                 T2=t2, $
+                 NAME=var_name, $
+                 UNITS=specUnits, $
+                 ANGLE=ionBeam_aRange, $
+                 /CALIB, $
+                 RETRACE=1
+     var_name = "IesaHalfRangeEnSpec"
+     GET_EN_SPEC,'fa_' + ieb_or_ies + '_c', $
+                 T1=t1, $
+                 T2=t2, $
+                 NAME=var_name, $
+                 UNITS=specUnits, $
+                 ANGLE=ion_halfRange, $
+                 /CALIB, $
+                 RETRACE=1
+
+     var_name='IesaTightEnSpec'
+     GET_DATA,var_name, DATA=enspec
+     var_name='IesaHalfRangeEnSpec'
+     GET_DATA,var_name,DATA=IesaHRSpec
+
+     GET_2DT_TS_POT,'j_2d_fs','fa_' + ieb_or_ies, $
+                    NAME='JiTight', $
+                    T1=t1eeb,T2=t2eeb, $
+                    ENERGY=[0.,ion_ER[1]], $
+                    ANGLE=ionBeam_aRange, $
+                    SC_POT={x:sc_potAvg.x,y:sc_potAvg.y*(-1.)}, $ ;This routine expects pot values to be the negative of their actual value
+                    /CALIB
+     GET_2DT_TS_POT,'je_2d_fs','fa_' + ieb_or_ies, $
+                    NAME='JeiTight', $
+                    T1=t1eeb,T2=t2eeb, $
+                    ENERGY=[0.,ion_ER[1]], $
+                    ANGLE=ionBeam_aRange, $
+                    SC_POT={x:sc_potAvg.x,y:sc_potAvg.y*(-1.)}, $ ;This routine expects pot values to be the negative of their actual value
+                    /CALIB
+
+     GET_DATA,'JiTight',DATA=jiTight
+     GET_DATA,'JeiTight',DATA=jeiTight
+
+  ENDELSE
+
   chari   = jeiTight.y/jiTight.y*6.242*1.0e11
+  compSpec = IesaHRSpec
 
   this           = VALUE_CLOSEST2(enspec.x,jeiTight.x,/CONSTRAINED) 
   enspec         = {x:enspec.x[this],y:enspec.y[this,*],v:enspec.v[this,*]}
@@ -238,15 +365,28 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
   ion_erArr = TRANSPOSE([[REPLICATE(ion_er[0],N_ELEMENTS(chari))], $
                          [REPLICATE(ion_er[1],N_ELEMENTS(chari))]])
   ion_erArr[0,*] = ion_erArr[0,*] > (sc_potAvgIn*(-1.))
-  ionEvents = {pa     : paspec, $
-               en     : enspec, $
-               ji     : jiTight, $
-               jei    : jeiTight, $
-               chari  : chari, $
-               newell : ionEvents, $
-               arange : ionBeam_aRange, $
-               erange : ion_erArr}
 
+  IF KEYWORD_SET(useDiffEflux) THEN BEGIN
+     ionEvents = {pa     : paspec, $
+                  en     : enspec, $
+                  ;; ji     : jiTight, $
+                  ;; jei    : jeiTight, $
+                  ;; chari  : chari, $
+                  moms   :ionMomStruct, $
+                  newell : ionEvents, $
+                  arange : ionBeam_aRange, $
+                  erange : ion_erArr}
+  ENDIF ELSE BEGIN
+     ionEvents = {pa     : paspec, $
+                  en     : enspec, $
+                  ji     : jiTight, $
+                  jei    : jeiTight, $
+                  chari  : chari, $
+                  newell : ionEvents, $
+                  arange : ionBeam_aRange, $
+                  erange : ion_erArr}
+
+  ENDELSE
   ;; SAVE,ionEvents,FILENAME='/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/orb1694_iondata.sav'
 
 END

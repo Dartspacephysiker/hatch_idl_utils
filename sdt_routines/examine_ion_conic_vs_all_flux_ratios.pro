@@ -243,6 +243,7 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
    ONLY_LEEWARD_IONS=only_leeward_ions, $
    ONLY_CONE_IONS=only_cone_ions, $
    ENFORCE_THIS_SAMPLE_RATE=enforce_this_sample_rate, $
+   DO_NOT_ENFORCE_SAMPLE_RATE=do_not_enforce_sample_rate, $
    REMAKE_DIFF_EFLUX=remake_diff_eFlux, $
    DEF__INCLUDE_SC_POT=dEF__include_sc_pot, $
    SC_POT=sc_pot, $
@@ -264,6 +265,7 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
    MAKE_SPECIAL_JGR_PLOT=make_special_JGR_plot, $
    NO_PLOTS=no_plots, $
    OUT_ORBIT=out_orbit, $
+   OUTSTRUCT_ORBIT=struc, $
    MISLYKTES=mislyktes
 
   COMPILE_OPT IDL2,STRICTARRSUBS
@@ -279,7 +281,18 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
 
   ieb_or_ies = "ies"
   ;; enforce_diff_eFlux_sRate = 1.25
-  enforce_diff_eFlux_sRate = KEYWORD_SET(enforce_this_sample_rate) ? enforce_this_sample_rate : 2.5
+  ;; enforce_diff_eFlux_sRate = KEYWORD_SET(enforce_this_sample_rate) ? enforce_this_sample_rate : 2.5
+
+  IF KEYWORD_SET(do_not_enforce_sample_rate) THEN BEGIN
+     PRINT,"EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS: Not enforcing sample rate ..."
+     enforce_diff_eFlux_sRate = 0
+  ENDIF ELSE IF KEYWORD_SET(enforce_diff_eFlux_sRate) THEN BEGIN
+     enforce_diff_eFlux_sRate = enforce_this_sample_rate
+  ENDIF ELSE BEGIN
+     PRINT,"enforce_diff_eFlux_sRate = 2.5 by default ..."
+     enforce_diff_eFlux_sRate = 2.5
+  ENDELSE
+
   calc_geom_factors      = 1
   clean_the_McFadden_way = 0
 
@@ -357,7 +370,11 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
      leewardStr = "-coneyIons"
   ENDIF
 
-  avgItvlStr    = '-sRate' + (STRING(FORMAT='(F0.2)',enforce_diff_eFlux_sRate)).Replace('.','_')
+  IF KEYWORD_SET(do_not_enforce_sample_rate) THEN BEGIN
+     avgItvlStr = ''
+  ENDIF ELSE BEGIN
+     avgItvlStr    = '-sRate' + (STRING(FORMAT='(F0.2)',enforce_diff_eFlux_sRate)).Replace('.','_')
+  ENDELSE
 
   savePref = "orb_" + STRING(FORMAT='(I0)',orbit)+"-conic_vs_flux_ratios"$
              +avgItvlStr+threshEFluxStr+upDownRatioStr+minNQualEStr + leewardStr
@@ -416,7 +433,7 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
   tDiffs     = diff_eFlux.end_time - diff_eFlux.time
 
   ;; Now get times corresponding to diff_eFlux
-  GET_FA_ORBIT,diff_eFlux.time,/TIME_ARRAY
+  GET_FA_ORBIT,diff_eFlux.time,/TIME_ARRAY,/ALL,STRUC=struc
 
   ;; get_data,'ORBIT',data=orb
   ;; out_orbit=diff_eflux[0].orbit
@@ -786,7 +803,13 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
   ENDIF
 
   these = WHERE(energy[1,*] LT energy[0,*],COMPLEMENT=notThese,/NULL)
+  origValid = diff_eflux.valid
+  validBef = TOTAL(diff_eflux.valid)
+
   diff_eflux[these].valid = 0
+  validAft = TOTAL(diff_eflux.valid)
+  PRINT,FORMAT='(A0,I5,A0,I5,A0)',"Only ",validAft," out of ",validBef," ion obs are upflow"
+  quiet = 1
 
   MOMENT_SUITE_2D,diff_eFlux, $
                   ENERGY=energy, $
@@ -936,6 +959,9 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
             type : eBound.type[these]}
 
   IF nNotUpflow GT 0 THEN ionupJ.y[notUpflow_i] = !VALUES.F_NaN
+
+  ;; Make original valids valid
+diff_eflux.valid = origValid
 
   ;; We actually have to flip signs regardless of hemisphere because (shy of the DONT_FLIP_SIGN keyword)
   ;; MOMENT_SUITE_2D makes all earthward fluxes positive and all anti-earthward fluxes negative
