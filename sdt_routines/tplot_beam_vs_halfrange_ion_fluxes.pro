@@ -90,7 +90,7 @@ PRO TPLOT_BEAM_VS_HALFRANGE_ION_FLUXES, $
 
         this = WHERE(ionEvents.newell.mono EQ 1 OR ionEvents.newell.mono EQ 2)
 
-        IF this[0] EQ -1 THEN BEGIN
+        IF (this[0] EQ -1) OR (N_ELEMENTS(this) LE 2) THEN BEGIN
            tBars = !NULL
         ENDIF ELSE BEGIN
 
