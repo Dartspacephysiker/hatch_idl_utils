@@ -5,6 +5,7 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                           MCFADDEN_STYLE_DIFF_EFLUX=McFadden_diff_eFlux, $
                           ORBIT=orbit, $
                           THRESH_BEAM_EFLUX=thresh_beam_eFlux, $
+                          BEAMHALFRATIO=beamHalfRatio, $
                           ;; NEWELL_2009_INTERP=Newell_2009_interp, $
                           ION_ANGLERANGE=ion_angleRange, $
                           ION_ENERGYRANGE=ion_energyRange, $
@@ -223,6 +224,10 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
 
   IF KEYWORD_SET(useDiffEflux) THEN BEGIN
 
+     doKillSome  = 0
+     doKillSome2 = 0
+     origValid = ion_dEF.valid
+
      deFlux__array_of_structs  = KEYWORD_SET(McFadden_diff_eFlux)
 
      varName = tightEnSpecName
@@ -246,8 +251,24 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
      IF badFruks[0] NE -1 THEN BEGIN
         enspec.y[badFruks] = makeZeroVal
      ENDIF
-
      STORE_DATA,varName,DATA=enspec
+
+
+     ;; Don't check the ones that can't be mono
+     ;; 1. Align 'em
+     this = VALUE_CLOSEST2(enspec.x, $
+                           ion_dEF.time $
+                           +(ion_dEF.end_time-ion_dEF.time)/2., $
+                           /CONSTRAINED)
+     ;; 2. Finnes det noe?
+     summies = TOTAL(enspec.y[this,*],2)          
+     killedForNow = WHERE(summies LT 1E6)
+     doKillSome = killedForNow[0] NE -1
+
+     ;; 3. Hvis ja, drep de
+     IF doKillSome THEN BEGIN
+        ion_dEF[killedForNow].valid = 0
+     ENDIF
 
      varName = halfEnSpecName
      IesaHRSpec = GET_EN_SPEC__FROM_DIFF_EFLUX( $
@@ -264,23 +285,53 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                   OUT_TIME=out_time, $
                   IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs, $
                   /QUIET)
+     ;; IF badFruks[0] NE -1 THEN BEGIN
+     ;;    IesaHRSpec.y[badFruks] = makeZeroVal
+     ;; ENDIF
+
      STORE_DATA,varName,DATA=IesaHRSpec
 
+
+     ;; Trim 'em down (I do the exact same thing if ~useDiffEflux BECAUSE I want to use the
+     ;; ratios of these energy spectrograms to trim down the number of moments we need to
+     ;; calculate.
+     ;; 
+     ;; In short, if goodNokFlux_arr from GET_MAX_EN_IND_FOR_IDENTIFY_DIFF_EFLUXES
+     ;; indicates that ion obs at a particular time CAN'T be a beam, we glem dem
+     ;; 
+     this = VALUE_CLOSEST2(enspec.x, $
+                           ion_dEF.time $
+                           +(ion_dEF.end_time-ion_dEF.time)/2., $
+                           /CONSTRAINED)
+     enspec       = {x:enspec.x[this], $
+                     y:enspec.y[this,*], $
+                     v:enspec.v[this,*], $
+                     yerr:enspec.yerr[this,*], $
+                     verr:enspec.verr[this,*]}
+     ;; this           = VALUE_CLOSEST2(IesaHRSpec.x,jeiTight.x,/CONSTRAINED) 
+     ;; this         = WHERE((bad_time2 EQ 1) OR (bad_time2 EQ 0))
+     this = VALUE_CLOSEST2(IesaHRSpec.x, $
+                           ion_dEF.time $
+                           +(ion_dEF.end_time-ion_dEF.time)/2., $
+                           /CONSTRAINED)
+     IesaHRSpec     = {x:IesaHRSpec.x[this], $
+                       y:IesaHRSpec.y[this,*], $
+                       v:IesaHRSpec.v[this,*], $
+                       yerr:IesaHRSpec.yerr[this,*], $
+                       verr:IesaHRSpec.verr[this,*]}
 
      IF KEYWORD_SET(usePeakEnergy) THEN BEGIN
 
         ;; this         = WHERE((bad_time1 EQ 1) OR (bad_time1 EQ 0))
-        this = VALUE_CLOSEST2(enspec.x, $
-                              ion_dEF.time $
-                              +(ion_dEF.end_time-ion_dEF.time)/2., $
-                              /CONSTRAINED)
 
         GET_PEAK_ENERGY_FROM_DIFF_EFLUX_AND_ESPEC, $
-           ion_dEF, {x:enspec.x[this], $
-                     y:enspec.y[this,*], $
-                     v:enspec.v[this,*], $
-                     yerr:enspec.yerr[this,*], $
-                     verr:enspec.verr[this,*]}, $
+           ;; ion_dEF, {x:enspec.x[this], $
+           ;;           y:enspec.y[this,*], $
+           ;;           v:enspec.v[this,*], $
+           ;;           yerr:enspec.yerr[this,*], $
+           ;;           verr:enspec.verr[this,*]}, $
+           ion_dEF, $
+           enspec, $
            PEAKE_BOUNDS_INDSHIFT=peakE_bounds_indShift, $
            OUT_PEAK_INDARR=peak_indArr, $
            OUT_PEAK_ENERGYARR=peak_energyArr, $
@@ -289,6 +340,31 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
            OUT_PEAKE_INDSHIFT=peakE_indShift
 
         enBounds = peak_eBoundsArr
+
+        that           = VALUE_CLOSEST2(sc_potAvg.x,ion_dEF.time,/CONSTRAINED) 
+        sc_potAvgIn    = sc_potAvg.y[that]
+
+        fixers = WHERE(ABS(sc_potavg.x[that]-ion_dEF.time) GT 5,nFixers)
+        IF nFixers GT 0 THEN BEGIN
+           sc_potAvgIn[fixers] = min_if_nan_scpots
+        ENDIF
+
+        GET_MAX_EN_IND_FOR_IDENTIFY_DIFF_EFLUXES, $
+           enspec, $
+           SC_POT=sc_potAvgIn, $
+           IND_SC_POT=ind_sc_pot, $
+           OUT_MAX_EN_IND=max_en_ind, $
+           PEAKFLUX_ARR=peakFlux_arr, $
+           PEAK_ENERGY_ARR=peak_energy_arr, $
+           GOODNOKFLUX_ARR=goodNokFlux_arr, $
+           ION_HR_SPEC=IesaHRSpec, $
+           BEAMHALFRATIO=beamHalfRatio
+
+        killedForNow2 = WHERE(~goodNokFlux_arr)
+        doKillSome2 = killedForNow2[0] NE -1
+        IF doKillSome2 THEN BEGIN
+           ion_dEF[killedForNow2].valid = 0
+        ENDIF
 
      ENDIF ELSE BEGIN
 
@@ -302,10 +378,15 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                                                    MIN_IF_NAN_SCPOTS=min_if_nan_scpots, $
                                                    EEB_OR_EES=eeb_or_ees)
 
+     ;; These moms are based on all energies between peak flux and detector lim (24keV)
+     ;; !NO! and all pitch angles !NO!
+     ;; and anti-earthward losscone pitch angles
      MOMENT_SUITE_2D,ion_dEF, $
                      ;; ENERGY=[0.,ion_ER[1]], $
                      ENERGY=enBeam, $
-                     ARANGE__MOMENTS=ionBeam_aRange, $
+                     ;; ARANGE__MOMENTS=ionBeam_aRange, $
+                     ;; ARANGE__MOMENTS=[0,360], $
+                     ARANGE__MOMENTS=ion_angleRange, $
                      SC_POT=sc_pot, $
                      EEB_OR_EES=ieb_or_ies, $
                      /ERROR_ESTIMATES, $
@@ -340,6 +421,8 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                                                    MIN_IF_NAN_SCPOTS=min_if_nan_scpots, $
                                                    EEB_OR_EES=eeb_or_ees)
 
+     ;; These moms are based on all energies between sc/pot (or 10 eV) and
+     ;; detector top, and beam pitch angles
      MOMENT_SUITE_2D,ion_dEF, $
                      ;; ENERGY=[0.,ion_ER[1]], $
                      ENERGY=enAll, $
@@ -399,6 +482,10 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                  y: ionMomStruct.je}
 
 
+     IF doKillSome OR doKillSome2 THEN BEGIN
+        ion_dEF.valid = origValid
+     ENDIF
+
   ENDIF ELSE BEGIN
 
      var_name = tightEnSpecName
@@ -443,38 +530,51 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
      GET_DATA,'JiTight',DATA=jiTight
      GET_DATA,'JeiTight',DATA=jeiTight
 
+     this = VALUE_CLOSEST2(enspec.x, $
+                           ion_dEF.time $
+                           +(ion_dEF.end_time-ion_dEF.time)/2., $
+                           /CONSTRAINED)
+     enspec       = {x:enspec.x[this], $
+                     y:enspec.y[this,*], $
+                     v:enspec.v[this,*], $
+                     yerr:enspec.yerr[this,*], $
+                     verr:enspec.verr[this,*]}
+     ;; this           = VALUE_CLOSEST2(IesaHRSpec.x,jeiTight.x,/CONSTRAINED) 
+     ;; this         = WHERE((bad_time2 EQ 1) OR (bad_time2 EQ 0))
+     this = VALUE_CLOSEST2(IesaHRSpec.x, $
+                           ion_dEF.time $
+                           +(ion_dEF.end_time-ion_dEF.time)/2., $
+                           /CONSTRAINED)
+     IesaHRSpec     = {x:IesaHRSpec.x[this], $
+                       y:IesaHRSpec.y[this,*], $
+                       v:IesaHRSpec.v[this,*], $
+                       yerr:IesaHRSpec.yerr[this,*], $
+                       verr:IesaHRSpec.verr[this,*]}
+
   ENDELSE
 
   chari   = jeiTight.y/jiTight.y*6.242*1.0e11
-  compSpec = IesaHRSpec
+  ;; compSpec = IesaHRSpec
 
   ;; this           = VALUE_CLOSEST2(enspec.x,jeiTight.x,/CONSTRAINED)
-  this         = WHERE((bad_time1 EQ 1) OR (bad_time1 EQ 0))
-  enspec       = {x:enspec.x[this], $
-                  y:enspec.y[this,*], $
-                  v:enspec.v[this,*], $
-                  yerr:enspec.yerr[this,*], $
-                  verr:enspec.verr[this,*]}
-  ;; this           = VALUE_CLOSEST2(compSpec.x,jeiTight.x,/CONSTRAINED) 
-  this         = WHERE((bad_time2 EQ 1) OR (bad_time2 EQ 0))
-  compSpec     = {x:compSpec.x[this], $
-                  y:compSpec.y[this,*], $
-                  v:compSpec.v[this,*], $
-                  yerr:compspec.yerr[this,*], $
-                  verr:compspec.verr[this,*]}
+  ;; this         = WHERE((bad_time1 EQ 1) OR (bad_time1 EQ 0))
 
   that           = VALUE_CLOSEST2(sc_potAvg.x,jeiTight.x,/CONSTRAINED) 
   sc_potAvgIn    = sc_potAvg.y[that]
 
-  GET_FA_ORBIT,enspec.x,/TIME_ARRAY,/NO_STORE,STRUC=ionEphem
+  ;; GET_FA_ORBIT,enspec.x,/TIME_ARRAY,/NO_STORE,STRUC=ionEphem
 
   IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,enspec,jeiTight,jiTight, $
-                                          ionEphem.mlt,ionEphem.ilat,ionEphem.alt,ionEphem.orbit, $
+                                          ephemStruct.mlt, $
+                                          ephemStruct.ilat, $
+                                          ephemStruct.alt, $
+                                          ephemStruct.orbit, $
                                           ionEvents, $
                                           BATCH_MODE=batch_mode, $
                                           SC_POT=sc_potAvgIn, $
                                           /IS_ION, $
-                                          ION_HALFRANGE_SPEC=compSpec, $
+                                          ION_HALFRANGE_SPEC=IesaHRSpec, $
+                                          BEAMHALFRATIO=beamHalfRatio, $
                                           /QUIET
 
   ion_erArr = TRANSPOSE([[REPLICATE(ion_er[0],N_ELEMENTS(chari))], $
@@ -658,8 +758,21 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
      peakEVarName = "peakE"
      potLStyle = 0              ;solid
      potColor  = hvit
+
+     plotPeaks = peak_energyArr
+     plotBeamJ = ionMomStructBeam.j
+
+
+     realMono = WHERE((ionEvents.newell.mono EQ 1) OR $
+                      (ionEvents.newell.mono EQ 2),notMono)
+
+     IF notMono[0] NE -1 THEN BEGIN
+        plotPeaks[notMono] = 0
+        plotBeamJ[notMono] = 0
+     ENDIF
+
      STORE_DATA,peakEVarName,DATA={x:ionMomStructBeam.time, $
-                                    y:peak_energyArr}
+                                    y:plotPeaks}
      OPTIONS,peakEVarName,'LINESTYLE',potLStyle
      OPTIONS,peakEVarName,'colors',potColor
      OPTIONS,peakEVarName,'thick',3.0
@@ -674,7 +787,7 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
 
      varName = "ion_beamJ"
      STORE_DATA,varName,DATA={x:ionMomStructBeam.time, $
-                              y:ionMomStructBeam.j}
+                              y:plotBeamJ}
      ;; YLIM,varName,6e6,6e9,1
      OPTIONS,varName,'ytitle','Ion beam flux!C!C#/cm!U2!N-s'
      ;; OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'

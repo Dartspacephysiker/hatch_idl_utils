@@ -160,6 +160,44 @@ PRO TPLOT_BEAM_VS_HALFRANGE_ION_FLUXES, $
      ctNum            = 43
      LOADCT2,ctNum
 
+     ;; Check if we can narrow the plot
+     IF KEYWORD_SET(timeBars) THEN BEGIN
+
+        CASE NDIMEN(tBars) OF
+           0:
+           -1:
+           ELSE: BEGIN
+
+              IF N_ELEMENTS(tBars) GE 2 THEN BEGIN
+
+
+                 ;; proposedBef = (MIN(tBars) - 5)
+                 ;; proposedAft = tBars
+                 passer = WHERE((tBars GE tLimList[pIdx,0]) AND $
+                                (tBars LE tLimList[pIdx,1]))
+                 IF N_ELEMENTS(passer) GE 2 THEN BEGIN
+                    
+                    tLimList[pIdx,0] = MIN(tBars[passer]) - 5
+                    tLimList[pIdx,1] = MAX(tBars[passer]) + 5
+
+                 ENDIF
+
+                 ;; GAMRE MÅTE
+                 ;; IF proposedBef GT tLimList[pIdx,0] THEN BEGIN
+                 ;;    tLimList[pIdx,0] = MIN(tBars) - 5
+                 ;; ENDIF
+
+                 ;; IF (MAX(tBars) + 5) LT tLimList[pIdx,1] THEN BEGIN
+                 ;;    tLimList[pIdx,1] = MAX(tBars) + 5
+                 ;; ENDIF
+
+              ENDIF
+
+           END
+        ENDCASE
+
+     ENDIF
+
      TPLOT,REVERSE(tPlt_vars),VAR=['ALT','ILAT','MLT'], $
            WINDOW=wInd, $
      TRANGE=tLimList[pIdx]
