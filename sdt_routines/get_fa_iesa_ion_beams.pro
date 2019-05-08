@@ -4,6 +4,7 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                           IONDIFFEFLUX=ion_dEF, $
                           MCFADDEN_STYLE_DIFF_EFLUX=McFadden_diff_eFlux, $
                           ORBIT=orbit, $
+                          THRESH_BEAM_EFLUX=thresh_beam_eFlux, $
                           ;; NEWELL_2009_INTERP=Newell_2009_interp, $
                           ION_ANGLERANGE=ion_angleRange, $
                           ION_ENERGYRANGE=ion_energyRange, $
@@ -15,7 +16,13 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                           OUT_IONEVENTS=ionEvents, $
                           OUT_SC_POTAVG=sc_potAvg, $
                           BATCH_MODE=batch_mode, $
-                          USEPEAKENERGY=usePeakEnergy
+                          USEPEAKENERGY=usePeakEnergy, $
+                          EPHEMSTRUCT=ephemStruct, $
+                          MAKE_TPLOT=make_tplot, $
+                          SAVE_PS=save_ps
+
+  makeZeroThreshEFlux = KEYWORD_SET(thresh_beam_eFlux) ? thresh_beam_eFlux : 5e4
+  makeZeroVal = 0.001
   
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -31,6 +38,10 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
 
   saveIonName  = 'fa_ion_beams'
   saveIonName += '-' + orbString + (KEYWORD_SET(bonusPref) ? bonusPref : '' )
+
+  paSpecName = 'IesaPASpec'
+  tightEnSpecName = 'IesaTightEnSpec'
+  halfEnSpecName = 'IesaHalfRangeEnSpec'
 
   ;; IF N_ELEMENTS(Newell_2009_interp) GT 0 THEN BEGIN
   ;;    IF Newell_2009_interp EQ 0 THEN BEGIN
@@ -144,7 +155,7 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
               /RETRACE, $
               /CALIB
   GET_DATA,var_name, DATA=data
-  STORE_DATA,'IesaPASpec',DATA=data
+  STORE_DATA,paSpecName,DATA=data
 
   ;; var_name='Iesa_Energy'
   ;; GET_EN_SPEC,'fa_' + ieb_or_ies + '_c', $
@@ -200,7 +211,7 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
   ;; iAngle       = KEYWORD_SET(ion_angleRange     ) ? ion_angleRange      : [135.,225.]
   ;; iAngleChari  = iAngle
 
-  var_name='IesaPASpec'
+  var_name=paSpecName
   GET_DATA,var_name, DATA=paspec
 
   t1eeb = 0.D 
@@ -214,10 +225,6 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
 
      deFlux__array_of_structs  = KEYWORD_SET(McFadden_diff_eFlux)
 
-     paSpecName = 'IesaPASpec'
-     tightEnSpecName = 'IesaTightEnSpec'
-     halfEnSpecName = 'IesaHalfRangeEnSpec'
-     
      varName = tightEnSpecName
      enspec = GET_EN_SPEC__FROM_DIFF_EFLUX( $
               ion_dEF, $
@@ -233,6 +240,13 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
               OUT_TIME=out_time, $
               IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs, $
               QUIET=quiet)
+
+     ;; Try zis
+     badFruks = WHERE(enspec.y LT makeZeroThreshEFlux)
+     IF badFruks[0] NE -1 THEN BEGIN
+        enspec.y[badFruks] = makeZeroVal
+     ENDIF
+
      STORE_DATA,varName,DATA=enspec
 
      varName = halfEnSpecName
@@ -332,7 +346,7 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                      ARANGE__MOMENTS=ionBeam_aRange, $
                      SC_POT=sc_pot, $
                      EEB_OR_EES=ieb_or_ies, $
-                     /ERROR_ESTIMATES, $
+                     ;; /ERROR_ESTIMATES, $ ; Don't need these, vil jeg tro
                      ;; MAP_TO_100KM=map_to_100km, $ 
                      ORBIT=orbit, $
                      /NEW_MOMENT_ROUTINE, $
@@ -358,17 +372,36 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                      MCFADDEN_STYLE_DIFF_EFLUX=deFlux__array_of_structs
 
 
-     ;; Use moments that are based on energies between S/C pot and top of detector
-     ;; The ones that use 'enBeam' are those corresponding to the accelerated population
+     flipMe = WHERE(FINITE(ionMomStructBeam.j),nFlip,/NULL)
+
+     IF nFlip GT 0 THEN BEGIN
+
+        ionMomStruct.j[flipMe] = -1. * ionMomStruct.j[flipMe]
+        ionMomStruct.je[flipMe] = -1. * ionMomStruct.je[flipMe]
+        ionMomStruct.cur[flipMe] = -1. * ionMomStruct.cur[flipMe] ;Should this be flipped?
+
+        ionMomStructBeam.j[flipMe] = -1. * ionMomStructBeam.j[flipMe]
+        ionMomStructBeam.je[flipMe] = -1. * ionMomStructBeam.je[flipMe]
+        ionMomStructBeam.cur[flipMe] = -1. * ionMomStructBeam.cur[flipMe] ;Should this be flipped?
+
+     ENDIF
+
+     ;; Use moments that are based on energies between S/C pot and top of
+     ;; detector.
+     ;;
+     ;; The ones that use 'enBeam' are those corresponding to the accelerated
+     ;; population, which instead have a lower-energy bound that is AT the identified peak
+
      jiTight = {x: ionMomStruct.time, $
                 y: ionMomStruct.j}
 
      jeiTight = {x: ionMomStruct.time, $
                  y: ionMomStruct.je}
 
+
   ENDIF ELSE BEGIN
 
-     var_name = "IesaTightEnSpec"
+     var_name = tightEnSpecName
      GET_EN_SPEC,'fa_' + ieb_or_ies + '_c', $
                  T1=t1, $
                  T2=t2, $
@@ -377,7 +410,7 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                  ANGLE=ionBeam_aRange, $
                  /CALIB, $
                  RETRACE=1
-     var_name = "IesaHalfRangeEnSpec"
+     var_name = halfEnSpecName
      GET_EN_SPEC,'fa_' + ieb_or_ies + '_c', $
                  T1=t1, $
                  T2=t2, $
@@ -387,9 +420,9 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                  /CALIB, $
                  RETRACE=1
 
-     var_name='IesaTightEnSpec'
+     var_name=tightEnSpecName
      GET_DATA,var_name, DATA=enspec
-     var_name='IesaHalfRangeEnSpec'
+     var_name=halfEnSpecName
      GET_DATA,var_name,DATA=IesaHRSpec
 
      GET_2DT_TS_POT,'j_2d_fs','fa_' + ieb_or_ies, $
@@ -480,6 +513,210 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                     eBounds : peak_EBoundsArr, $
                     indShift : peakE_indShift}
      ionEvents = CREATE_STRUCT(ionEvents,'peakE',peakEStruct)
+  ENDIF
+
+  IF KEYWORD_SET(make_tplot) THEN BEGIN
+
+     savePref = "orb_" + STRING(FORMAT='(I0)',orbit)+"-beam_vs_up_ratios"$
+                +specAvgSuff
+     saveSuff = ".sav"
+
+     IF N_ELEMENTS(ephemStruct) EQ 0 THEN BEGIN
+        GET_FA_ORBIT,ion_dEF.time,/TIME_ARRAY,/ALL,STRUC=ephemStruct
+     ENDIF
+
+     ;; get_data,'ILAT',data=ILAT
+     ;; get_data,'MLT',data=MLT
+
+     ;; if (n_elements(ILAT.y) LE 0) then return
+
+     plot_ascN = 1
+     plot_descN = 1
+     plot_ascS = 1
+     plot_descS = 1
+
+     GET_N_S_ASCENDING_DESCENDING_TIME_LIMITS, $
+        {x:ephemStruct.time,y:ephemStruct.ilat}, $
+        TLIMN=tLimN, $
+        TLIMASCENDN=tLimNAscend, $
+        TLIMDESCENDN=tLimNDescend, $
+        TLIMS=tLimS, $
+        TLIMASCENDS=tLimSAscend, $
+        TLIMDESCENDS=tLimSDescend, $
+        NN=nN, $
+        NASCENDN=nNAscend, $
+        NDESCENDN=nNDescend, $
+        NS=nS, $
+        NORTHI=northI, $
+        SOUTHI=southI, $
+        NASCENDS=nSAscend, $
+        NDESCENDS=nSDescend, $
+        SAVETSTRN=saveTStrN, $
+        SAVETSTRS=saveTStrS, $
+        SAVETSTRASCENDN=saveTStrNAscend, $
+        SAVETSTRDESCENDN=saveTStrNDescend, $
+        SAVETSTRASCENDS=saveTStrSAscend, $
+        SAVETSTRDESCENDS=saveTStrSDescend
+
+     fName = savePref+saveSuff
+
+     IF N_ELEMENTS(saveTStrN) GT 0 THEN BEGIN
+        fNameN = savePref+'-'+saveTStrN+saveSuff
+        ;; fNameN = savePref+saveSuff
+        ;; PRINT,fNameN
+     ENDIF
+     IF N_ELEMENTS(saveTStrNAscend) GT 0 THEN BEGIN
+        fNameNAscend  = savePref+'-NASC-'+saveTStrNAscend+saveSuff
+        ;; PRINT,fNameNAscend
+     ENDIF
+     IF N_ELEMENTS(saveTStrNDescend) GT 0 THEN BEGIN
+        fNameNDescend = savePref+'-NDESC-'+saveTStrNDescend+saveSuff
+        ;; PRINT,fNameNDescend
+     ENDIF
+     IF N_ELEMENTS(saveTStrS) GT 0 THEN BEGIN
+        fNameS = savePref+'-'+saveTStrS+saveSuff
+        ;; PRINT,fNameS
+     ENDIF
+     IF N_ELEMENTS(saveTStrSAscend) GT 0 THEN BEGIN
+        fNameSAscend  = savePref+'-SASC-'+saveTStrSAscend+saveSuff
+        ;; PRINT,fNameSAscend
+     ENDIF
+     IF N_ELEMENTS(saveTStrSDescend) GT 0 THEN BEGIN
+        fNameSDescend = savePref+'-SDESC-'+saveTStrSDescend+saveSuff
+        ;; PRINT,fNameSDescend
+     ENDIF
+
+     ;; setup plots
+     varName = tightEnSpecName
+     ;; STORE_DATA,varName,DATA=eSpecUp
+     OPTIONS,varName,'spec',1
+     ZLIM,varName,1e4,1e8,1
+     ylim,varName,4,24000,1
+     OPTIONS,varName,'ytitle','Beam ions!C!CEnergy (eV)'
+     OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
+     OPTIONS,varName,'x_no_interp',1
+     OPTIONS,varName,'y_no_interp',1
+     OPTIONS,varName,'panel_size',typiskPanelSize
+     IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
+
+     varName = halfEnSpecName
+     ;; STORE_DATA,varName,DATA=eSpecDown
+     OPTIONS,varName,'spec',1
+     zlim,varName,1e4,1e8,1
+     ylim,varName,4,24000,1
+     OPTIONS,varName,'ytitle','Upward ions !C!CEnergy (eV)'
+     OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
+     OPTIONS,varName,'x_no_interp',1
+     OPTIONS,varName,'y_no_interp',1
+     OPTIONS,varName,'panel_size',typiskPanelSize
+     IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
+
+     ;; varName = allAngleVarNameN
+     ;; OPTIONS,varName,'spec',1
+     ;; zlim,varName,1e4,1e8,1
+     ;; ylim,varName,3,40000,1
+     ;; OPTIONS,varName,'ytitle','ions (all angles)!C!CEnergy (eV)'
+     ;; OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
+     ;; OPTIONS,varName,'x_no_interp',1
+     ;; OPTIONS,varName,'y_no_interp',1
+     ;; OPTIONS,varName,'panel_size',typiskPanelSize
+     ;; IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
+
+     ;; varName = "ratioN"
+     ;; data = upAllRatioSpecN
+     ;; STORE_DATA,varName,DATA=data
+     ;; OPTIONS,varName,'spec',1
+     ;; YLIM,varName,4,24000,1
+     ;; ZLIM,varName,0.1,100,1
+     ;; OPTIONS,varName,'ytitle',"Ion energy (eV)"
+     ;; OPTIONS,varName,'ztitle','Up/all-angle ion eFlux'
+     ;; OPTIONS,varName,'x_no_interp',1
+     ;; OPTIONS,varName,'y_no_interp',1
+
+     ;; IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
+
+     beamHalfRatioSpec = {x : enspec.x, $
+                          y : enspec.y / IesaHRSpec.y, $
+                          v : enspec.v}
+
+     beamHalfRatioSpecVarName = "ratioBeamHalf"
+     varName = beamHalfRatioSpecVarName
+     data = beamHalfRatioSpec
+     STORE_DATA,varName,DATA=data
+     OPTIONS,varName,'spec',1
+     YLIM,varName,4,24000,1
+     ZLIM,varName,0.1,1000,1
+     OPTIONS,varName,'ytitle',"Ion energy (eV)"
+     OPTIONS,varName,'ztitle','Beam/Up Ion Ratio'
+     OPTIONS,varName,'x_no_interp',1
+     OPTIONS,varName,'y_no_interp',1
+     OPTIONS,varName,'panel_size',typiskPanelSize
+
+     IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
+
+     hvit             = 255
+     peakEVarName = "peakE"
+     potLStyle = 0              ;solid
+     potColor  = hvit
+     STORE_DATA,peakEVarName,DATA={x:ionMomStructBeam.time, $
+                                    y:peak_energyArr}
+     OPTIONS,peakEVarName,'LINESTYLE',potLStyle
+     OPTIONS,peakEVarName,'colors',potColor
+     OPTIONS,peakEVarName,'thick',3.0
+
+     ;; eBoundLowVarName = "eBoundLow"
+     ;; potLStyle = 0              ;solid
+     ;; potColor  = 40
+     ;; STORE_DATA,eBoundLowVarName,DATA={x:eBound.x,y:eBound.yLow}
+     ;; OPTIONS,eBoundLowVarName,'LINESTYLE',potLStyle
+     ;; OPTIONS,eBoundLowVarName,'colors',potColor
+     ;; OPTIONS,eBoundLowVarName,'thick',3.0
+
+     varName = "ion_beamJ"
+     STORE_DATA,varName,DATA={x:ionMomStructBeam.time, $
+                              y:ionMomStructBeam.j}
+     ;; YLIM,varName,6e6,6e9,1
+     OPTIONS,varName,'ytitle','Ion beam flux!C!C#/cm!U2!N-s'
+     ;; OPTIONS,varName,'ztitle','eV/cm!U2!N-s-sr-eV'
+     OPTIONS,varName,'x_no_interp',1
+     OPTIONS,varName,'y_no_interp',1
+     OPTIONS,varName,'panel_size',1
+     IF (N_ELEMENTS(tPlt_vars) EQ 0) THEN tPlt_vars=[varName] ELSE tPlt_vars=[varName,tPlt_vars]
+
+     timeBars = 1
+     timeBar_from_ion_beams = 1
+
+     TPLOT_BEAM_VS_HALFRANGE_ION_FLUXES, $
+        tPlt_vars, $
+        PEAKEVARNAME=peakEVarName, $
+        ;; EBOUNDLOWVARNAME=eBoundLowVarName, $
+        BEAMHALFRATIOSPECVARNAME=beamHalfRatioSpecVarName, $
+        PLOT_ASCENDING_NORTH=plot_ascN, $
+        PLOT_ASCENDING_SOUTH=plot_ascS, $
+        PLOT_DESCENDING_NORTH=plot_descN, $
+        PLOT_DESCENDING_SOUTH=plot_descS, $
+        TLIMASCENDN=tLimNAscend, $
+        TLIMDESCENDN=tLimNDescend, $
+        TLIMS=tLimS, $
+        TLIMASCENDS=tLimSAscend, $
+        TLIMDESCENDS=tLimSDescend, $
+        FNAMENASCEND=fNameNAscend, $
+        FNAMENDESCEND=fNameNDescend, $
+        FNAMESASCEND=fNameSAscend, $
+        FNAMESDESCEND=fNameSDescend, $
+        SAVETSTRN=saveTStrN, $
+        SAVETSTRS=saveTStrS, $
+        SAVETSTRASCENDN=saveTStrNAscend, $
+        SAVETSTRDESCENDN=saveTStrNDescend, $
+        SAVETSTRASCENDS=saveTStrSAscend, $
+        SAVETSTRDESCENDS=saveTStrSDescend, $
+        SAVE_PS=save_ps, $
+        MAKE_SPECIAL_JGR_PLOT=make_special_JGR_plot, $
+        SAVEPREF=savePref, $
+        TIMEBARS=timeBars, $
+        TIMEBAR_FROM_ION_BEAMS=timeBar_from_ion_beams, $
+        IONEVENTS=ionEvents
+
   ENDIF
 
   ;; SAVE,ionEvents,FILENAME='/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/orb1694_iondata.sav'

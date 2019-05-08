@@ -140,7 +140,14 @@ PRO GET_STREAKS,input, $
   ENDELSE
 
   streakLens                        = stop_i-start_i
-  gapLens                           = input[start_i[1:-1]]-input[stop_i[0:-2]]
+  CASE N_ELEMENTS(start_i) OF
+     1: BEGIN
+        gapLens = -1
+     END
+     ELSE: BEGIN
+        gapLens                     = input[start_i[1:-1]]-input[stop_i[0:-2]]
+     END
+  ENDCASE
 
   n_streaks                         = N_ELEMENTS(WHERE(streakLens GT 0,/NULL))
   IF ~(no_print_summary OR KEYWORD_SET(quiet)) THEN BEGIN

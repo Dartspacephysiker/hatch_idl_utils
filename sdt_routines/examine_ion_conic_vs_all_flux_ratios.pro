@@ -1,104 +1,105 @@
 ;Opprinnelig fra 2018/07/20-dagbokfilen JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS
-PRO GET_N_S_ASCENDING_DESCENDING_TIME_LIMITS, $
-     ilat, $
-     TLIMN=tLimN, $
-     TLIMASCENDN=tLimNAscend, $
-     TLIMDESCENDN=tLimNDescend, $
-     TLIMS=tLimS, $
-     TLIMASCENDS=tLimSAscend, $
-     TLIMDESCENDS=tLimSDescend, $
-     NN=nN, $
-     NASCENDN=nNAscend, $
-     NDESCENDN=nNDescend, $
-     NS=nS, $
-     NASCENDS=nSAscend, $
-     NDESCENDS=nSDescend, $
-     NORTHI=northI, $
-     SOUTHI=southI, $
-     SAVETSTRN=saveTStrN, $
-     SAVETSTRS=saveTStrS, $
-     SAVETSTRASCENDN=saveTStrNAscend, $
-     SAVETSTRDESCENDN=saveTStrNDescend, $
-     SAVETSTRASCENDS=saveTStrSAscend, $
-     SAVETSTRDESCENDS=saveTStrSDescend
+;; This one har nå en egen fil 
+;; PRO GET_N_S_ASCENDING_DESCENDING_TIME_LIMITS, $
+;;      ilat, $
+;;      TLIMN=tLimN, $
+;;      TLIMASCENDN=tLimNAscend, $
+;;      TLIMDESCENDN=tLimNDescend, $
+;;      TLIMS=tLimS, $
+;;      TLIMASCENDS=tLimSAscend, $
+;;      TLIMDESCENDS=tLimSDescend, $
+;;      NN=nN, $
+;;      NASCENDN=nNAscend, $
+;;      NDESCENDN=nNDescend, $
+;;      NS=nS, $
+;;      NASCENDS=nSAscend, $
+;;      NDESCENDS=nSDescend, $
+;;      NORTHI=northI, $
+;;      SOUTHI=southI, $
+;;      SAVETSTRN=saveTStrN, $
+;;      SAVETSTRS=saveTStrS, $
+;;      SAVETSTRASCENDN=saveTStrNAscend, $
+;;      SAVETSTRDESCENDN=saveTStrNDescend, $
+;;      SAVETSTRASCENDS=saveTStrSAscend, $
+;;      SAVETSTRDESCENDS=saveTStrSDescend
 
-  saveTStrN        = !NULL
-  saveTStrS        = !NULL
-  saveTStrNAscend  = !NULL
-  saveTStrNDescend = !NULL
-  saveTStrSAscend  = !NULL
-  saveTStrSDescend = !NULL
+;;   saveTStrN        = !NULL
+;;   saveTStrS        = !NULL
+;;   saveTStrNAscend  = !NULL
+;;   saveTStrNDescend = !NULL
+;;   saveTStrSAscend  = !NULL
+;;   saveTStrSDescend = !NULL
 
-  diffILAT = ilat.y[1:-1]-ilat.y[0:-2]
+;;   diffILAT = ilat.y[1:-1]-ilat.y[0:-2]
 
-  ;; Make sure monotonic
-  CHECK_SORTED,ilat.x,is_sorted
-  IF ~is_sorted THEN STOP
+;;   ;; Make sure monotonic
+;;   CHECK_SORTED,ilat.x,is_sorted
+;;   IF ~is_sorted THEN STOP
 
-  northI = where(ilat.y GT 0,nN)
-  ;; northI = where(ilat.y GT 10 AND (mlt.y GE 9 AND MLT.y LE 15),nn)
-  IF (nN GT 0) then BEGIN
-     tLimN=[ilat.x[northI[0]],ilat.x[northI[-1]]]
-     tLimN=[DOUBLE(FLOOR(tLimN[0])),DOUBLE(CEIL(tLimN[1]))]
-     tLimNStr=T2S(tLimN)
-     saveTStrN = STRMID(tLimNStr[0],0,10)                      + "__" $
-                 + (STRMID(tLimNStr[0],11,8)).Replace(":","_") + "-"  $
-                 + (STRMID(tLimNStr[1],11,8)).Replace(":","_")
+;;   northI = where(ilat.y GT 0,nN)
+;;   ;; northI = where(ilat.y GT 10 AND (mlt.y GE 9 AND MLT.y LE 15),nn)
+;;   IF (nN GT 0) then BEGIN
+;;      tLimN=[ilat.x[northI[0]],ilat.x[northI[-1]]]
+;;      tLimN=[DOUBLE(FLOOR(tLimN[0])),DOUBLE(CEIL(tLimN[1]))]
+;;      tLimNStr=T2S(tLimN)
+;;      saveTStrN = STRMID(tLimNStr[0],0,10)                      + "__" $
+;;                  + (STRMID(tLimNStr[0],11,8)).Replace(":","_") + "-"  $
+;;                  + (STRMID(tLimNStr[1],11,8)).Replace(":","_")
 
-     nAscendII = WHERE(diffILAT[northI] GE 0,nNAscend, $
-                       COMPLEMENT=nDescendII, $
-                       NCOMPLEMENT=nNDescend)
-     IF (nNAscend GT 0) THEN BEGIN
-        nAscendI = northI[nAscendII]
-        tLimNAscend=[ilat.x[nAscendI[0]],ilat.x[nAscendI[-1]]]
-        tLimNAscendStr=T2S(tLimNAscend)
-        saveTStrNAscend = STRMID(tLimNAscendStr[0],0,10)                + "__" $
-                          + (STRMID(tLimNAscendStr[0],11,8)).Replace(":","_") + "-"  $
-                          + (STRMID(tLimNAscendStr[1],11,8)).Replace(":","_")
-     ENDIF
-     IF (nNDescend GT 0) THEN BEGIN
-        nDescendI = northI[nDescendII]
-        tLimNDescend=[ilat.x[nDescendI[0]],ilat.x[nDescendI[-1]]]
-        tLimNDescendStr=T2S(tLimNDescend)
-        saveTStrNDescend = STRMID(tLimNDescendStr[0],0,10)                + "__" $
-                           + (STRMID(tLimNDescendStr[0],11,8)).Replace(":","_") + "-"  $
-                           + (STRMID(tLimNDescendStr[1],11,8)).Replace(":","_")
-     ENDIF
+;;      nAscendII = WHERE(diffILAT[northI] GE 0,nNAscend, $
+;;                        COMPLEMENT=nDescendII, $
+;;                        NCOMPLEMENT=nNDescend)
+;;      IF (nNAscend GT 0) THEN BEGIN
+;;         nAscendI = northI[nAscendII]
+;;         tLimNAscend=[ilat.x[nAscendI[0]],ilat.x[nAscendI[-1]]]
+;;         tLimNAscendStr=T2S(tLimNAscend)
+;;         saveTStrNAscend = STRMID(tLimNAscendStr[0],0,10)                + "__" $
+;;                           + (STRMID(tLimNAscendStr[0],11,8)).Replace(":","_") + "-"  $
+;;                           + (STRMID(tLimNAscendStr[1],11,8)).Replace(":","_")
+;;      ENDIF
+;;      IF (nNDescend GT 0) THEN BEGIN
+;;         nDescendI = northI[nDescendII]
+;;         tLimNDescend=[ilat.x[nDescendI[0]],ilat.x[nDescendI[-1]]]
+;;         tLimNDescendStr=T2S(tLimNDescend)
+;;         saveTStrNDescend = STRMID(tLimNDescendStr[0],0,10)                + "__" $
+;;                            + (STRMID(tLimNDescendStr[0],11,8)).Replace(":","_") + "-"  $
+;;                            + (STRMID(tLimNDescendStr[1],11,8)).Replace(":","_")
+;;      ENDIF
 
-  ENDIF
+;;   ENDIF
 
-  southI = where(ilat.y LT 0,nS)
-  if (nS GT 0) THEN BEGIN
-     tLimS=[ilat.x[southI[0]],ilat.x[southI[-1]]]
-     tLimS=[DOUBLE(FLOOR(tLimS[0])),DOUBLE(CEIL(tLimS[1]))]
-     tLimSStr=T2S(tLimS)
-     saveTStrS = STRMID(tLimSStr[0],0,10)                      + "__" $
-                 + (STRMID(tLimSStr[0],11,8)).Replace(":","_") + "-"  $
-                 + (STRMID(tLimSStr[1],11,8)).Replace(":","_")
+;;   southI = where(ilat.y LT 0,nS)
+;;   if (nS GT 0) THEN BEGIN
+;;      tLimS=[ilat.x[southI[0]],ilat.x[southI[-1]]]
+;;      tLimS=[DOUBLE(FLOOR(tLimS[0])),DOUBLE(CEIL(tLimS[1]))]
+;;      tLimSStr=T2S(tLimS)
+;;      saveTStrS = STRMID(tLimSStr[0],0,10)                      + "__" $
+;;                  + (STRMID(tLimSStr[0],11,8)).Replace(":","_") + "-"  $
+;;                  + (STRMID(tLimSStr[1],11,8)).Replace(":","_")
 
-     sAscendII = WHERE(diffILAT[southI] GE 0,nSAscend, $
-                       COMPLEMENT=sDescendII, $
-                       NCOMPLEMENT=nSDescend)
-     IF (nSAscend GT 0) THEN BEGIN
-        sAscendI = southI[sAscendII]
-        tLimSAscend=[ilat.x[sAscendI[0]],ilat.x[sAscendI[-1]]]
-        tLimSAscendStr=T2S(tLimSAscend)
-        saveTStrSAscend = STRMID(tLimSAscendStr[0],0,10)                + "__" $
-                          + (STRMID(tLimSAscendStr[0],11,8)).Replace(":","_") + "-"  $
-                          + (STRMID(tLimSAscendStr[1],11,8)).Replace(":","_")
-     ENDIF
+;;      sAscendII = WHERE(diffILAT[southI] GE 0,nSAscend, $
+;;                        COMPLEMENT=sDescendII, $
+;;                        NCOMPLEMENT=nSDescend)
+;;      IF (nSAscend GT 0) THEN BEGIN
+;;         sAscendI = southI[sAscendII]
+;;         tLimSAscend=[ilat.x[sAscendI[0]],ilat.x[sAscendI[-1]]]
+;;         tLimSAscendStr=T2S(tLimSAscend)
+;;         saveTStrSAscend = STRMID(tLimSAscendStr[0],0,10)                + "__" $
+;;                           + (STRMID(tLimSAscendStr[0],11,8)).Replace(":","_") + "-"  $
+;;                           + (STRMID(tLimSAscendStr[1],11,8)).Replace(":","_")
+;;      ENDIF
 
-     IF (nSDescend GT 0) THEN BEGIN
-        sDescendI = southI[sDescendII]
-        tLimSDescend=[ilat.x[sDescendI[0]],ilat.x[sDescendI[-1]]]
-        tLimSDescendStr=T2S(tLimSDescend)
-        saveTStrSDescend = STRMID(tLimSDescendStr[0],0,10)                + "__" $
-                           + (STRMID(tLimSDescendStr[0],11,8)).Replace(":","_") + "-"  $
-                           + (STRMID(tLimSDescendStr[1],11,8)).Replace(":","_")
-     ENDIF
-  ENDIF
+;;      IF (nSDescend GT 0) THEN BEGIN
+;;         sDescendI = southI[sDescendII]
+;;         tLimSDescend=[ilat.x[sDescendI[0]],ilat.x[sDescendI[-1]]]
+;;         tLimSDescendStr=T2S(tLimSDescend)
+;;         saveTStrSDescend = STRMID(tLimSDescendStr[0],0,10)                + "__" $
+;;                            + (STRMID(tLimSDescendStr[0],11,8)).Replace(":","_") + "-"  $
+;;                            + (STRMID(tLimSDescendStr[1],11,8)).Replace(":","_")
+;;      ENDIF
+;;   ENDIF
 
-END
+;; END
 
 PRO TPLOT_UP_VS_DOWN_ION_FLUXES, $
    tPlt_vars, $
@@ -267,7 +268,7 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
    NO_PLOTS=no_plots, $
    ORBIT=orbit, $
    OUT_ORBIT=out_orbit, $
-   OUTSTRUCT_ORBIT=struc, $
+   OUTSTRUCT_ORBIT=ephemStruct, $
    MISLYKTES=mislyktes, $
    TPLT_VARS=tplt_vars, $
    ADD_EBOUND_INFO_TO_IONMOMSTRUCT=add_eBound_info_to_ionMomStruct
@@ -298,7 +299,7 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
   IF KEYWORD_SET(do_not_enforce_sample_rate) THEN BEGIN
      PRINT,"EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS: Not enforcing sample rate ..."
      enforce_diff_eFlux_sRate = 0
-  ENDIF ELSE IF KEYWORD_SET(enforce_diff_eFlux_sRate) THEN BEGIN
+  ENDIF ELSE IF KEYWORD_SET(enforce_this_sample_rate) THEN BEGIN
      enforce_diff_eFlux_sRate = enforce_this_sample_rate
   ENDIF ELSE BEGIN
      PRINT,"enforce_diff_eFlux_sRate = 2.5 by default ..."
@@ -450,7 +451,7 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
   tDiffs     = diff_eFlux.end_time - diff_eFlux.time
 
   ;; Now get times corresponding to diff_eFlux
-  GET_FA_ORBIT,diff_eFlux.time,/TIME_ARRAY,/ALL,STRUC=struc
+  GET_FA_ORBIT,diff_eFlux.time,/TIME_ARRAY,/ALL,STRUC=ephemStruct
 
   get_data,'ILAT',data=ILAT
   get_data,'MLT',data=MLT
@@ -486,27 +487,27 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
   IF N_ELEMENTS(saveTStrN) GT 0 THEN BEGIN
      fNameN = savePref+'-'+saveTStrN+saveSuff
      ;; fNameN = savePref+saveSuff
-     PRINT,fNameN
+     ;; PRINT,fNameN
   ENDIF
   IF N_ELEMENTS(saveTStrNAscend) GT 0 THEN BEGIN
      fNameNAscend  = savePref+'-NASC-'+saveTStrNAscend+saveSuff
-     PRINT,fNameNAscend
+     ;; PRINT,fNameNAscend
   ENDIF
   IF N_ELEMENTS(saveTStrNDescend) GT 0 THEN BEGIN
      fNameNDescend = savePref+'-NDESC-'+saveTStrNDescend+saveSuff
-     PRINT,fNameNDescend
+     ;; PRINT,fNameNDescend
   ENDIF
   IF N_ELEMENTS(saveTStrS) GT 0 THEN BEGIN
      fNameS = savePref+'-'+saveTStrS+saveSuff
-     PRINT,fNameS
+     ;; PRINT,fNameS
   ENDIF
   IF N_ELEMENTS(saveTStrSAscend) GT 0 THEN BEGIN
      fNameSAscend  = savePref+'-SASC-'+saveTStrSAscend+saveSuff
-     PRINT,fNameSAscend
+     ;; PRINT,fNameSAscend
   ENDIF
   IF N_ELEMENTS(saveTStrSDescend) GT 0 THEN BEGIN
      fNameSDescend = savePref+'-SDESC-'+saveTStrSDescend+saveSuff
-     PRINT,fNameSDescend
+     ;; PRINT,fNameSDescend
   ENDIF
 
   ;; t1Str = '1998-09-25/00:00:00'
