@@ -14,7 +14,8 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                           SC_POT=sc_pot, $
                           OUT_IONEVENTS=ionEvents, $
                           OUT_SC_POTAVG=sc_potAvg, $
-                          BATCH_MODE=batch_mode
+                          BATCH_MODE=batch_mode, $
+                          USEPEAKENERGY=usePeakEnergy
   
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -211,14 +212,6 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
 
   IF KEYWORD_SET(useDiffEflux) THEN BEGIN
 
-     en   = MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX(ion_dEF, $
-                                               ENERGY=[0.,ion_ER[1]], $
-                                               SC_POT=sc_pot, $
-                                               MIN_IF_NAN_SCPOTS=min_if_nan_scpots, $
-                                               EEB_OR_EES=eeb_or_ees)
-
-     
-
      deFlux__array_of_structs  = KEYWORD_SET(McFadden_diff_eFlux)
 
      paSpecName = 'IesaPASpec'
@@ -227,40 +220,77 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
      
      varName = tightEnSpecName
      enspec = GET_EN_SPEC__FROM_DIFF_EFLUX( $
-               ion_dEF, $
-               T1=t1, $
-               T2=t2, $
-               /RETRACE, $
-               ANGLE=ionBeam_aRange, $
-               UNITS=specUnits, $
-               NAME=varName, $
-               OUT_AVGFACTORARR=avgFactorArr, $
-               OUT_NORMARR=normArr, $
-               BAD_TIME=bad_time, $
-               OUT_TIME=out_time, $
-               IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs)
+              ion_dEF, $
+              T1=t1, $
+              T2=t2, $
+              /RETRACE, $
+              ANGLE=ionBeam_aRange, $
+              UNITS=specUnits, $
+              NAME=varName, $
+              OUT_AVGFACTORARR=avgFactorArr, $
+              OUT_NORMARR=normArr, $
+              BAD_TIME=bad_time1, $
+              OUT_TIME=out_time, $
+              IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs, $
+              QUIET=quiet)
      STORE_DATA,varName,DATA=enspec
 
      varName = halfEnSpecName
      IesaHRSpec = GET_EN_SPEC__FROM_DIFF_EFLUX( $
-               ion_dEF, $
-               T1=t1, $
-               T2=t2, $
-               /RETRACE, $
-               ANGLE=ion_halfRange, $
-               UNITS=specUnits, $
-               NAME=varName, $
-               OUT_AVGFACTORARR=avgFactorArr, $
-               OUT_NORMARR=normArr, $
-               BAD_TIME=bad_time, $
-               OUT_TIME=out_time, $
-               IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs)
+                  ion_dEF, $
+                  T1=t1, $
+                  T2=t2, $
+                  /RETRACE, $
+                  ANGLE=ion_halfRange, $
+                  UNITS=specUnits, $
+                  NAME=varName, $
+                  OUT_AVGFACTORARR=avgFactorArr, $
+                  OUT_NORMARR=normArr, $
+                  BAD_TIME=bad_time2, $
+                  OUT_TIME=out_time, $
+                  IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs, $
+                  /QUIET)
      STORE_DATA,varName,DATA=IesaHRSpec
 
 
+     IF KEYWORD_SET(usePeakEnergy) THEN BEGIN
+
+        ;; this         = WHERE((bad_time1 EQ 1) OR (bad_time1 EQ 0))
+        this = VALUE_CLOSEST2(enspec.x, $
+                              ion_dEF.time $
+                              +(ion_dEF.end_time-ion_dEF.time)/2., $
+                              /CONSTRAINED)
+
+        GET_PEAK_ENERGY_FROM_DIFF_EFLUX_AND_ESPEC, $
+           ion_dEF, {x:enspec.x[this], $
+                     y:enspec.y[this,*], $
+                     v:enspec.v[this,*], $
+                     yerr:enspec.yerr[this,*], $
+                     verr:enspec.verr[this,*]}, $
+           PEAKE_BOUNDS_INDSHIFT=peakE_bounds_indShift, $
+           OUT_PEAK_INDARR=peak_indArr, $
+           OUT_PEAK_ENERGYARR=peak_energyArr, $
+           OUT_PEAK_DEARR=peak_dEArr, $
+           OUT_PEAK_EBOUNDSARR=peak_EBoundsArr, $
+           OUT_PEAKE_INDSHIFT=peakE_indShift
+
+        enBounds = peak_eBoundsArr
+
+     ENDIF ELSE BEGIN
+
+        enBounds = [0.,ion_ER[1]]
+
+     ENDELSE
+
+     enBeam   = MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX(ion_dEF, $
+                                                   ENERGY=enBounds, $
+                                                   SC_POT=sc_pot, $
+                                                   MIN_IF_NAN_SCPOTS=min_if_nan_scpots, $
+                                                   EEB_OR_EES=eeb_or_ees)
+
      MOMENT_SUITE_2D,ion_dEF, $
                      ;; ENERGY=[0.,ion_ER[1]], $
-                     ENERGY=en, $
+                     ENERGY=enBeam, $
                      ARANGE__MOMENTS=ionBeam_aRange, $
                      SC_POT=sc_pot, $
                      EEB_OR_EES=ieb_or_ies, $
@@ -268,7 +298,45 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                      ;; MAP_TO_100KM=map_to_100km, $ 
                      ORBIT=orbit, $
                      /NEW_MOMENT_ROUTINE, $
-                     QUIET=quiet, $
+                     /QUIET, $
+                     OUTTIME=time, $
+                     OUT_N=n, $
+                     OUT_J_=j, $
+                     OUT_JE=je, $
+                     OUT_T=T, $
+                     OUT_CHARE=charE, $
+                     OUT_CURRENT=cur, $
+                     OUT_JJE_COVAR=jje_coVar, $
+                     OUT_ERRORS=errors, $
+                     OUT_ERR_N=nErr, $
+                     OUT_ERR_J_=jErr, $
+                     OUT_ERR_JE=jeErr, $
+                     OUT_ERR_T=TErr, $
+                     OUT_ERR_CURRENT=curErr, $
+                     OUT_ERR_CHARE=charEErr, $
+                     INOUT_MAPRATIO=mapRatio, $
+                     OUT_STRUCT=ionMomStructBeam, $
+                     BATCH_MODE=batch_mode, $
+                     MCFADDEN_STYLE_DIFF_EFLUX=deFlux__array_of_structs
+
+     enBounds = [0.,ion_ER[1]]
+     enAll    = MAKE_ENERGY_ARRAYS__FOR_DIFF_EFLUX(ion_dEF, $
+                                                   ENERGY=enBounds, $
+                                                   SC_POT=sc_pot, $
+                                                   MIN_IF_NAN_SCPOTS=min_if_nan_scpots, $
+                                                   EEB_OR_EES=eeb_or_ees)
+
+     MOMENT_SUITE_2D,ion_dEF, $
+                     ;; ENERGY=[0.,ion_ER[1]], $
+                     ENERGY=enAll, $
+                     ARANGE__MOMENTS=ionBeam_aRange, $
+                     SC_POT=sc_pot, $
+                     EEB_OR_EES=ieb_or_ies, $
+                     /ERROR_ESTIMATES, $
+                     ;; MAP_TO_100KM=map_to_100km, $ 
+                     ORBIT=orbit, $
+                     /NEW_MOMENT_ROUTINE, $
+                     /QUIET, $
                      OUTTIME=time, $
                      OUT_N=n, $
                      OUT_J_=j, $
@@ -289,6 +357,9 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                      BATCH_MODE=batch_mode, $
                      MCFADDEN_STYLE_DIFF_EFLUX=deFlux__array_of_structs
 
+
+     ;; Use moments that are based on energies between S/C pot and top of detector
+     ;; The ones that use 'enBeam' are those corresponding to the accelerated population
      jiTight = {x: ionMomStruct.time, $
                 y: ionMomStruct.j}
 
@@ -344,15 +415,26 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
   chari   = jeiTight.y/jiTight.y*6.242*1.0e11
   compSpec = IesaHRSpec
 
-  this           = VALUE_CLOSEST2(enspec.x,jeiTight.x,/CONSTRAINED) 
-  enspec         = {x:enspec.x[this],y:enspec.y[this,*],v:enspec.v[this,*]}
-  this           = VALUE_CLOSEST2(compSpec.x,jeiTight.x,/CONSTRAINED) 
-  compSpec     = {x:compSpec.x[this],y:compSpec.y[this,*],v:compSpec.v[this,*]}
+  ;; this           = VALUE_CLOSEST2(enspec.x,jeiTight.x,/CONSTRAINED)
+  this         = WHERE((bad_time1 EQ 1) OR (bad_time1 EQ 0))
+  enspec       = {x:enspec.x[this], $
+                  y:enspec.y[this,*], $
+                  v:enspec.v[this,*], $
+                  yerr:enspec.yerr[this,*], $
+                  verr:enspec.verr[this,*]}
+  ;; this           = VALUE_CLOSEST2(compSpec.x,jeiTight.x,/CONSTRAINED) 
+  this         = WHERE((bad_time2 EQ 1) OR (bad_time2 EQ 0))
+  compSpec     = {x:compSpec.x[this], $
+                  y:compSpec.y[this,*], $
+                  v:compSpec.v[this,*], $
+                  yerr:compspec.yerr[this,*], $
+                  verr:compspec.verr[this,*]}
 
   that           = VALUE_CLOSEST2(sc_potAvg.x,jeiTight.x,/CONSTRAINED) 
   sc_potAvgIn    = sc_potAvg.y[that]
 
   GET_FA_ORBIT,enspec.x,/TIME_ARRAY,/NO_STORE,STRUC=ionEphem
+
   IDENTIFY_DIFF_EFLUXES_AND_CREATE_STRUCT,enspec,jeiTight,jiTight, $
                                           ionEphem.mlt,ionEphem.ilat,ionEphem.alt,ionEphem.orbit, $
                                           ionEvents, $
@@ -367,15 +449,17 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
   ion_erArr[0,*] = ion_erArr[0,*] > (sc_potAvgIn*(-1.))
 
   IF KEYWORD_SET(useDiffEflux) THEN BEGIN
-     ionEvents = {pa     : paspec, $
-                  en     : enspec, $
+     ionEvents = {pa         : paspec, $
+                  en         : enspec, $
                   ;; ji     : jiTight, $
                   ;; jei    : jeiTight, $
                   ;; chari  : chari, $
-                  moms   :ionMomStruct, $
-                  newell : ionEvents, $
-                  arange : ionBeam_aRange, $
-                  erange : ion_erArr}
+                  momsAll    : ionMomStruct, $
+                  erangeAll  : ion_erArr, $
+                  momsBeam   : ionMomStructBeam, $
+                  erangeBeam : enBeam, $
+                  arange     : ionBeam_aRange, $
+                  newell     : ionEvents}
   ENDIF ELSE BEGIN
      ionEvents = {pa     : paspec, $
                   en     : enspec, $
@@ -387,6 +471,17 @@ PRO GET_FA_IESA_ION_BEAMS,time1,time2, $
                   erange : ion_erArr}
 
   ENDELSE
+
+  IF KEYWORD_SET(usePeakEnergy) THEN BEGIN
+
+     peakEStruct = {ind   : peak_indArr, $
+                    energy : peak_energyArr, $
+                    de     : peak_dEArr, $
+                    eBounds : peak_EBoundsArr, $
+                    indShift : peakE_indShift}
+     ionEvents = CREATE_STRUCT(ionEvents,'peakE',peakEStruct)
+  ENDIF
+
   ;; SAVE,ionEvents,FILENAME='/SPENCEdata/software/sdt/batch_jobs/saves_output_etc/orb1694_iondata.sav'
 
 END

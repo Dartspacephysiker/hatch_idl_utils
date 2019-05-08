@@ -30,7 +30,8 @@
 ;MOD HISTORY:
 ;		97/03/04	T1,T2 keywords added
 ;		97/05/22	CALIB keyword added
-;
+;               19/05/07        'BAD_TIME = 2' means issue with gap_time
+;                               'BAD_TIME = 1' means data.valid == 0
 ;
 ;NOTES:	  
 ;	Current version only works for FAST
@@ -58,7 +59,8 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
                                       OUT_AVGFACTORARR=avgFactorArr, $
                                       OUT_NORMARR=normArr, $
                                       OUT_TIME=out_time, $
-                                      BAD_TIME=bad_time
+                                      BAD_TIME=bad_time, $
+                                      QUIET=quiet
 
   COMPILE_OPT IDL2,STRICTARRSUBS
   
@@ -130,6 +132,8 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
   datInd = 0
   FOR k=0,max-1 DO BEGIN
 
+     ;; print,k
+
      IF datInd GE nHere THEN BREAK 
 
      dat = MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX( $
@@ -152,7 +156,7 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
         dvar[k,*]  = missing
 
         ;; PRINT,'Invalid packet, diff_eFlux.valid ne 1, at: ',TIME_TO_STR(diff_eFlux.time[k])
-        PRINT,'Invalid packet, diff_eFlux.valid ne 1, at: ',TIME_TO_STR(dat.time)
+        IF NOT KEYWORD_SET(quiet) THEN PRINT,'GET_EN_SPEC__FROM_DIFF_EFLUX: Invalid packet, diff_eFlux.valid ne 1, at: ',TIME_TO_STR(dat.time)
 
         CONTINUE
      ENDIF
@@ -184,24 +188,27 @@ FUNCTION GET_EN_SPEC__FROM_DIFF_EFLUX,diff_eFlux,  $
      IF ABS((dat.time+dat.end_time)/2.-last_time) GE gap_time THEN BEGIN
         IF k GE 2 THEN dbadtime = time[k-1] - time[k-2] else dbadtime = gap_time/2.
         time[k]    = (last_time) + dbadtime
-        bad_time[k] = 1B
+        bad_time[k] = 2B
         out_time[k]= dat.time
         data[k,*]  = missing
         ddata[k,*] = missing
         var[k,*]   = missing
         dvar[k,*]  = missing
         k++
+        ;; print,k,"BONUS"
+
         ;; IF (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2. GT time[k-1] + gap_time THEN BEGIN
         IF (dat.time+dat.end_time)/2. GT time[k-1] + gap_time THEN BEGIN
            ;; time[k]   = (diff_eFlux.time[k]+diff_eFlux.end_time[k])/2. - dbadtime
            time[k]    = (dat.time+dat.end_time)/2. - dbadtime
-           bad_time[k] = 1B
+           bad_time[k] = 2B
            out_time[k]= dat.time
            data[k,*]  = missing
            ddata[k,*] = missing
            var[k,*]   = missing
            dvar[k,*]  = missing
            k++
+        ;; print,k,"BONUS"
         ENDIF
      ENDIF
 

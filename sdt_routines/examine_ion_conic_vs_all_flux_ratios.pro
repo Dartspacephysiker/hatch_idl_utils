@@ -1,4 +1,4 @@
-;2018/07/20
+;Opprinnelig fra 2018/07/20-dagbokfilen JOURNAL__20180720__LOOK_AT_CONIC_VS_ALL_FLUX_RATIOS
 PRO GET_N_S_ASCENDING_DESCENDING_TIME_LIMITS, $
      ilat, $
      TLIMN=tLimN, $
@@ -234,6 +234,7 @@ PRO TPLOT_UP_VS_DOWN_ION_FLUXES, $
 END
 
 PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
+   TIMES=times, $
    UPDOWNMINRATIO=upDownMinRatio, $
    MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
    FRACBELOWTHATMUSTBEUPWARD=fracBelowThatMustBeUpward, $
@@ -264,14 +265,25 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
    SAVE_PS=save_ps, $
    MAKE_SPECIAL_JGR_PLOT=make_special_JGR_plot, $
    NO_PLOTS=no_plots, $
+   ORBIT=orbit, $
    OUT_ORBIT=out_orbit, $
    OUTSTRUCT_ORBIT=struc, $
-   MISLYKTES=mislyktes
+   MISLYKTES=mislyktes, $
+   TPLT_VARS=tplt_vars, $
+   ADD_EBOUND_INFO_TO_IONMOMSTRUCT=add_eBound_info_to_ionMomStruct
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
   ;; UPFLOWVERSION = '20190116'
-  UPFLOWVERSION = '20190117'    ;Forgot to add .type member to ionupj!!
+  ;; UPFLOWVERSION = '20190117'    ;Forgot to add .type member to ionupj!!
+
+  ;; 20190407
+  ;; i.   Added 'only_leeward_ions' to struct.info in MOMENT_SUITE_2D
+  ;; ii.  We now ALSO flip signs of j, je, and cur in ionMomStruct (no longer just ionUpJ)
+  ;; iii. We now ALSO double n, j, je, and cur in ionMomStruct if only leeward (no longer just ionUpJ)
+  ;; iv.  We turn on ionMomStruct.info.only_leeward_ions if only leeward
+  ;; v.   To save me time remembering in the future, struct member 'errors_are_fractional' has been added to ionMomStruct.info (= 0B by default) 
+  UPFLOWVERSION = '20190407'
 
   remake_file = 0
 
@@ -338,14 +350,19 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
 
   calib = 1
 
-  tRange = GET_ESA_TIMERANGES__RASKT(/IONS,OUT_TIME_ARRAY=times)
+  IF N_ELEMENTS(times) EQ 0 THEN BEGIN
+     tRange = GET_ESA_TIMERANGES__RASKT(/IONS,OUT_TIME_ARRAY=times)
+  ENDIF
 
-  GET_FA_ORBIT,times,/TIME_ARRAY
+  IF N_ELEMENTS(orbit) EQ 0 THEN BEGIN
+     GET_FA_ORBIT,times,/TIME_ARRAY
 
-  nHere = N_ELEMENTS(times)
-  GET_DATA,"ORBIT",DATA=orbit
-  orbit = orbit.y[nHere/2]
+     nHere = N_ELEMENTS(times)
+     GET_DATA,"ORBIT",DATA=orbit
+     orbit = orbit.y[nHere/2]
+  ENDIF
   out_orbit = orbit
+
   ;; upDownRatioStr = ''
   upDownMinRatio = KEYWORD_SET(upDownMinRatio) ? upDownMinRatio : 10
   minNumQualifyingEChannels = KEYWORD_SET(minNumQualifyingEChannels) ? minNumQualifyingEChannels : 10
@@ -435,8 +452,6 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
   ;; Now get times corresponding to diff_eFlux
   GET_FA_ORBIT,diff_eFlux.time,/TIME_ARRAY,/ALL,STRUC=struc
 
-  ;; get_data,'ORBIT',data=orb
-  ;; out_orbit=diff_eflux[0].orbit
   get_data,'ILAT',data=ILAT
   get_data,'MLT',data=MLT
 
@@ -676,7 +691,8 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
         OUT_BAD_TIME=out_bad_timeN, $
         /USE_DIFF_EFLUX, $
         DIFF_EFLUX=diff_eFlux, $
-        IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs
+        IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs, $
+        QUIET=quiet
 
      eSpecTimes = [eSpecTimes,out_timeN]
      eSpecBad = [eSpecBad,out_bad_timeN]
@@ -713,7 +729,8 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
         OUT_BAD_TIME=out_bad_timeS, $
         /USE_DIFF_EFLUX, $
         DIFF_EFLUX=diff_eFlux, $
-        IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs
+        IS_MCFADDEN_DIFF_EFLUX=deFlux__array_of_structs, $
+        QUIET=quiet
 
      eSpecTimes = [eSpecTimes,out_timeS]
      eSpecBad = [eSpecBad,out_bad_timeS]
@@ -938,10 +955,12 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
      END
   ENDCASE
 
-  these = VALUE_CLOSEST2(out_time,diff_eFlux.time, $
-                          /CONSTRAINED)
+  ;; these = VALUE_CLOSEST2(out_time,diff_eFlux.time, $
+  ;;                         /CONSTRAINED)
 
-  upflow_i = WHERE(diff_eFlux.valid AND eBound.y[these] GT 4,nUpflow, $
+  these = WHERE((eSpecBad EQ 1) OR (eSpecBad EQ 0))
+
+  upflow_i = WHERE(diff_eFlux.valid AND (eBound.y[these] GT 4),nUpflow, $
                    COMPLEMENT=notUpflow_i, $
                    NCOMPLEMENT=nNotUpflow)
 
@@ -958,6 +977,15 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
             y    :  ionMomStruct.j, $
             type : eBound.type[these]}
 
+  IF KEYWORD_SET(add_eBound_info_to_ionMomStruct) THEN BEGIN
+     ionMomStruct = CREATE_STRUCT(ionMomStruct, $
+                                  "eRange",TRANSPOSE([[eBound.y[these]], $
+                                                      [eBound.yLow[these]]]), $
+                                  "eRangeInd",TRANSPOSE([[eBound.ind[these]], $
+                                                         [eBound.indLow[these]]]), $
+                                  "type",eBound.type[these])
+  ENDIF
+
   IF nNotUpflow GT 0 THEN ionupJ.y[notUpflow_i] = !VALUES.F_NaN
 
   ;; Make original valids valid
@@ -972,8 +1000,24 @@ diff_eflux.valid = origValid
 
      ionupJ.y[flipMe] = -1. * ionupJ.y[flipMe]
 
+     ionMomStruct.j[flipMe] = -1. * ionMomStruct.j[flipMe]
+     ionMomStruct.je[flipMe] = -1. * ionMomStruct.je[flipMe]
+     ionMomStruct.cur[flipMe] = -1. * ionMomStruct.cur[flipMe] ;Should this be flipped?
+
      IF KEYWORD_SET(only_leeward_ions) THEN BEGIN
         ionupJ.y[flipMe] *= 2.
+
+        ionMomStruct.n[flipMe] *= 2.
+        ionMomStruct.j[flipMe] *= 2.
+        ionMomStruct.je[flipMe] *= 2.
+        ionMomStruct.cur[flipMe] *= 2.
+
+        ionMomStruct.nErr[flipMe] *= 2.
+        ionMomStruct.jErr[flipMe] *= 2.
+        ionMomStruct.jeErr[flipMe] *= 2.
+        ionMomStruct.curErr[flipMe] *= 2.
+
+        ionMomStruct.info.only_leeward_ions = 1B
      ENDIF
 
   ENDIF

@@ -21,7 +21,8 @@ PRO GET_FA_RATIO_OF_ION_SPECTROGRAMS, $
    OUT_BAD_TIME=bad_time, $
    USE_DIFF_EFLUX=use_diff_eFlux, $
    DIFF_EFLUX=diff_eFlux, $
-   IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux
+   IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux, $
+   QUIET=quiet
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -42,7 +43,8 @@ PRO GET_FA_RATIO_OF_ION_SPECTROGRAMS, $
                OUT_NORMARR=normArr, $
                BAD_TIME=bad_time, $
                OUT_TIME=out_time, $
-               IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux)
+               IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux, $
+               QUIET=quiet)
      STORE_DATA,varName,DATA=eSpecUp
 
      varName = downVarName
@@ -56,7 +58,8 @@ PRO GET_FA_RATIO_OF_ION_SPECTROGRAMS, $
                  NAME=varName, $
                  OUT_AVGFACTORARR=avgFactorArr, $
                  OUT_NORMARR=normArr, $
-                 IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux)
+                 IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux, $ 
+                 /QUIET)        ;Definitely don't need to hear it three times
      STORE_DATA,varName,DATA=eSpecDown
 
      varName = allAngleVarName
@@ -69,7 +72,8 @@ PRO GET_FA_RATIO_OF_ION_SPECTROGRAMS, $
              NAME=varName, $
              OUT_AVGFACTORARR=avgFactorArr, $
              OUT_NORMARR=normArr, $
-             IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux)
+             IS_MCFADDEN_DIFF_EFLUX=is_McFadden_diff_eFlux, $
+             /QUIET)            ;Definitely don't need to hear it three times
      STORE_DATA,varName,DATA=eSpec
      
   ENDIF ELSE BEGIN

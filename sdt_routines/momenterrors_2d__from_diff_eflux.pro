@@ -39,7 +39,7 @@ FUNCTION MOMENTERRORS_2D__FROM_DIFF_EFLUX,diff_eFlux, $
 
      errThing    = MOMENTERRORS_2D((KEYWORD_SET(McFadden_style_diff_eFlux) ? $
                                     MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX__MCFADDEN_STYLE(diff_eFlux,k, $
-                                                                                       HAS_SC_POT=(SIZE(sc_pot,/TYPE) EQ 8)) : $
+                                                                                       HAS_SC_POT=(SIZE(sc_pot,/TYPE) EQ 8),QUIET=quiet) : $
                                     MAKE_SDT_STRUCT_FROM_PREPPED_EFLUX(diff_eFlux,k, $
                                                                        HAS_SC_POT=(SIZE(sc_pot,/TYPE) EQ 8))), $
                                    ;; ENERGY=en, $
