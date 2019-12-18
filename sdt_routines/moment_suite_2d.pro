@@ -750,7 +750,8 @@ PRO MOMENT_SUITE_2D,diff_eFlux, $
                all            : TEMPORARY(all), $
                info           :{ is_mapped            : KEYWORD_SET(map_to_100km), $
                                  errors_are_fractional : 0B, $
-                                 only_leeward_ions     : 0B}}
+                                 only_leeward_ions     : 0B, $
+                                 losscone_ions         : 0B}}
      
      IF N_ELEMENTS(source) GT 0 THEN BEGIN
 

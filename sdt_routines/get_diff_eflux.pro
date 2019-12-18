@@ -1164,8 +1164,9 @@ PRO GET_DIFF_EFLUX,T1=t1,T2=t2, $
      IF ((N_ELEMENTS(diff_eFlux_file) GT 0) OR gotMeString) AND ~got_restored THEN BEGIN
         save_diff_eFlux_to_file = gotMeString ? save_diff_eFlux_to_file : diff_eFlux_file
         SAVEDIFFEFLUXVERSION = DIFFEFLUXVERSION
-        PRINT,"Saving diff_eFlux to file: " + save_diff_eFlux_to_file
-        SAVE,diff_eFlux,SAVEDIFFEFLUXVERSION,FILENAME=diffEFluxDir + save_diff_eFlux_to_file
+        ;; PRINT,"Saving diff_eFlux to file: " + save_diff_eFlux_to_file
+        ;; SAVE,diff_eFlux,SAVEDIFFEFLUXVERSION,FILENAME=diffEFluxDir + save_diff_eFlux_to_file
+        PRINT,"NOT saving diff_eFlux to file (spence commented out!)"
      ENDIF ELSE BEGIN
         ;; PRINT,"Sorry, no save for you"
      ENDELSE

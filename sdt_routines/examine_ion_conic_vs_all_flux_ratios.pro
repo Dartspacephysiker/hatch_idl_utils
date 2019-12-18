@@ -106,6 +106,7 @@ PRO TPLOT_UP_VS_DOWN_ION_FLUXES, $
    EBOUNDVARNAME=eBoundVarName, $
    EBOUNDLOWVARNAME=eBoundLowVarName, $
    UPDOWNRATIOSPECVARNAME=upDownRatioSpecVarName, $
+   USE_LOSSCONE=use_losscone, $
    PLOT_ASCENDING_NORTH=plot_ascN, $
    PLOT_ASCENDING_SOUTH=plot_ascS, $
    PLOT_DESCENDING_NORTH=plot_descN, $
@@ -180,6 +181,10 @@ PRO TPLOT_UP_VS_DOWN_ION_FLUXES, $
         saveTStr = saveTStrList[pIdx]
         psNavn = fName.Replace(".sav","")
 
+        IF KEYWORD_SET(use_losscone) THEN BEGIN
+           psNavn = psNavn + '_LC'
+        ENDIF
+
         IF N_ELEMENTS(plotDir) EQ 0 THEN BEGIN
            SET_PLOT_DIR,plotDir,/FOR_SDT,ADD_SUFF='/outflow_summaries'
         ENDIF
@@ -240,12 +245,14 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
    MINNUMQUALIFYINGECHANNELS=minNumQualifyingEChannels, $
    FRACBELOWTHATMUSTBEUPWARD=fracBelowThatMustBeUpward, $
    THRESH_EFLUX=thresh_eFlux, $
+   USE_LOSSCONE=use_losscone, $
    MAKE_IONS_OXYGEN=make_ions_oxygen, $
    QUIT_IF_FILE_EXISTS=quit_if_file_exists, $
    ONLY_LEEWARD_IONS=only_leeward_ions, $
    ONLY_CONE_IONS=only_cone_ions, $
    ENFORCE_THIS_SAMPLE_RATE=enforce_this_sample_rate, $
    DO_NOT_ENFORCE_SAMPLE_RATE=do_not_enforce_sample_rate, $
+   SAVE_DIFF_EFLUX_TO_FILE=save_diff_eFlux_to_file, $
    REMAKE_DIFF_EFLUX=remake_diff_eFlux, $
    DEF__INCLUDE_SC_POT=dEF__include_sc_pot, $
    SC_POT=sc_pot, $
@@ -310,7 +317,7 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
   clean_the_McFadden_way = 0
 
   deFlux__array_of_structs  = 1
-  save_diff_eFlux_to_file   = 1
+  save_diff_eFlux_to_file   = N_ELEMENTS(save_diff_eFlux_to_file) GT 0 ? save_diff_eFlux_to_file : 1
   load_diff_eFlux_from_file = N_ELEMENTS(remake_diff_eFlux) GT 0 ? ~remake_diff_eFlux : 1
 
   plot_ascN = 1
@@ -452,6 +459,27 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
 
   ;; Now get times corresponding to diff_eFlux
   GET_FA_ORBIT,diff_eFlux.time,/TIME_ARRAY,/ALL,STRUC=ephemStruct
+
+  IF KEYWORD_SET(use_losscone) THEN BEGIN
+     GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI, $
+        ;; t1,t2, $
+        ephemStruct.time[0],ephemStruct.time[-1], $
+        ionlc_angleRange, $
+        i_angle,i_angle_up, $
+        north_southArr, $
+        ALLEXCLATM_ARANGE=allExclAtm_aRange, $
+        OUT_LCW=lcw, $
+        ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
+        CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
+        OUT_E_ANGLE=e_angle, $
+        ANGLESTR=angleStr, $
+        SDTSTRUCT=ephemStruct ;; , $
+     ;; /JUST_ONE
+
+     ;; Flip lc_angleRange so that it's upgoing
+     arange__moments = (360.*((ionlc_angleRange-180)/360.-FLOOR((ionlc_angleRange-180)/360.)))
+
+  ENDIF
 
   get_data,'ILAT',data=ILAT
   get_data,'MLT',data=MLT
@@ -857,7 +885,11 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
                   INOUT_MAPRATIO=mapRatio, $
                   OUT_STRUCT=ionMomStruct, $
                   BATCH_MODE=batch_mode, $
-                  MCFADDEN_STYLE_DIFF_EFLUX=deFlux__array_of_structs
+                  MCFADDEN_STYLE_DIFF_EFLUX=deFlux__array_of_structs, $
+                  /PROVIDING_EPHEM_INFO, $
+                  IN_ILAT=ephemStruct.ilat, $
+                  IN_MLT=ephemStruct.mlt, $
+                  IN_ALT=ephemStruct.alt
 
 
   CASE 1 OF
@@ -985,6 +1017,10 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
                                   "eRangeInd",TRANSPOSE([[eBound.ind[these]], $
                                                          [eBound.indLow[these]]]), $
                                   "type",eBound.type[these])
+  ENDIF
+
+  IF KEYWORD_SET(use_losscone) THEN BEGIN
+     ionMomStruct.info.losscone_ions = 1B
   ENDIF
 
   IF nNotUpflow GT 0 THEN ionupJ.y[notUpflow_i] = !VALUES.F_NaN
@@ -1217,6 +1253,7 @@ diff_eflux.valid = origValid
         EBOUNDVARNAME=eBoundVarName, $
         EBOUNDLOWVARNAME=eBoundLowVarName, $
         UPDOWNRATIOSPECVARNAME=upDownRatioSpecVarName, $
+        USE_LOSSCONE=use_losscone, $
         PLOT_ASCENDING_NORTH=plot_ascN, $
         PLOT_ASCENDING_SOUTH=plot_ascS, $
         PLOT_DESCENDING_NORTH=plot_descN, $
