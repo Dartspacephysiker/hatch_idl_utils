@@ -278,7 +278,9 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
    OUTSTRUCT_ORBIT=ephemStruct, $
    MISLYKTES=mislyktes, $
    TPLT_VARS=tplt_vars, $
-   ADD_EBOUND_INFO_TO_IONMOMSTRUCT=add_eBound_info_to_ionMomStruct
+   ADD_EBOUND_INFO_TO_IONMOMSTRUCT=add_eBound_info_to_ionMomStruct, $
+   BATCH_MODE=batch_mode
+
 
   COMPILE_OPT IDL2,STRICTARRSUBS
 
@@ -292,6 +294,8 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
   ;; iv.  We turn on ionMomStruct.info.only_leeward_ions if only leeward
   ;; v.   To save me time remembering in the future, struct member 'errors_are_fractional' has been added to ionMomStruct.info (= 0B by default) 
   UPFLOWVERSION = '20190407'
+
+  ;; UPFLOWVERSION = '20200101'
 
   remake_file = 0
 
@@ -1059,13 +1063,17 @@ diff_eflux.valid = origValid
 
   ENDIF
 
-  PRINT,"Saving " + fName + " ..."
-  SAVE, $
-     eSpec,eSpecUp,eSpecDown,upDownRatioSpec,upAllRatioSpec, $
-     eBound, ionMomStruct, ionupJ, $
-     up_aRangeN,down_aRangeN, $
-     up_aRangeS,down_aRangeS,SAVEUPFLOWVERSION, $
-     FILENAME=loadDir+fName
+  IF ~KEYWORD_SET(isCorrectVersion) THEN BEGIN
+
+     PRINT,"Saving " + fName + " ..."
+     SAVE, $
+        eSpec,eSpecUp,eSpecDown,upDownRatioSpec,upAllRatioSpec, $
+        eBound, ionMomStruct, ionupJ, $
+        up_aRangeN,down_aRangeN, $
+        up_aRangeS,down_aRangeS,SAVEUPFLOWVERSION, $
+        FILENAME=loadDir+fName
+
+  ENDIF
 
   typiskPanelSize = 2
   IF KEYWORD_SET(make_special_JGR_plot) THEN BEGIN
