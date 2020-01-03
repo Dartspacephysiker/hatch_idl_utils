@@ -246,6 +246,7 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
    FRACBELOWTHATMUSTBEUPWARD=fracBelowThatMustBeUpward, $
    THRESH_EFLUX=thresh_eFlux, $
    USE_LOSSCONE=use_losscone, $
+   ADD_UPWARD=add_upward, $
    MAKE_IONS_OXYGEN=make_ions_oxygen, $
    QUIT_IF_FILE_EXISTS=quit_if_file_exists, $
    ONLY_LEEWARD_IONS=only_leeward_ions, $
@@ -471,6 +472,7 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
         ionlc_angleRange, $
         i_angle,i_angle_up, $
         north_southArr, $
+        ANTIEARTHWARD_ARANGE=antiearthward_aRange, $
         ALLEXCLATM_ARANGE=allExclAtm_aRange, $
         OUT_LCW=lcw, $
         ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
@@ -895,6 +897,53 @@ PRO EXAMINE_ION_CONIC_VS_ALL_FLUX_RATIOS, $
                   IN_MLT=ephemStruct.mlt, $
                   IN_ALT=ephemStruct.alt
 
+
+  IF KEYWORD_SET(add_upward) THEN BEGIN
+
+     PRINT,"Now upward moments ..."
+     MOMENT_SUITE_2D,diff_eFlux, $
+                     ENERGY=energy, $
+                     ARANGE__MOMENTS=antiearthward_aRange, $
+                     SC_POT=tmpSc_pot, $
+                     EEB_OR_EES=ieb_or_ies, $
+                     /ERROR_ESTIMATES, $
+                     ;; MAP_TO_100KM=map_to_100km, $ 
+                     ORBIT=orbit, $
+                     /NEW_MOMENT_ROUTINE, $
+                     QUIET=quiet, $
+                     ;; OUTTIME=time, $
+                     ;; OUT_N=n, $
+                     ;; OUT_J_=j, $
+                     ;; OUT_JE=je, $
+                     ;; OUT_T=T, $
+                     ;; OUT_CHARE=charE, $
+                     ;; OUT_CURRENT=cur, $
+                     ;; OUT_JJE_COVAR=jje_coVar, $
+                     ;; OUT_ERRORS=errors, $
+                     ;; OUT_ERR_N=nErr, $
+                     ;; OUT_ERR_J_=jErr, $
+                     ;; OUT_ERR_JE=jeErr, $
+                     ;; OUT_ERR_T=TErr, $
+                     ;; OUT_ERR_CURRENT=curErr, $
+                     ;; OUT_ERR_CHARE=charEErr, $
+                     INOUT_MAPRATIO=mapRatio, $
+                     OUT_STRUCT=ionMomStruct_upward, $
+                     BATCH_MODE=batch_mode, $
+                     MCFADDEN_STYLE_DIFF_EFLUX=deFlux__array_of_structs, $
+                     /PROVIDING_EPHEM_INFO, $
+                     IN_ILAT=ephemStruct.ilat, $
+                     IN_MLT=ephemStruct.mlt, $
+                     IN_ALT=ephemStruct.alt
+
+     ionMomStruct = CREATE_STRUCT(ionMomStruct, $
+                                  "upwardn",ionMomStruct_upward.n, $
+                                  "upwardj",ionMomStruct_upward.j, $
+                                  "upwardje",ionMomStruct_upward.je, $
+                                  "upwardnerr",ionMomStruct_upward.nErr, $
+                                  "upwardjerr",ionMomStruct_upward.jErr, $
+                                  "upwardjeerr",ionMomStruct_upward.jeErr)
+
+  ENDIF
 
   CASE 1 OF
      KEYWORD_SET(eBoundN) AND KEYWORD_SET(eBoundS): BEGIN

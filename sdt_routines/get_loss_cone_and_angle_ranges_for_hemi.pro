@@ -4,6 +4,7 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
    north_south, $
    ALLEXCLATM_ARANGE=allExclAtm_aRange, $
    EARTHWARD_ARANGE=earthward_aRange, $
+   ANTIEARTHWARD_ARANGE=antiearthward_aRange, $
    OUT_LCW=lcw, $
    ONLY_FIT_FIELDALIGNED_ANGLE=only_fit_fieldaligned_angle, $
    CUSTOM_E_ANGLERANGE=custom_e_angleRange, $
@@ -72,12 +73,14 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
      lc_angleRange     = MAKE_ARRAY(2,/FLOAT,VALUE=0.0)
      allExclAtm_aRange = MAKE_ARRAY(2,/FLOAT,VALUE=0.0)
      earthward_aRange  = MAKE_ARRAY(2,/FLOAT,VALUE=0.0)
+     antiearthward_aRange = MAKE_ARRAY(2,/FLOAT,VALUE=0.0)
      i_angle           = MAKE_ARRAY(2,/FLOAT,VALUE=0.0)
      i_angle_up        = MAKE_ARRAY(2,/FLOAT,VALUE=0.0)
   ENDIF ELSE BEGIN
      lc_angleRange     = MAKE_ARRAY(2,nHere,/FLOAT,VALUE=0.0)
      allExclAtm_aRange = MAKE_ARRAY(2,nHere,/FLOAT,VALUE=0.0)
      earthward_aRange  = MAKE_ARRAY(2,nHere,/FLOAT,VALUE=0.0)
+     antiearthward_aRange = MAKE_ARRAY(2,nHere,/FLOAT,VALUE=0.0)
      i_angle           = MAKE_ARRAY(2,nHere,/FLOAT,VALUE=0.0)
      i_angle_up        = MAKE_ARRAY(2,nHere,/FLOAT,VALUE=0.0)
   ENDELSE
@@ -87,6 +90,10 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
      IF north_south[i] EQ -1 THEN BEGIN
 
         ;; for Southern Hemisphere
+
+        earthward_aRange[*,i]      = [90.     ,270.    ]
+        antiearthward_aRange[*,i]  = [270.    ,90.     ]
+
         CASE 1 OF
            KEYWORD_SET(upgoing): BEGIN
 
@@ -98,6 +105,7 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
 
               lc_angleRange[*,i] = [360.-lcw[i],lcw[i]]
               ;; i_angle  = [90.,270.0]
+
               ;; eliminate ram from data
               i_angle[*,i]    = [ 0.0,180.0]
               i_angle_up[*,i] = [90.0,180.0]
@@ -111,7 +119,6 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
 
               lc_angleRange[*,i]     = [180.-lcw[i],180.+lcw[i]]
               allExclAtm_aRange[*,i] = [lcw[i]     ,360.-lcw[i]]
-              earthward_aRange[*,i]  = [90.     ,270.    ]
 
               ;; i_angle  = [270.0,90.0]	
               ;; eliminate ram from data
@@ -128,6 +135,10 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
      ENDIF ELSE BEGIN
 
         ;; for Northern Hemis.
+
+        earthward_aRange[*,i]      = [270.    ,90.    ]
+        antiearthward_aRange[*,i]  = [90.     ,270.   ]
+
         CASE 1 OF
            KEYWORD_SET(upgoing): BEGIN
 
@@ -157,7 +168,6 @@ PRO GET_LOSS_CONE_AND_ANGLE_RANGES_FOR_HEMI,t1,t2, $
               
               lc_angleRange[*,i]     = [360.-lcw[i],     lcw[i]]
               allExclAtm_aRange[*,i] = [180.+lcw[i],180.-lcw[i]]
-              earthward_aRange[*,i]  = [270.     ,90.    ]
 
               ;; i_angle  = [90.,270.0]
               ;; eliminate ram from data
